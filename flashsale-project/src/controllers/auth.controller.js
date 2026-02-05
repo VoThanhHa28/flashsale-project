@@ -125,7 +125,40 @@ const login = async (req, res) => {
   }
 };
 
+/**
+ * Lấy thông tin user hiện tại (API bảo mật - cần JWT)
+ * GET /v1/api/auth/me
+ */
+const getMe = async (req, res) => {
+  try {
+    // req.user đã được gắn từ middleware verifyToken
+    const user = req.user;
+
+    return res.status(200).json({
+      code: 200,
+      message: 'Success',
+      metadata: {
+        user: {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('GetMe error:', error);
+    return res.status(500).json({
+      code: 500,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
+  getMe,
 };
