@@ -35,7 +35,12 @@ docker-compose up -d
 # - Vào http://localhost:15672 (User: guest / Pass: guest) -> Ra RabbitMQ là OK.
 
 ### Bước 4: Chạy Server
-npm run start:dev
+Code hằng ngày:
+npm run dev
+
+Demo / quay video / nộp:
+npm start
+
 # Nếu hiện "Server running on port 3000" là thành công.
 
 ## 3. Quy tắc Git (NGHIÊM TÚC THỰC HIỆN)
