@@ -159,10 +159,14 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Trả response theo yêu cầu: { "token": "...", "userId": "..." }
+    // Trả response theo format chuẩn: { code, message, metadata: { token, userId } }
     return res.status(200).json({
-      token,
-      userId: user._id.toString(),
+      code: 200,
+      message: 'Login successful',
+      metadata: {
+        token,
+        userId: user._id.toString(),
+      },
     });
   } catch (error) {
     console.error('Login error:', error);
