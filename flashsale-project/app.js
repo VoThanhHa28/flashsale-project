@@ -1,10 +1,15 @@
+require('dotenv').config()
+
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const connectDB = require('./src/config/db');
+connectDB(); // Gọi hàm kết nối ngay
+
+var indexRouter = require('./src/routes/index');
+var usersRouter = require('./src/routes/users');
 
 var app = express();
 
