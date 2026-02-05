@@ -3,6 +3,73 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 /**
+ * Đăng ký user mới
+ * POST /v1/api/auth/register
+ */
+const register = async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        code: 400,
+        message: 'Email and password are required',
+      });
+    }
+
+    // Kiểm tra email đã tồn tại chưa (email unique)
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({
+        code: 409,
+        message: 'Email already exists',
+      });
+    }
+
+    // Hash password bằng bcrypt
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Tạo user mới
+    const user = await User.create({
+      email,
+      password: hashedPassword,
+      name: name || '',
+    });
+
+    // Trả response theo API Contract (không trả password)
+    return res.status(201).json({
+      code: 201,
+      message: 'Registered!',
+      metadata: {
+        user: {
+          _id: user._id,
+          email: user.email,
+          name: user.name,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    
+    // Xử lý lỗi duplicate key (email unique)
+    if (error.code === 11000) {
+      return res.status(409).json({
+        code: 409,
+        message: 'Email already exists',
+      });
+    }
+    
+    return res.status(500).json({
+      code: 500,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Đăng nhập
  * POST /v1/api/auth/login
  */
@@ -59,5 +126,6 @@ const login = async (req, res) => {
 };
 
 module.exports = {
+  register,
   login,
 };
