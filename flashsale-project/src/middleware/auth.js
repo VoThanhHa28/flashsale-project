@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
+const logger = require('../libs/logger');
 
 /**
  * Middleware xác thực JWT token
@@ -12,7 +13,7 @@ const verifyToken = async (req, res, next) => {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
-        code: 401,
+        status: 'error',
         message: 'Unauthorized - No token provided',
       });
     }
@@ -22,22 +23,28 @@ const verifyToken = async (req, res, next) => {
 
     if (!token) {
       return res.status(401).json({
-        code: 401,
+        status: 'error',
         message: 'Unauthorized - Invalid token format',
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-    );
+    // JWT_SECRET đã được check ở app start (fail fast)
+    if (!process.env.JWT_SECRET) {
+      logger.error('JWT_SECRET is missing in middleware');
+      return res.status(500).json({
+        status: 'error',
+        message: 'Internal server error',
+      });
+    }
 
-    // Tìm user từ token
-    const user = await User.findById(decoded.userId).select('-password');
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Tìm user từ token (password đã được ẩn mặc định)
+    const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({
-        code: 401,
+        status: 'error',
         message: 'Unauthorized - User not found',
       });
     }
@@ -48,21 +55,25 @@ const verifyToken = async (req, res, next) => {
 
     next();
   } catch (error) {
+    // Log chi tiết lỗi server-side
+    logger.error('Auth middleware error:', error);
+
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
-        code: 401,
+        status: 'error',
         message: 'Unauthorized - Invalid token',
       });
     }
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
-        code: 401,
+        status: 'error',
         message: 'Unauthorized - Token expired',
       });
     }
-    console.error('Auth middleware error:', error);
+
+    // KHONG leak error.message ra client
     return res.status(500).json({
-      code: 500,
+      status: 'error',
       message: 'Internal server error',
     });
   }

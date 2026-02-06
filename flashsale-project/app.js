@@ -1,5 +1,10 @@
 require('dotenv').config()
 
+// JWT_SECRET - Fail fast khi start
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in environment variables');
+}
+
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
