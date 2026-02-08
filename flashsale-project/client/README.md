@@ -1,70 +1,68 @@
-# Getting Started with Create React App
+# Flash Sale – Client (React)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Giao diện Member 5: Login, Register, Danh sách sản phẩm, Chi tiết sản phẩm + MUA NGAY.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Chạy
 
-### `npm start`
+```bash
+npm install
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Mở http://localhost:3000.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Thay đổi đã làm
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Router:** `/`, `/login`, `/register`, `/product/:id` (React Router).
+- **Layout:** Header chung (Trang chủ, Đăng nhập/Đăng ký hoặc Xin chào + Đăng xuất).
+- **Trang:** Login, Register, Home (danh sách SP), ProductDetail (chi tiết + số lượng + MUA NGAY).
+- **Data giả:** `public/data/products.json` (cấu trúc trùng API: `code`, `metadata`, `product_id`, `product_name`, `product_price`, `product_thumb`, ...).
+- **Layer API:** `src/services/api.js` – base URL, token, `getPayload`/`getErrorMessage`, `request()`, `login`, `register`, `getProducts`/`getProductsList`, `createOrder`.
+- **Auth:** Token + user lưu `localStorage`; Layout đọc để hiện/ẩn Đăng nhập, Đăng xuất.
+- **Responsive:** Form, grid, nút 44–48px; xử lý lỗi/loading trên từng trang.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Kết nối backend – cần lưu ý
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 1. Cấu hình
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Trong thư mục `client/` tạo file **`.env`** (xem `.env.example`):
+  ```env
+  REACT_APP_API_URL=http://localhost:3000
+  ```
+- Đổi port nếu backend chạy port khác (vd: 30000). Sau khi sửa `.env` cần chạy lại `npm start`.
 
-### `npm run eject`
+### 2. Hợp đồng API (đã dùng trong code)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Chức năng   | Method | URL                        | Body / Header |
+|------------|--------|----------------------------|----------------|
+| Đăng ký    | POST   | `/v1/api/auth/register`    | `{ email, password, name }` |
+| Đăng nhập  | POST   | `/v1/api/auth/login`      | `{ email, password }` |
+| Danh sách SP | GET  | `/v1/api/product`         | — |
+| Đặt hàng   | POST   | `/v1/api/order`           | Body: `{ productId, quantity }`, Header: `Authorization: Bearer <token>` |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 3. Response backend cần trả
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **Thành công:** Có thể dùng `metadata` hoặc `data` chứa dữ liệu; code đã đọc cả hai qua `getPayload()`.
+- **Login:** Trả thêm `metadata.tokens.accessToken` (hoặc `metadata.accessToken`) để client lưu token.
+- **Lỗi:** Trả `status: "error"` và `message` (hoặc HTTP 4xx/5xx + body có `message`); client hiển thị `message` cho user.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 4. Chỗ đã sẵn sàng nối API
 
-## Learn More
+- **Login / Register:** Gọi `api.login()` / `api.register()` khi `REACT_APP_API_URL` có giá trị; lưu token + user; hiển thị lỗi từ server.
+- **Home:** Dùng `api.getProductsList()` – ưu tiên GET `/v1/api/product`, không có hoặc lỗi thì fallback `public/data/products.json`.
+- **ProductDetail:** Lấy sản phẩm từ cùng nguồn với Home; MUA NGAY gọi `api.createOrder(productId, quantity)` với token trong header; hiển thị lỗi/thành công tại chỗ.
+- **Layout:** Đọc `api.getToken()` / `api.getUser()`; Đăng xuất gọi `api.clearAuth()`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 5. CORS
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Backend cần bật CORS cho origin của client (vd `http://localhost:3000` khi chạy dev).
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Chỉ cần đặt `REACT_APP_API_URL` trong `.env` và đảm bảo backend đúng contract trên là có thể kết nối, không cần sửa logic từng trang.

@@ -1,0 +1,152 @@
+.banner-carousel {
+  position: relative;
+  width: 100%;
+  margin: 0 0 1.25rem 0;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.banner-carousel-track {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 1;
+  min-height: 160px;
+  max-height: 280px;
+}
+
+.banner-carousel-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.banner-carousel-slide--active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.banner-carousel-content {
+  text-align: center;
+  color: #fff;
+  padding: 1.5rem;
+}
+
+.banner-carousel-title {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.banner-carousel-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+.banner-carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.banner-carousel-btn:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+.banner-carousel-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 2px 2px 0 0;
+}
+
+.banner-carousel-btn--prev {
+  left: 0.75rem;
+}
+
+.banner-carousel-btn--prev::after {
+  transform: rotate(-135deg);
+  margin-left: 6px;
+}
+
+.banner-carousel-btn--next {
+  right: 0.75rem;
+}
+
+.banner-carousel-btn--next::after {
+  transform: rotate(45deg);
+  margin-right: 6px;
+}
+
+.banner-carousel-dots {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.banner-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.banner-carousel-dot:hover {
+  background: rgba(255,255,255,0.7);
+}
+
+.banner-carousel-dot--active {
+  background: #fff;
+  transform: scale(1.2);
+}
+
+@media (min-width: 640px) {
+  .banner-carousel-title {
+    font-size: 2rem;
+  }
+
+  .banner-carousel-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .banner-carousel-track {
+    min-height: 200px;
+  }
+}
+
+@media (min-width: 768px) {
+  .banner-carousel-title {
+    font-size: 2.25rem;
+  }
+
+  .banner-carousel-track {
+    min-height: 220px;
+    max-height: 320px;
+  }
+}

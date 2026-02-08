@@ -1,0 +1,61 @@
+.promo-tiles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.promo-tile {
+  display: block;
+  background: var(--tile-color, #c00a27);
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
+  text-decoration: none;
+  color: #fff;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.promo-tile:hover {
+  opacity: 0.95;
+  transform: translateY(-2px);
+}
+
+.promo-tile-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.promo-tile-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.promo-tile-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.promo-tile-cta {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@media (min-width: 640px) {
+  .promo-tiles {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .promo-tile {
+    padding: 1.5rem;
+  }
+
+  .promo-tile-title {
+    font-size: 1.25rem;
+  }
+}
