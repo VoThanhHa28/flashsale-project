@@ -18,6 +18,7 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
+    
     // Extract token (bỏ "Bearer " prefix)
     const token = authHeader.substring(7);
 

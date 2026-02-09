@@ -128,6 +128,7 @@ const login = async (req, res) => {
       });
     }
 
+    
     // Normalize email khi login (giống hệt register)
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) {
