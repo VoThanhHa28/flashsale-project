@@ -4,7 +4,7 @@ const OrderModel = require("../models/order.model");
 const mongoose = require("mongoose");
 
 // Cấu hình
-const QUEUE_NAME = "order_queue";
+const QUEUE_NAME = "order-queue";
 const PREFETCH_COUNT = 10; // Xử lý tối đa 10 message cùng lúc
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/flashsale";
 
@@ -44,14 +44,9 @@ const processOrder = async (orderData, channel, msg) => {
     try {
         console.log(`[Worker] Nhận đơn hàng:`, orderData);
 
-        // Validate dữ liệu
-        if (!orderData.userId || !orderData.productId || !orderData.quantity) {
-            throw new Error("Thiếu thông tin bắt buộc: userId, productId hoặc quantity");
-        }
-
-        // Kiểm tra quantity hợp lệ
-        if (orderData.quantity <= 0) {
-            throw new Error("Quantity phải lớn hơn 0");
+        // Validate format cơ bản (không validate nghiệp vụ - đã xử lý ở API)
+        if (orderData.quantity && orderData.quantity <= 0) {
+            throw new Error("Quantity không hợp lệ");
         }
 
         // Lưu đơn hàng vào MongoDB
@@ -62,9 +57,9 @@ const processOrder = async (orderData, channel, msg) => {
             userId: orderData.userId,
             productId: orderData.productId,
             quantity: orderData.quantity,
-            status: "Success",
-            totalPrice: orderData.totalPrice || 0,
-            processedAt: new Date(),
+            status: "Pending",
+            totalPrice: orderData.price || 0,
+            processedAt: orderData.orderTime || new Date(),
         });
 
         const processingTime = Date.now() - startTime;
@@ -81,20 +76,6 @@ const processOrder = async (orderData, channel, msg) => {
     } catch (error) {
         console.error("[Worker] ❌ Lỗi xử lý đơn hàng:", error.message);
         console.error("[Worker] Dữ liệu lỗi:", orderData);
-
-        // Lưu đơn hàng lỗi vào DB để tracking
-        try {
-            await OrderModel.create({
-                userId: orderData.userId || null,
-                productId: orderData.productId || null,
-                quantity: orderData.quantity || 0,
-                status: "Failed",
-                errorMessage: error.message,
-                processedAt: new Date(),
-            });
-        } catch (dbError) {
-            console.error("[Worker] ❌ Không thể lưu đơn hàng lỗi:", dbError.message);
-        }
 
         // NACK message nhưng không requeue (tránh loop vô hạn)
         // Nếu muốn retry, dùng Dead Letter Exchange
@@ -165,14 +146,18 @@ const startWorker = async () => {
 };
 
 // Xử lý graceful shutdown
+const { closeConnection } = require("../config/rabbitmq");
+
 process.on("SIGINT", async () => {
     console.log("[Worker] Đang tắt Worker...");
+    await closeConnection();
     await mongoose.connection.close();
     process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
     console.log("[Worker] Đang tắt Worker...");
+    await closeConnection();
     await mongoose.connection.close();
     process.exit(0);
 });

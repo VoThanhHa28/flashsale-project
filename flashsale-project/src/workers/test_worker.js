@@ -1,6 +1,6 @@
 const amqp = require("amqplib");
 
-const QUEUE_NAME = "order_queue";
+const QUEUE_NAME = "order-queue";
 const RABBITMQ_URL = "amqp://localhost";
 
 /**
@@ -27,7 +27,8 @@ const testSendOrders = async () => {
                 userId: `user_${i}`,
                 productId: `product_${Math.floor(Math.random() * 5) + 1}`,
                 quantity: Math.floor(Math.random() * 3) + 1,
-                totalPrice: Math.floor(Math.random() * 1000000) + 100000,
+                price: Math.floor(Math.random() * 1000000) + 100000,
+                orderTime: new Date(),
             };
 
             // Gửi message vào queue
