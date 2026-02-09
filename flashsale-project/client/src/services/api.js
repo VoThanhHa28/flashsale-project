@@ -45,11 +45,10 @@ export function clearAuth() {
 }
 
 /**
- * Chuẩn hóa payload từ response (backend có thể dùng metadata hoặc data).
+ * Chuẩn hóa payload từ response (backend phải luôn trả { data: ... }).
  */
 export function getPayload(res) {
-  const data = res.metadata !== undefined ? res.metadata : res.data;
-  return data;
+  return res.data;
 }
 
 /**
@@ -75,6 +74,12 @@ export async function request(url, options = {}) {
   const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
   const res = await fetch(fullUrl, { ...options, headers });
   const json = await res.json().catch(() => ({}));
+
+  if (res.status === 401) {
+    clearAuth();
+    window.location.href = '/login';
+    return;
+  }
 
   if (!res.ok) {
     const message = getErrorMessage(json) || res.statusText;
@@ -111,11 +116,24 @@ export async function getProducts() {
 export async function getProductsList() {
   const list = await getProducts();
   if (list !== null) return list;
+  // Fallback: fetch JSON giả (có thể dùng metadata hoặc data)
   const res = await fetch('/data/products.json');
   if (!res.ok) throw new Error('Không tải được danh sách sản phẩm.');
   const data = await res.json();
-  const payload = getPayload(data);
+  // File JSON giả có thể dùng metadata hoặc data
+  const payload = data.metadata ?? data.data ?? data;
   return Array.isArray(payload) ? payload : [];
+}
+
+/**
+ * GET /v1/api/product/:id – lấy chi tiết sản phẩm theo ID.
+ * Nếu chưa cấu hình API thì trả về null để caller dùng fallback (JSON).
+ */
+export async function getProductById(id) {
+  if (!isApiConfigured()) return null;
+  const res = await request(`/v1/api/product/${id}`);
+  const product = getPayload(res);
+  return product || null;
 }
 
 /**
@@ -127,8 +145,8 @@ export async function login(email, password) {
     body: JSON.stringify({ email, password }),
   });
   const payload = getPayload(res);
-  const token = payload?.tokens?.accessToken || payload?.accessToken;
-  const user = payload?.user || payload;
+  const token = payload?.token;
+  const user = payload?.user;
   return { token, user, response: res };
 }
 

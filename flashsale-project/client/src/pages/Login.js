@@ -26,14 +26,14 @@ function Login() {
     setLoading(true);
     try {
       if (api.isApiConfigured()) {
-        const { token, user } = await api.login(email.trim(), password);
+        const { token, user } = await api.login(email.trim().toLowerCase(), password);
         if (token) api.setToken(token);
         if (user) api.setUser(user);
         navigate('/', { replace: true });
         return;
       }
-      // Mock: chưa có backend, lưu user + token giả
-      api.setUser({ email: email.trim(), name: 'User' });
+      // DEV ONLY – remove when backend ready (m sẽ tự thêm lại sau khi t merge auth vào)
+      api.setUser({ email: email.trim().toLowerCase(), name: 'User' });
       api.setToken('mock-token');
       navigate('/', { replace: true });
     } catch (err) {

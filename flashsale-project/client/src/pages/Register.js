@@ -35,11 +35,11 @@ function Register() {
     setLoading(true);
     try {
       if (api.isApiConfigured()) {
-        await api.register(email.trim(), password, name.trim());
+        await api.register(email.trim().toLowerCase(), password, name.trim());
         navigate('/login', { replace: true });
         return;
       }
-      // Mock: chưa có backend, chuyển sang Đăng nhập
+      // DEV ONLY – remove when backend ready (m sẽ tự thêm lại sau khi t merge auth vào)
       navigate('/login', { replace: true });
     } catch (err) {
       setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.');

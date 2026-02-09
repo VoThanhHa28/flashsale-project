@@ -26,9 +26,24 @@ function ProductDetail() {
 
     async function load() {
       try {
+        // Ưu tiên dùng API chi tiết sản phẩm
+        let found = await api.getProductById(id);
+        if (found && !cancelled) {
+          setProduct(found);
+          // Lấy danh sách để hiển thị sản phẩm liên quan
+          const list = await api.getProductsList();
+          if (!cancelled) {
+            const related = list
+              .filter((p) => String(p.product_id) !== String(id))
+              .slice(0, 4);
+            setRelatedProducts(related);
+          }
+          return;
+        }
+        // Fallback: dùng danh sách và tìm
         const list = await api.getProductsList();
         if (cancelled) return;
-        const found = list.find((p) => String(p.product_id) === String(id));
+        found = list.find((p) => String(p.product_id) === String(id));
         setProduct(found || null);
         const related = list
           .filter((p) => String(p.product_id) !== String(id))
@@ -63,6 +78,7 @@ function ProductDetail() {
         setOrderSuccess('Đơn hàng đang được xử lý.');
         return;
       }
+      // DEV ONLY – remove when backend ready (m sẽ tự thêm lại sau khi t merge auth vào)
       setOrderSuccess('Đơn hàng đang được xử lý. (Chưa kết nối API)');
     } catch (err) {
       setOrderError(err.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
