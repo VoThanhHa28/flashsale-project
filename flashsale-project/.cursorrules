@@ -1,0 +1,135 @@
+# 📋 QUY ƯỚC ĐẶT TÊN - FLASHSALE PROJECT
+
+> **Mục đích**: Tài liệu này quy định cách đặt tên biến, hàm, file, schema, API... để tất cả member code nhất quán và tránh lỗi.
+
+## 🎯 QUY TẮC CHÍNH
+
+### 1. BIẾN (Variables)
+- ✅ **camelCase** cho biến thông thường: `userName`, `productQuantity`, `orderStatus`
+- ✅ **UPPER_SNAKE_CASE** cho constants: `MAX_RETRY_ATTEMPTS`, `DEFAULT_PAGE_SIZE`, `JWT_SECRET`
+- ✅ Prefix cho boolean: `is`, `has`, `can`, `should` (ví dụ: `isAuthenticated`, `hasPermission`)
+- ✅ Tên biến phải có ý nghĩa, không viết tắt tùy tiện
+
+### 2. HÀM (Functions)
+- ✅ **camelCase** cho hàm: `register`, `login`, `getMe`, `createOrder`
+- ✅ Tên hàm phải là động từ (verb): `getUser`, `createProduct`, `updateOrder`, `deleteUser`
+- ✅ Prefix cho getter/setter: `getUser`, `getProductById`, `setUserRole`
+
+### 3. FILE
+- ✅ **camelCase** cho file JavaScript với pattern `<module>.<type>.js`
+- ✅ Ví dụ: `auth.controller.js`, `user.model.js`, `product.route.js`
+- ✅ Không dùng: kebab-case, snake_case, PascalCase
+
+### 4. SCHEMA/DATABASE FIELDS
+- ✅ **camelCase** cho Schema fields: `email`, `userName`, `productQuantity`, `orderStatus`
+- ✅ Tên trường phải rõ ràng, không viết tắt: `productQuantity` (không dùng `qty`)
+- ⚠️ **QUAN TRỌNG**: Thống nhất tên trường từ đầu với team
+
+### 5. API ROUTES
+- ✅ **kebab-case** cho API endpoints: `/register`, `/login`, `/create-order`, `/order-history`
+- ✅ Pattern RESTful:
+  - `GET /resource` → Lấy danh sách
+  - `GET /resource/:id` → Lấy 1 item
+  - `POST /resource` → Tạo mới
+  - `PUT /resource/:id` → Cập nhật toàn bộ
+  - `PATCH /resource/:id` → Cập nhật một phần
+  - `DELETE /resource/:id` → Xóa
+
+### 6. FORM/INPUT FIELDS
+- ✅ **camelCase** cho form field names: `email`, `userName`, `productQuantity`
+- ✅ Tên form field phải khớp với Schema field
+
+### 7. MODEL/CLASS
+- ✅ **PascalCase** cho Model/Class: `User`, `Product`, `Order`
+
+### 8. OBJECT PROPERTIES
+- ✅ **camelCase** cho object properties: `{ email, userName, productQuantity }`
+
+### 9. THƯ MỤC
+- ✅ **kebab-case** hoặc **lowercase**: `controllers/`, `models/`, `routes/`, `middleware/`
+
+### 10. API RESPONSE FORMAT
+- ✅ **Format chuẩn cho TẤT CẢ API Response**:
+```javascript
+{
+  "code": 200,
+  "message": "Success",
+  "metadata": {
+    // Dữ liệu ở đây
+  }
+}
+```
+
+### 11. ERROR RESPONSE FORMAT
+- ✅ **Format chuẩn cho Error Response**:
+```javascript
+{
+  "code": 400,
+  "message": "Error message"
+}
+```
+
+### 12. COMMENTS
+- ✅ Tiếng Việt cho comments (theo code hiện tại)
+
+## ⚠️ LƯU Ý QUAN TRỌNG
+
+1. **Thống nhất Schema fields từ đầu**: Nếu không chốt `productQuantity`, các member có thể đặt khác nhau → Gây lỗi khi gọi sai tên trường.
+
+2. **Thống nhất API Response format**: Frontend rất ghét lúc thì nhận được `{ user: ... }`, lúc thì `{ data: ... }`. Thống nhất format giúp Frontend code 1 hàm xử lý chung.
+
+3. **Đặt tên có ý nghĩa**: Không viết tắt tùy tiện. `productQuantity` tốt hơn `qty`, `userName` tốt hơn `name`.
+
+4. **Follow pattern nhất quán**: Một khi đã chọn camelCase cho biến, thì TẤT CẢ biến phải dùng camelCase.
+
+## ✅ CHECKLIST TRƯỚC KHI CODE
+
+- [ ] Tất cả biến dùng **camelCase**
+- [ ] Tất cả hàm dùng **camelCase** và là động từ
+- [ ] Tất cả file dùng **camelCase** với pattern `<module>.<type>.js`
+- [ ] Tất cả Schema fields dùng **camelCase** và đã thống nhất với team
+- [ ] Tất cả API routes dùng **kebab-case**
+- [ ] Tất cả form fields dùng **camelCase** và khớp với Schema
+- [ ] Tất cả Model/Class dùng **PascalCase**
+- [ ] Tất cả constants dùng **UPPER_SNAKE_CASE**
+- [ ] Tất cả API Response follow format chuẩn: `{code, message, metadata}`
+- [ ] Tất cả Error Response follow format chuẩn: `{code, message}`
+- [ ] Tên biến/hàm có ý nghĩa, không viết tắt tùy tiện
+- [ ] Boolean variables có prefix: `is`, `has`, `can`, `should`
+
+## 📝 VÍ DỤ
+
+### Schema Example
+```javascript
+const productSchema = new mongoose.Schema({
+  productName: { type: String, required: true },
+  productPrice: { type: Number, required: true },
+  productQuantity: { type: Number, required: true }, // ← Tên này phải thống nhất
+  productStatus: { type: String, enum: ['active', 'inactive'] }
+}, { timestamps: true });
+```
+
+### Controller Example
+```javascript
+const getProducts = async (req, res) => {
+  try {
+    const products = await Product.find();
+    return res.status(200).json({
+      code: 200,
+      message: 'Success',
+      metadata: { products }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      message: 'Internal server error'
+    });
+  }
+};
+```
+
+### Route Example
+```javascript
+router.get('/products', productController.getProducts);
+router.post('/create-order', verifyToken, orderController.createOrder);
+```

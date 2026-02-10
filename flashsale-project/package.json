@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "nodemon ./bin/www"
+    "dev": "nodemon ./bin/www",
+    "seed:products": "node src/scripts/seedProducts.js"
   },
   "dependencies": {
     "amqplib": "^0.10.9",
