@@ -1,0 +1,11 @@
+/* Base container – Layout handles main structure */
+.App {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Focus visible for keyboard nav (giữ outline khi tab, bỏ khi click) */
+:focus-visible {
+  outline: 2px solid #c00a27;
+  outline-offset: 2px;
+}

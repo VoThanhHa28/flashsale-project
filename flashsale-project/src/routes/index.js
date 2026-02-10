@@ -1,12 +1,18 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 
-/* GET home page. */
-// Test server sống hay chết
+/**
+ * GET home page
+ * Test server sống hay chết
+ * GET /
+ */
 router.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: "Server FlashSale is running!", 
-    status: "success" 
+  return res.status(200).json({
+    code: 200,
+    message: 'Server FlashSale is running!',
+    metadata: {
+      status: 'success'
+    }
   });
 });
 
