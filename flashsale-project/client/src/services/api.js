@@ -45,10 +45,16 @@ export function clearAuth() {
 }
 
 /**
- * Chuẩn hóa payload từ response (backend phải luôn trả { data: ... }).
+ * Chuẩn hóa payload từ response (backend trả { status, data: ... } hoặc { code, metadata: ... }).
+ * Hỗ trợ cả 2 format để tương thích.
  */
 export function getPayload(res) {
-  return res.data;
+  // Hỗ trợ format mới: { code, metadata }
+  if (res.metadata !== undefined) return res.metadata;
+  // Hỗ trợ format cũ: { status, data }
+  if (res.data !== undefined) return res.data;
+  // Fallback: trả về chính response nếu không có data/metadata
+  return res;
 }
 
 /**
@@ -72,20 +78,40 @@ export async function request(url, options = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
-  const res = await fetch(fullUrl, { ...options, headers });
-  const json = await res.json().catch(() => ({}));
+  let res;
+  let json = {};
 
-  if (res.status === 401) {
-    clearAuth();
-    window.location.href = '/login';
-    return;
+  try {
+    res = await fetch(fullUrl, { ...options, headers });
+  } catch (networkError) {
+    // Lỗi network (backend tắt, CORS, timeout, ...).
+    // Ném ra Error với message chuẩn để UI hiển thị.
+    const err = new Error('Không thể kết nối tới máy chủ. Vui lòng thử lại sau.');
+    err.isNetworkError = true;
+    err.cause = networkError;
+    throw err;
   }
+
+  json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     const message = getErrorMessage(json) || res.statusText;
     const err = new Error(message);
     err.status = res.status;
     err.response = json;
+
+    // Nếu là 401 nhưng KHÔNG phải login/register → auto logout + redirect.
+    // Các màn đăng nhập / đăng ký sẽ tự xử lý 401 để hiển thị message.
+    const isAuthRoute =
+      typeof url === 'string' &&
+      (url.includes('/v1/api/auth/login') || url.includes('/v1/api/auth/register'));
+
+    if (res.status === 401 && !isAuthRoute) {
+      clearAuth();
+      window.location.href = '/login';
+      return;
+    }
+
     throw err;
   }
 
@@ -105,17 +131,32 @@ export async function request(url, options = {}) {
  */
 export async function getProducts() {
   if (!isApiConfigured()) return null;
-  const res = await request('/v1/api/product');
-  const list = getPayload(res);
-  return Array.isArray(list) ? list : [];
+
+  try {
+    const res = await request('/v1/api/product');
+    const list = getPayload(res);
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    // Nếu là lỗi network hoặc server down, cho phép fallback sang JSON tĩnh.
+    // Log ra console để tiện debug, nhưng không làm vỡ UI.
+    // eslint-disable-next-line no-console
+    console.error('Lỗi gọi API /v1/api/product:', err);
+    return null;
+  }
 }
 
 /**
  * Lấy danh sách sản phẩm: dùng API nếu đã cấu hình, không thì fetch JSON.
  */
 export async function getProductsList() {
-  const list = await getProducts();
-  if (list !== null) return list;
+  try {
+    const list = await getProducts();
+    // Nếu API trả về list (kể cả rỗng) thì dùng luôn.
+    if (Array.isArray(list)) return list;
+  } catch (err) {
+    // Đã log ở getProducts, không cần log thêm.
+  }
+
   // Fallback: fetch JSON giả (có thể dùng metadata hoặc data)
   const res = await fetch('/data/products.json');
   if (!res.ok) throw new Error('Không tải được danh sách sản phẩm.');
@@ -131,9 +172,17 @@ export async function getProductsList() {
  */
 export async function getProductById(id) {
   if (!isApiConfigured()) return null;
-  const res = await request(`/v1/api/product/${id}`);
-  const product = getPayload(res);
-  return product || null;
+
+  try {
+    const res = await request(`/v1/api/product/${id}`);
+    const product = getPayload(res);
+    return product || null;
+  } catch (err) {
+    // Nếu backend không kết nối được (hoặc lỗi mạng), cho phép fallback sang JSON tĩnh ở tầng gọi (ProductDetail).
+    // eslint-disable-next-line no-console
+    console.error(`Lỗi gọi API /v1/api/product/${id}:`, err);
+    return null;
+  }
 }
 
 /**
@@ -145,7 +194,8 @@ export async function login(email, password) {
     body: JSON.stringify({ email, password }),
   });
   const payload = getPayload(res);
-  const token = payload?.token;
+  // Hỗ trợ cả 2 format: tokens.accessToken (spec mới) và token (format hiện tại)
+  const token = payload?.tokens?.accessToken || payload?.token;
   const user = payload?.user;
   return { token, user, response: res };
 }

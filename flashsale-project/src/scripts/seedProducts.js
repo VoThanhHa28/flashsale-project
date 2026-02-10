@@ -1,0 +1,109 @@
+require('dotenv').config();
+const mongoose = require('mongoose');
+const Product = require('../models/product.model');
+const connectDB = require('../config/db');
+
+const productsData = [
+  {
+    product_id: 1,
+    product_name: "iPhone 15",
+    product_price: 24990000,
+    product_thumb: "https://picsum.photos/seed/iphone15/400/400",
+    product_description: "iPhone 15 với chip A16 Bionic, camera 48MP, màn hình Super Retina XDR 6.1 inch.",
+    product_quantity: 100
+  },
+  {
+    product_id: 2,
+    product_name: "iPhone 15 Pro Max",
+    product_price: 34990000,
+    product_thumb: "https://picsum.photos/seed/iphone15pro/400/400",
+    product_description: "iPhone 15 Pro Max - Titanium, chip A17 Pro, camera 48MP, màn hình 6.7 inch.",
+    product_quantity: 50
+  },
+  {
+    product_id: 3,
+    product_name: "Samsung Galaxy S24",
+    product_price: 22990000,
+    product_thumb: "https://picsum.photos/seed/s24/400/400",
+    product_description: "Samsung Galaxy S24, Snapdragon 8 Gen 3, màn hình Dynamic AMOLED 2X 6.2 inch.",
+    product_quantity: 80
+  },
+  {
+    product_id: 4,
+    product_name: "Samsung Galaxy S24 Ultra",
+    product_price: 32990000,
+    product_thumb: "https://picsum.photos/seed/s24ultra/400/400",
+    product_description: "Samsung S24 Ultra với S Pen, camera 200MP, khung Titanium.",
+    product_quantity: 40
+  },
+  {
+    product_id: 5,
+    product_name: "Xiaomi 14",
+    product_price: 19990000,
+    product_thumb: "https://picsum.photos/seed/xiaomi14/400/400",
+    product_description: "Xiaomi 14 - Snapdragon 8 Gen 3, camera Leica, màn hình 6.36 inch.",
+    product_quantity: 120
+  },
+  {
+    product_id: 6,
+    product_name: "OPPO Find X7",
+    product_price: 21990000,
+    product_thumb: "https://picsum.photos/seed/oppofind/400/400",
+    product_description: "OPPO Find X7 với camera Hasselblad, chip Dimensity 9300.",
+    product_quantity: 60
+  },
+  {
+    product_id: 7,
+    product_name: "Google Pixel 8 Pro",
+    product_price: 27990000,
+    product_thumb: "https://picsum.photos/seed/pixel8/400/400",
+    product_description: "Google Pixel 8 Pro - Tensor G3, camera AI, màn hình 6.7 inch OLED.",
+    product_quantity: 30
+  },
+  {
+    product_id: 8,
+    product_name: "OnePlus 12",
+    product_price: 23990000,
+    product_thumb: "https://picsum.photos/seed/oneplus12/400/400",
+    product_description: "OnePlus 12 - Snapdragon 8 Gen 3, sạc 100W, màn hình 2K 120Hz.",
+    product_quantity: 70
+  },
+  {
+    product_id: 9,
+    product_name: "Vivo X100 Pro",
+    product_price: 26990000,
+    product_thumb: "https://picsum.photos/seed/vivox100/400/400",
+    product_description: "Vivo X100 Pro - camera ZEISS, chip Dimensity 9300, pin 5400mAh.",
+    product_quantity: 45
+  },
+  {
+    product_id: 10,
+    product_name: "Sony Xperia 1 V",
+    product_price: 29990000,
+    product_thumb: "https://picsum.photos/seed/sonyxperia/400/400",
+    product_description: "Sony Xperia 1 V - màn hình 4K 21:9, camera Exmor RS, âm thanh Hi-Res.",
+    product_quantity: 25
+  }
+];
+
+async function seedProducts() {
+  try {
+    // Kết nối database
+    await connectDB();
+    
+    // Xóa tất cả products cũ (optional - có thể comment nếu muốn giữ lại)
+    await Product.deleteMany({});
+    console.log('✅ Đã xóa products cũ');
+    
+    // Thêm products mới
+    await Product.insertMany(productsData);
+    console.log(`✅ Đã thêm ${productsData.length} sản phẩm vào database`);
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Lỗi khi seed products:', error);
+    process.exit(1);
+  }
+}
+
+seedProducts();
