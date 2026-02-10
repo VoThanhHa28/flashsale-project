@@ -18,18 +18,24 @@ const getProducts = async (req, res) => {
     const sortBy = req.query.sortBy || 'createdAt';
     const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
 
-    // Double check validation
+    // Double check validation (đảm bảo trả về cùng format JSend)
     if (page < 1 || !Number.isInteger(page)) {
       return res.status(400).json({
-        code: 400,
-        message: 'Page must be an integer >= 1',
+        status: 'error',
+        message: 'Validation error',
+        data: {
+          errors: ['Page must be an integer >= 1'],
+        },
       });
     }
 
     if (pageSize < 1 || pageSize > MAX_PAGE_SIZE || !Number.isInteger(pageSize)) {
       return res.status(400).json({
-        code: 400,
-        message: `Page size must be an integer between 1 and ${MAX_PAGE_SIZE}`,
+        status: 'error',
+        message: 'Validation error',
+        data: {
+          errors: [`Page size must be an integer between 1 and ${MAX_PAGE_SIZE}`],
+        },
       });
     }
 
