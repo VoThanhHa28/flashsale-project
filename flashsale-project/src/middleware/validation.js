@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Validation Middleware
  * Xá»­ lÃ½ validation cho query params vÃ  request body
  */
@@ -10,19 +10,6 @@ const MIN_PAGE = 1;
 const MIN_PAGE_SIZE = 1;
 const ALLOWED_SORT_FIELDS = ['productName', 'productPrice', 'productQuantity', 'createdAt', 'updatedAt'];
 const ALLOWED_SORT_ORDERS = ['asc', 'desc'];
-
-/**
- * Validate URL helper
- */
-const validateUrl = (url) => {
-  if (typeof url !== 'string') return false;
-  try {
-    const urlObj = new URL(url);
-    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
 
 /**
  * Validate query params cho GET /products
@@ -81,9 +68,9 @@ const validateGetProductsQuery = (req, res, next) => {
 
   if (errors.length > 0) {
     return res.status(400).json({
-      code: 400,
+      status: 'error',
       message: 'Validation error',
-      errors: errors,
+      data: { errors },
     });
   }
 
@@ -92,18 +79,19 @@ const validateGetProductsQuery = (req, res, next) => {
 
 /**
  * Validate request body cho POST /products
+ * Body sử dụng các field camelCase trùng với Product Schema
  */
 const validateCreateProduct = (req, res, next) => {
-  const { product_name, product_thumb, product_description, product_price, product_quantity } = req.body;
+  const { productName, productThumb, productDescription, productPrice, productQuantity } = req.body;
   const errors = [];
 
-  // Validate product_name
-  if (product_name === undefined || product_name === null) {
+  // Validate productName
+  if (productName === undefined || productName === null) {
     errors.push('Product name is required');
-  } else if (typeof product_name !== 'string') {
+  } else if (typeof productName !== 'string') {
     errors.push('Product name must be a string');
   } else {
-    const trimmedName = product_name.trim();
+    const trimmedName = productName.trim();
     if (trimmedName.length === 0) {
       errors.push('Product name cannot be empty or whitespace only');
     } else if (trimmedName.length > 200) {
@@ -111,27 +99,25 @@ const validateCreateProduct = (req, res, next) => {
     }
   }
 
-  // Validate product_thumb
-  if (product_thumb === undefined || product_thumb === null) {
+  // Validate productThumb
+  if (productThumb === undefined || productThumb === null) {
     errors.push('Product thumbnail URL is required');
-  } else if (typeof product_thumb !== 'string') {
+  } else if (typeof productThumb !== 'string') {
     errors.push('Product thumbnail URL must be a string');
   } else {
-    const trimmedThumb = product_thumb.trim();
+    const trimmedThumb = productThumb.trim();
     if (trimmedThumb.length === 0) {
       errors.push('Product thumbnail URL cannot be empty');
-    } else if (!validateUrl(trimmedThumb)) {
-      errors.push('Product thumbnail must be a valid HTTP or HTTPS URL');
     }
   }
 
-  // Validate product_description
-  if (product_description === undefined || product_description === null) {
+  // Validate productDescription
+  if (productDescription === undefined || productDescription === null) {
     errors.push('Product description is required');
-  } else if (typeof product_description !== 'string') {
+  } else if (typeof productDescription !== 'string') {
     errors.push('Product description must be a string');
   } else {
-    const trimmedDesc = product_description.trim();
+    const trimmedDesc = productDescription.trim();
     if (trimmedDesc.length === 0) {
       errors.push('Product description cannot be empty or whitespace only');
     } else if (trimmedDesc.length > 2000) {
@@ -139,11 +125,11 @@ const validateCreateProduct = (req, res, next) => {
     }
   }
 
-  // Validate product_price
-  if (product_price === undefined || product_price === null) {
+  // Validate productPrice
+  if (productPrice === undefined || productPrice === null) {
     errors.push('Product price is required');
   } else {
-    const priceNum = Number(product_price);
+    const priceNum = Number(productPrice);
     if (isNaN(priceNum) || !Number.isFinite(priceNum)) {
       errors.push('Product price must be a valid number');
     } else if (priceNum < 0) {
@@ -153,11 +139,11 @@ const validateCreateProduct = (req, res, next) => {
     }
   }
 
-  // Validate product_quantity
-  if (product_quantity === undefined || product_quantity === null) {
+  // Validate productQuantity
+  if (productQuantity === undefined || productQuantity === null) {
     errors.push('Product quantity is required');
   } else {
-    const quantityNum = Number(product_quantity);
+    const quantityNum = Number(productQuantity);
     if (isNaN(quantityNum) || !Number.isFinite(quantityNum)) {
       errors.push('Product quantity must be a valid number');
     } else if (!Number.isInteger(quantityNum)) {
@@ -171,9 +157,9 @@ const validateCreateProduct = (req, res, next) => {
 
   if (errors.length > 0) {
     return res.status(400).json({
-      code: 400,
+      status: 'error',
       message: 'Validation error',
-      errors: errors,
+      data: { errors },
     });
   }
 

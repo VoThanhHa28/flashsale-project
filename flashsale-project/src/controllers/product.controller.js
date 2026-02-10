@@ -1,4 +1,4 @@
-﻿const Product = require('../models/product.model');
+const Product = require('../models/product.model');
 
 // Constants
 const DEFAULT_PAGE_SIZE = 20;
@@ -6,13 +6,13 @@ const MAX_PAGE_SIZE = 100;
 const ALLOWED_SORT_FIELDS = ['productName', 'productPrice', 'productQuantity', 'createdAt', 'updatedAt'];
 
 /**
- * Láº¥y danh sÃ¡ch sáº£n pháº©m
+ * Lấy danh sách sản phẩm
  * GET /v1/api/products
  * Query params: page, pageSize, sortBy, sortOrder
  */
 const getProducts = async (req, res) => {
   try {
-    // Láº¥y vÃ  validate query params (Ä‘Ã£ Ä‘Æ°á»£c middleware validate nhÆ°ng double check)
+    // Lấy và validate query params (đã được middleware validate nhưng double check)
     const page = parseInt(req.query.page) || 1;
     const pageSize = Math.min(parseInt(req.query.pageSize) || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const sortBy = req.query.sortBy || 'createdAt';
@@ -58,71 +58,65 @@ const getProducts = async (req, res) => {
 
     const totalPages = Math.ceil(total / pageSize);
 
-    // Format response theo yÃªu cáº§u API contract
-    const formattedProducts = products.map((product) => ({
-      product_id: product._id.toString(),
-      product_name: product.productName,
-      product_price: product.productPrice,
-      product_thumb: product.productThumb,
-      product_quantity: product.productQuantity,
-    }));
-
+    // Trả về theo chuẩn JSend, không mapping thủ công
     return res.status(200).json({
-      code: 200,
-      message: 'Success',
-      metadata: formattedProducts,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages,
+      status: 'success',
+      message: 'Lấy danh sách sản phẩm thành công',
+      data: {
+        products,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+        },
       },
     });
   } catch (error) {
     console.error('Error in getProducts:', error);
     return res.status(500).json({
-      code: 500,
+      status: 'error',
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      // Có thể expose thêm error.message khi NODE_ENV=development nếu cần debug
+      data: process.env.NODE_ENV === 'development'
+        ? { error: error.message }
+        : undefined,
     });
   }
 };
 
 /**
- * Táº¡o sáº£n pháº©m má»›i
+ * Tạo sản phẩm mới
  * POST /v1/api/products
  */
 const createProduct = async (req, res) => {
   try {
-    const { product_name, product_thumb, product_description, product_price, product_quantity } = req.body;
+    // Body đã được validate ở middleware, sử dụng trực tiếp các field camelCase
+    const {
+      productName,
+      productThumb,
+      productDescription,
+      productPrice,
+      productQuantity,
+    } = req.body;
 
-    // Map tá»« snake_case (API) sang camelCase (Schema) vÃ  trim strings
+    // Chuẩn hoá dữ liệu (trim string, ép kiểu number)
     const productData = {
-      productName: String(product_name).trim(),
-      productThumb: String(product_thumb).trim(),
-      productDescription: String(product_description).trim(),
-      productPrice: Number(product_price),
-      productQuantity: Number(product_quantity),
+      productName: String(productName).trim(),
+      productThumb: String(productThumb).trim(),
+      productDescription: String(productDescription).trim(),
+      productPrice: Number(productPrice),
+      productQuantity: Number(productQuantity),
     };
 
-    // Táº¡o sáº£n pháº©m má»›i
+    // Tạo sản phẩm mới
     const product = await Product.create(productData);
 
-    // Format response
-    const formattedProduct = {
-      product_id: product._id.toString(),
-      product_name: product.productName,
-      product_thumb: product.productThumb,
-      product_description: product.productDescription,
-      product_price: product.productPrice,
-      product_quantity: product.productQuantity,
-    };
-
     return res.status(201).json({
-      code: 201,
-      message: 'Product created',
-      metadata: {
-        product: formattedProduct,
+      status: 'success',
+      message: 'Tạo sản phẩm thành công',
+      data: {
+        product,
       },
     });
   } catch (error) {
@@ -132,9 +126,9 @@ const createProduct = async (req, res) => {
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res.status(400).json({
-        code: 400,
+        status: 'error',
         message: 'Validation error',
-        errors: errors,
+        data: { errors },
       });
     }
 
@@ -142,7 +136,7 @@ const createProduct = async (req, res) => {
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
-        code: 400,
+        status: 'error',
         message: `${field} already exists`,
       });
     }
@@ -150,16 +144,20 @@ const createProduct = async (req, res) => {
     // Handle cast errors (invalid ObjectId, etc.)
     if (error.name === 'CastError') {
       return res.status(400).json({
-        code: 400,
+        status: 'error',
         message: 'Invalid data format',
-        error: error.message,
+        data: process.env.NODE_ENV === 'development'
+          ? { error: error.message }
+          : undefined,
       });
     }
 
     return res.status(500).json({
-      code: 500,
+      status: 'error',
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      data: process.env.NODE_ENV === 'development'
+        ? { error: error.message }
+        : undefined,
     });
   }
 };

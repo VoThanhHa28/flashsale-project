@@ -1,20 +1,9 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 /**
  * Product Schema
  * LÆ°u thÃ´ng tin sáº£n pháº©m trong há»‡ thá»‘ng FlashSale
  */
-
-// Validate URL helper function
-const validateUrl = (url) => {
-  if (typeof url !== 'string') return false;
-  try {
-    const urlObj = new URL(url);
-    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
 
 const productSchema = new mongoose.Schema(
   {
@@ -36,8 +25,11 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Product thumbnail URL is required'],
       trim: true,
       validate: {
-        validator: validateUrl,
-        message: 'Product thumbnail must be a valid HTTP or HTTPS URL',
+        // Nới lỏng validate: chỉ cần string không rỗng, không bắt buộc HTTP/HTTPS URL
+        validator: function (v) {
+          return typeof v === 'string' && v.trim().length > 0;
+        },
+        message: 'Product thumbnail URL cannot be empty',
       },
     },
     productDescription: {
@@ -83,10 +75,11 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// Táº¡o index Ä‘á»ƒ tÃ¬m kiáº¿m nhanh hÆ¡n
+// Tạo index để tìm kiếm nhanh hơn
 productSchema.index({ productName: 'text' });
 productSchema.index({ productPrice: 1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ productQuantity: 1 });
 
 const Product = mongoose.model('Product', productSchema);
 
