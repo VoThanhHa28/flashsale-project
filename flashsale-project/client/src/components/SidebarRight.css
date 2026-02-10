@@ -1,0 +1,97 @@
+.sidebar-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.sidebar-right-block {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.sidebar-right-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sidebar-right-logo {
+  font-size: 1.1rem;
+}
+
+.sidebar-right-text {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.sidebar-right-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-right-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.sidebar-right-btn:first-child {
+  background: #c00a27;
+  color: #fff;
+}
+
+.sidebar-right-btn:first-child:hover {
+  opacity: 0.9;
+}
+
+.sidebar-right-btn:last-child {
+  border: 1px solid #ddd;
+  color: #333;
+}
+
+.sidebar-right-btn:last-child:hover {
+  border-color: #c00a27;
+  color: #c00a27;
+}
+
+.sidebar-right-link {
+  font-size: 0.85rem;
+  color: #c00a27;
+  text-decoration: none;
+}
+
+.sidebar-right-link:hover {
+  text-decoration: underline;
+}
+
+.sidebar-right-offers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-right-offers li {
+  padding: 0.35rem 0;
+  font-size: 0.85rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-right-offer-icon {
+  font-size: 1rem;
+}
