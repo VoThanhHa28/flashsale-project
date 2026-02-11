@@ -109,6 +109,45 @@
   background: #fff5f5;
 }
 
+.layout-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #eee;
+  background: #f8f8f8;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.layout-user-chip:hover {
+  background: #fff5f5;
+  border-color: #c00a27;
+}
+
+.layout-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #c00a27;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.layout-user-name {
+  font-size: 0.9rem;
+  color: #333;
+  max-width: 140px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
 .layout-main {
   flex: 1;
   padding: 0;

@@ -1,0 +1,27 @@
+.account-page {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+.account-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  border: 1px solid #eee;
+}
+
+.account-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.5rem;
+  color: #1a1a2e;
+}
+
+.account-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #555;
+}
+

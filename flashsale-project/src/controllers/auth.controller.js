@@ -4,14 +4,96 @@ const jwt = require('jsonwebtoken');
 const logger = require('../libs/logger');
 
 /**
- * Validate password policy
+ * Validate email format
+ */
+const validateEmail = (email) => {
+  if (!email || typeof email !== 'string') {
+    return { valid: false, message: 'Email không được để trống' };
+  }
+  const trimmedEmail = email.trim();
+  if (!trimmedEmail) {
+    return { valid: false, message: 'Email không được để trống' };
+  }
+  // Email regex pattern - RFC 5322 compliant
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return { valid: false, message: 'Email không đúng định dạng (ví dụ: email@example.com)' };
+  }
+  // Kiểm tra độ dài email
+  if (trimmedEmail.length > 254) {
+    return { valid: false, message: 'Email không được vượt quá 254 ký tự' };
+  }
+  return { valid: true };
+};
+
+/**
+ * Validate password policy - Mật khẩu phải có:
+ * - Ít nhất 8 ký tự
+ * - Ít nhất 1 chữ hoa (A-Z)
+ * - Ít nhất 1 chữ thường (a-z)
+ * - Ít nhất 1 số (0-9)
+ * - Ít nhất 1 ký tự đặc biệt
  */
 const validatePassword = (password) => {
   if (!password || typeof password !== 'string') {
-    return { valid: false, message: 'Password is required' };
+    return { valid: false, message: 'Mật khẩu không được để trống' };
   }
-  if (password.trim().length < 6) {
-    return { valid: false, message: 'Password must be at least 6 characters' };
+
+  const trimmedPassword = password.trim();
+  
+  // Kiểm tra độ dài tối thiểu
+  if (trimmedPassword.length < 8) {
+    return { valid: false, message: 'Mật khẩu phải có ít nhất 8 ký tự' };
+  }
+
+  // Kiểm tra độ dài tối đa
+  if (trimmedPassword.length > 100) {
+    return { valid: false, message: 'Mật khẩu không được vượt quá 100 ký tự' };
+  }
+
+  // Kiểm tra có chữ hoa
+  if (!/[A-Z]/.test(trimmedPassword)) {
+    return { valid: false, message: 'Mật khẩu phải có ít nhất 1 chữ hoa (A-Z)' };
+  }
+
+  // Kiểm tra có chữ thường
+  if (!/[a-z]/.test(trimmedPassword)) {
+    return { valid: false, message: 'Mật khẩu phải có ít nhất 1 chữ thường (a-z)' };
+  }
+
+  // Kiểm tra có số
+  if (!/[0-9]/.test(trimmedPassword)) {
+    return { valid: false, message: 'Mật khẩu phải có ít nhất 1 số (0-9)' };
+  }
+
+  // Kiểm tra có ký tự đặc biệt
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(trimmedPassword)) {
+    return { valid: false, message: 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt (!@#$%^&*...)' };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Validate name
+ */
+const validateName = (name) => {
+  if (!name || typeof name !== 'string') {
+    return { valid: false, message: 'Họ tên không được để trống' };
+  }
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    return { valid: false, message: 'Họ tên không được để trống' };
+  }
+  if (trimmedName.length < 2) {
+    return { valid: false, message: 'Họ tên phải có ít nhất 2 ký tự' };
+  }
+  if (trimmedName.length > 100) {
+    return { valid: false, message: 'Họ tên không được vượt quá 100 ký tự' };
+  }
+  // Kiểm tra không chứa ký tự đặc biệt không hợp lệ
+  if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(trimmedName)) {
+    return { valid: false, message: 'Họ tên chỉ được chứa chữ cái và khoảng trắng' };
   }
   return { valid: true };
 };
@@ -34,11 +116,20 @@ const register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
 
-    // Validation
+    // Validation: Kiểm tra các trường bắt buộc
     if (!email || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Email and password are required',
+        message: 'Email và mật khẩu không được để trống',
+      });
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return res.status(400).json({
+        status: 'error',
+        message: emailValidation.message,
       });
     }
 
@@ -47,7 +138,7 @@ const register = async (req, res) => {
     if (!normalizedEmail) {
       return res.status(400).json({
         status: 'error',
-        message: 'Email cannot be empty',
+        message: 'Email không được để trống',
       });
     }
 
@@ -60,12 +151,23 @@ const register = async (req, res) => {
       });
     }
 
+    // Validate name nếu có
+    if (name) {
+      const nameValidation = validateName(name);
+      if (!nameValidation.valid) {
+        return res.status(400).json({
+          status: 'error',
+          message: nameValidation.message,
+        });
+      }
+    }
+
     // Kiểm tra email đã tồn tại chưa (email unique) - Race condition safe
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({
         status: 'error',
-        message: 'Email already exists',
+        message: 'Email này đã được sử dụng. Vui lòng chọn email khác hoặc đăng nhập.',
       });
     }
 
@@ -83,7 +185,7 @@ const register = async (req, res) => {
     // Trả response theo format chuẩn (không trả password)
     return res.status(201).json({
       status: 'success',
-      message: 'Registered successfully',
+      message: 'Đăng ký thành công! Vui lòng đăng nhập.',
       data: {
         user: {
           _id: user._id,
@@ -100,14 +202,14 @@ const register = async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({
         status: 'error',
-        message: 'Email already exists',
+        message: 'Email này đã được sử dụng. Vui lòng chọn email khác hoặc đăng nhập.',
       });
     }
 
     // KHONG leak error.message ra client
     return res.status(500).json({
       status: 'error',
-      message: 'Internal server error',
+      message: 'Lỗi hệ thống. Vui lòng thử lại sau.',
     });
   }
 };
@@ -120,11 +222,20 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
+    // Validation: Kiểm tra các trường bắt buộc
     if (!email || !password) {
       return res.status(400).json({
         status: 'error',
-        message: 'Email and password are required',
+        message: 'Email và mật khẩu không được để trống',
+      });
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return res.status(400).json({
+        status: 'error',
+        message: emailValidation.message,
       });
     }
 
@@ -133,7 +244,15 @@ const login = async (req, res) => {
     if (!normalizedEmail) {
       return res.status(400).json({
         status: 'error',
-        message: 'Email cannot be empty',
+        message: 'Email không được để trống',
+      });
+    }
+
+    // Kiểm tra password không rỗng
+    if (!password.trim()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Mật khẩu không được để trống',
       });
     }
 
@@ -143,7 +262,7 @@ const login = async (req, res) => {
       // Khong leak thong tin - tra cung message cho ca email/password sai
       return res.status(401).json({
         status: 'error',
-        message: 'Invalid email or password',
+        message: 'Email hoặc mật khẩu không đúng',
       });
     }
 
@@ -153,7 +272,7 @@ const login = async (req, res) => {
       // Khong leak thong tin - tra cung message cho ca email/password sai
       return res.status(401).json({
         status: 'error',
-        message: 'Invalid email or password',
+        message: 'Email hoặc mật khẩu không đúng',
       });
     }
 
@@ -162,7 +281,7 @@ const login = async (req, res) => {
       logger.error('JWT_SECRET is missing');
       return res.status(500).json({
         status: 'error',
-        message: 'Internal server error',
+        message: 'Lỗi hệ thống. Vui lòng thử lại sau.',
       });
     }
 
@@ -176,7 +295,7 @@ const login = async (req, res) => {
     // Trả response theo format chuẩn
     return res.status(200).json({
       status: 'success',
-      message: 'Login successful',
+      message: 'Đăng nhập thành công!',
       data: {
         user: {
           _id: user._id,
@@ -193,7 +312,7 @@ const login = async (req, res) => {
     // KHONG leak error.message ra client
     return res.status(500).json({
       status: 'error',
-      message: 'Internal server error',
+      message: 'Lỗi hệ thống. Vui lòng thử lại sau.',
     });
   }
 };
@@ -209,7 +328,7 @@ const getMe = async (req, res) => {
 
     return res.status(200).json({
       status: 'success',
-      message: 'Success',
+      message: 'Thành công',
       data: {
         user: {
           _id: user._id,
@@ -227,7 +346,7 @@ const getMe = async (req, res) => {
     // KHONG leak error.message ra client
     return res.status(500).json({
       status: 'error',
-      message: 'Internal server error',
+      message: 'Lỗi hệ thống. Vui lòng thử lại sau.',
     });
   }
 };
