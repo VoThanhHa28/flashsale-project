@@ -16,6 +16,7 @@ function Layout() {
   };
 
   const displayName = user?.name || user?.email || 'User';
+  const userInitial = (user?.name || user?.email || 'U').trim().charAt(0).toUpperCase();
 
   return (
     <div className="layout">
@@ -34,10 +35,17 @@ function Layout() {
           />
         </div>
         <nav className="layout-nav">
-          <Link to="/" className="layout-link">Trang chủ</Link>
           {isLoggedIn ? (
             <>
-              <span className="layout-user">Xin chào, {displayName}</span>
+              <Link to="/cart" className="layout-link">Giỏ hàng</Link>
+              <button
+                type="button"
+                className="layout-user-chip"
+                onClick={() => navigate('/account')}
+              >
+                <span className="layout-user-avatar">{userInitial}</span>
+                <span className="layout-user-name">{displayName}</span>
+              </button>
               <button
                 type="button"
                 className="layout-logout"

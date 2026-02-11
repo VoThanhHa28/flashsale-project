@@ -35,6 +35,15 @@
   font-size: 0.9rem;
 }
 
+.register-success {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: #e5f5e5;
+  color: #2d6a2d;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
 .register-field {
   display: flex;
   flex-direction: column;
@@ -62,6 +71,44 @@
   box-shadow: 0 0 0 2px rgba(192, 10, 39, 0.2);
 }
 
+.register-password-requirements {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.register-requirements-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.register-requirements-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.register-requirements-list li {
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.register-requirements-list li.valid {
+  color: #2d6a2d;
+}
+
+.register-requirements-list li.invalid {
+  color: #c00;
+}
+
 .register-submit {
   margin-top: 0.5rem;
   padding: 0.875rem 1rem;
@@ -76,12 +123,18 @@
   transition: background 0.2s;
 }
 
-.register-submit:hover {
+.register-submit:hover:not(:disabled) {
   background: #d63d56;
 }
 
-.register-submit:active {
+.register-submit:active:not(:disabled) {
   background: #c2364d;
+}
+
+.register-submit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .register-footer {
