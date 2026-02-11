@@ -1,8 +1,34 @@
 const redisClient = require('../config/redis');
+const ProductModel = require('../models/product.model');
 
 class InventoryService {
+    // 1. Hàm nạp kho (Chạy 1 lần khi server start)
+    static async initInventory() {
+        try {
+            // Lấy toàn bộ sản phẩm từ MongoDB
+            const products = await ProductModel.find().lean();
+            
+            if (!products.length) return;
+
+            console.log(`📦 Đang đồng bộ ${products.length} sản phẩm vào Redis...`);
+
+            const commands = [];
+            products.forEach(product => {
+                const key = `product:${product._id}:stock`;
+                // Dùng setnx (Set if Not Exists) để tránh đè lại nếu đã có
+                commands.push(redisClient.setNX(key, String(product.productQuantity)));
+            });
+
+            // Chạy song song tất cả lệnh cho nhanh (Promise.all)
+            await Promise.all(commands);
+            console.log('✅ Đồng bộ kho hoàn tất!');
+            
+        } catch (error) {
+            console.error('❌ Lỗi initInventory:', error);
+        }
+    }
     
-    // Hàm trừ kho (Promise trả về true/false)
+    // 2. Hàm trừ kho (Promise trả về true/false)
     static async reservationInventory({ productId, quantity }) {
         const key = `product:${productId}:stock`; // Ví dụ key: product:123:stock
 

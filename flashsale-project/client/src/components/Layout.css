@@ -1,0 +1,137 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f2f2f2;
+}
+
+.layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.layout-search-wrap {
+  flex: 1;
+  min-width: 120px;
+  max-width: 320px;
+}
+
+.layout-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.layout-search::placeholder {
+  color: #999;
+}
+
+.layout-search:focus {
+  outline: none;
+  border-color: #c00a27;
+}
+
+.layout-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #c00a27;
+  text-decoration: none;
+  padding: 0.25rem 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.layout-logo:hover {
+  color: #a00820;
+}
+
+.layout-nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.layout-link {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+
+.layout-link:hover {
+  color: #c00a27;
+  background: #fff5f5;
+}
+
+.layout-user {
+  color: #555;
+  font-size: 0.95rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.layout-logout {
+  background: transparent;
+  border: none;
+  color: #333;
+  font-weight: 500;
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layout-logout:hover {
+  color: #c00a27;
+  background: #fff5f5;
+}
+
+.layout-main {
+  flex: 1;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .layout-header {
+    padding: 0.75rem 1.5rem;
+  }
+
+  .layout-logo {
+    font-size: 1.4rem;
+  }
+
+  .layout-nav {
+    gap: 1rem;
+  }
+
+  .layout-link {
+    padding: 0.5rem 0;
+    min-width: auto;
+  }
+}
