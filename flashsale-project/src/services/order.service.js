@@ -59,5 +59,3 @@ class InventoryService {
 }
 
 module.exports = InventoryService;
-}
-module.exports = InventoryService;
