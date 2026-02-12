@@ -2,9 +2,10 @@ require("dotenv").config();
 const { getChannel, connectToRabbitMQ } = require("../config/rabbitmq");
 const OrderModel = require("../models/order.model");
 const mongoose = require("mongoose");
+const CONST = require("../constants/constants");
 
 // Cấu hình
-const QUEUE_NAME = "order-queue";
+const QUEUE_NAME = CONST.RABBIT_QUEUE.ORDER;
 const PREFETCH_COUNT = 10; // Xử lý tối đa 10 message cùng lúc
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/flashsale";
 

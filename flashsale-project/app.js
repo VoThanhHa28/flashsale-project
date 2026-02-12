@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+console.log('🔥 SERVER RELOADED AT', new Date().toISOString());
+
 // JWT_SECRET - Fail fast khi start
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is required in environment variables');
@@ -11,12 +13,12 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const app = express();
 const connectDB = require('./src/config/db');
-connectDB(); // Gọi hàm kết nối ngay
+const InventoryService = require('./src/services/order.service'); 
+const errorMiddleware = require('./src/middlewares/error.middleware');
 
-const indexRouter = require('./src/routes/index');
-const usersRouter = require('./src/routes/users');
-const authRouter = require('./src/routes/auth.route');
-const productRouter = require('./src/routes/product.route');
+// Route tổng (Gom lại cho gọn app.js)
+const rootRouter = require('./src/routes/index'); 
+
 // CORS configuration - Cho phép frontend kết nối
 // Hỗ trợ cả port 3000 và 3001 để tránh conflict
 const allowedOrigins = [
@@ -41,15 +43,24 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// 1. Kết nối DB & Init Redis
+// Lưu ý: connectDB là async, nên logic init phải nằm trong .then()
+connectDB().then(() => {
+    // Chỉ nạp kho khi DB đã kết nối thành công
+    InventoryService.initInventory();
+});
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/v1/api/auth', authRouter);
-app.use('/v1/api', productRouter);
+// 2. Setup Routes (Nên gom hết vào file routes/index.js như đã bàn)
+// Thay vì app.use từng cái lẻ tẻ, hãy dùng 1 dòng này:
+app.use('/', rootRouter); 
+// (Trong file routes/index.js bạn sẽ khai báo: router.use('/v1/api', productRouter), router.use('/v1/api', orderRouter)...)
+
+app.use(errorMiddleware);
 
 module.exports = app;
