@@ -42,5 +42,22 @@ class InventoryService {
 
         return result === 1;
     }
+
+    /**
+     * @desc    Cập nhật tồn kho trong Redis (Dùng cho Admin khi nhập hàng/sửa kho)
+     * @param   {string} productId 
+     * @param   {number} stock 
+     */
+    static async updateStock(productId, stock) {
+        const key = CONST.REDIS.PRODUCT_STOCK(productId);
+        // Set lại key trong Redis, hết hạn sau 7 ngày (hoặc không hết hạn tùy bạn)
+        await redisClient.set(key, stock, {
+            EX: 7 * 24 * 60 * 60, // 7 days
+        });
+        console.log(`Updated Redis Stock: ${productId} -> ${stock}`);
+    }
+}
+
+module.exports = InventoryService;
 }
 module.exports = InventoryService;
