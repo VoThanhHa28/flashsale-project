@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/product.controller');
-const { validateGetProductsQuery, validateCreateProduct } = require('../middlewares/product.validation');
+const validate = require('../middlewares/validate.middleware');
+const productValidation = require('../validation/product.validation');
 const { verifyToken } = require('../middlewares/auth'); 
 
 /**
@@ -10,13 +11,13 @@ const { verifyToken } = require('../middlewares/auth');
  * @access  Public
  * @query   page, pageSize, sortBy, sortOrder
  */
-router.get('/', validateGetProductsQuery, productController.getProducts);
+router.get('/', validate(productValidation.getProducts), productController.getProducts);
 
 /**
  * @route   POST /v1/api/products
  * @desc    Tạo sản phẩm mới
  * @access  Public (có thể thêm middleware auth sau)
  */
-router.post('/', verifyToken, validateCreateProduct, productController.createProduct);
+router.post('/', verifyToken, validate(productValidation.createProduct), productController.createProduct);
 
 module.exports = router;

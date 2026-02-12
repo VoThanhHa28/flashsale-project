@@ -24,7 +24,4 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Tạo index cho email để tối ưu query
-userSchema.index({ email: 1 });
-
 module.exports = mongoose.model('User', userSchema);

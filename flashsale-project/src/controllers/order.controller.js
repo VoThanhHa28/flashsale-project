@@ -1,61 +1,49 @@
-const InventoryService = require('../services/inventory.service');
+const InventoryService = require('../services/order.service');
 const { sendToQueue } = require('../config/rabbitmq');
+const asyncHandler = require('../utils/asyncHandler');
+const { BadRequestError } = require('../core/error.response');
+const { OK } = require('../core/success.response');
+const CONST = require('../constants');
 
 class OrderController {
 
-    static async placeOrder(req, res) {
-        try {
-            // 1. Lấy dữ liệu từ Frontend
-            const { userId, productId, quantity, price } = req.body;
+  static placeOrder = asyncHandler(async (req, res) => {
+    // 1️⃣ LẤY USER TỪ AUTH MIDDLEWARE (KHÔNG TỪ BODY)
+    const userId = req.user._id;
 
-            // Validate cơ bản (Best practice)
-            if (!userId || !productId || !quantity) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Thiếu thông tin đặt hàng!'
-                });
-            }
+    // 2️⃣ LẤY DATA ĐÃ ĐƯỢC VALIDATE
+    const { productId, quantity, price } = req.body;
 
-            // 2. [QUAN TRỌNG] Trừ kho trong Redis (Xử lý đồng thời)
-            const isInStock = await InventoryService.reservationInventory({ 
-                productId, 
-                quantity 
-            });
+    // 3️⃣ TRỪ KHO (REDIS – ATOMIC)
+    const isInStock = await InventoryService.reservationInventory({
+      productId,
+      quantity,
+    });
 
-            if (!isInStock) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'Rất tiếc! Sản phẩm đã hết hàng.'
-                });
-            }
-
-            // 3. Nếu còn hàng -> Tạo payload đơn hàng
-            const orderPayload = {
-                userId,
-                productId,
-                quantity,
-                price,
-                orderTime: new Date().toISOString()
-            };
-
-            // 4. Đẩy xuống Queue cho Worker xử lý (Async)
-            await sendToQueue(orderPayload);
-
-            // 5. Trả về ngay lập tức (Không chờ DB lưu) -> Tốc độ phản hồi cực nhanh
-            return res.status(200).json({
-                status: 'success',
-                message: 'Đặt hàng thành công! Đang xử lý...',
-                data: orderPayload
-            });
-
-        } catch (error) {
-            console.error('Order Error:', error);
-            return res.status(500).json({
-                status: 'error',
-                message: 'Lỗi hệ thống, vui lòng thử lại sau.'
-            });
-        }
+    if (!isInStock) {
+      throw new BadRequestError('Rất tiếc! Sản phẩm đã hết hàng.');
     }
+
+    // 4️⃣ PAYLOAD ĐẨY QUEUE (CHỈ DATA CẦN THIẾT)
+    const orderPayload = {
+      userId: userId.toString(),
+      productId: productId.toString(),
+      quantity,
+      price,
+      orderTime: new Date().toISOString(),
+    };
+
+    // 5️⃣ ĐẨY SANG RABBITMQ (ASYNC)
+    await sendToQueue(CONST.RABBIT_QUEUE.ORDER_QUEUE, orderPayload);
+
+    // 6️⃣ RESPONSE NGAY (NON-BLOCKING)
+    return new OK({
+      message: CONST.ORDER.MESSAGE.PLACE_ORDER_SUCCESS,
+      data: {
+        order: orderPayload,
+      },
+    }).send(res);
+  });
 }
 
 module.exports = OrderController;

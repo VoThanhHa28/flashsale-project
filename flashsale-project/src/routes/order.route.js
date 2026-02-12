@@ -1,13 +1,24 @@
 const express = require('express');
 const router = express.Router();
+
 const OrderController = require('../controllers/order.controller');
+const validate = require('../middlewares/validate.middleware');
+const auth = require('../middlewares/auth');
+const orderValidation = require('../validation/order.validation');
 
-// Định nghĩa route con
-// URL thực tế sẽ là: POST /v1/api/order/ (vì được ghép từ index.js)
-router.post('/', OrderController.placeOrder);
+// Tạo đơn hàng (user đã đăng nhập)
+router.post(
+  '/',
+  auth.verifyToken,                  // 1️⃣ xác thực JWT
+  validate(orderValidation.create),  // 2️⃣ validate body
+  OrderController.placeOrder         // 3️⃣ business
+);
 
-// Ví dụ sau này thêm: Lấy lịch sử đơn hàng
-// router.get('/history', OrderController.getHistory); 
-// -> URL: GET /v1/api/order/history
+// Lịch sử đơn hàng
+// router.get(
+//   '/history',
+//   auth.verifyToken,
+//   OrderController.getHistory
+// );
 
 module.exports = router;
