@@ -124,6 +124,34 @@ class ProductService {
   }
 
   /**
+   * Force Start Flash Sale (Kích hoạt ngay)
+   * Update productStartTime = hiện tại và đồng bộ Redis
+   */
+  static async forceStartProduct(productId) {
+    // Tìm product hiện tại
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
+      throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
+    }
+
+    // Update productStartTime = hiện tại
+    const now = new Date();
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { productStartTime: now },
+      { new: true, runValidators: true }
+    );
+
+    // Đồng bộ Redis sau khi update (invalidate cache và update stock)
+    await InventoryService.updateStock(
+      updatedProduct._id.toString(),
+      updatedProduct.productQuantity
+    );
+
+    return updatedProduct;
+  }
+
+  /**
    * Lấy danh sách sản phẩm (Pagination + Sort)
    */
   static async getAllProducts({ page = 1, pageSize = DEFAULT_PAGE_SIZE, sortBy = 'createdAt', sortOrder = 'desc' }) {

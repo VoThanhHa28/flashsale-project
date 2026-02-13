@@ -27,4 +27,11 @@ router.post('/', verifyToken, validate(productValidation.createProduct), product
  */
 router.put('/:id', verifyToken, validate(productValidation.updateProduct), productController.updateProduct);
 
+/**
+ * @route   PUT /v1/api/products/:id/force-start
+ * @desc    Kích hoạt Flash Sale ngay lập tức (Force Start)
+ * @access  Private (Admin)
+ */
+router.put('/:id/force-start', verifyToken, validate(productValidation.forceStartProduct), productController.forceStartProduct);
+
 module.exports = router;
