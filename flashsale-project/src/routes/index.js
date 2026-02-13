@@ -6,8 +6,7 @@ const orderRouter = require('./order.route');
 
 // const productRouter = require('./product.route'); // Của Member 3
 const authRouter = require('./auth.route');
-
-// const authRouter = require('./auth.route');       // Của Member 4
+const userRouter = require('./user.route');
 const productRouter = require('./product.route');
 
 // 1. Route kiểm tra Server sống hay chết (Health Check)
@@ -28,6 +27,6 @@ router.use('/v1/api/order', orderRouter);
 router.use('/v1/api/products', productRouter);
 
 router.use('/v1/api/auth', authRouter);
-
+router.use('/v1/api/users', userRouter);
 
 module.exports = router;
