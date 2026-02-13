@@ -27,6 +27,17 @@ class ProductController {
     }).send(res);
   });
 
+  // PUT /v1/api/products/:id
+  static updateProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await ProductService.updateProduct(id, req.body);
+
+    new OK({
+      message: CONST.PRODUCT.MESSAGE.UPDATE_SUCCESS,
+      data: result,
+    }).send(res);
+  });
+
   // PUT /v1/api/products/:id/force-start
   static forceStartProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
