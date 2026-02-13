@@ -16,8 +16,15 @@ router.get('/', validate(productValidation.getProducts), productController.getPr
 /**
  * @route   POST /v1/api/products
  * @desc    Tạo sản phẩm mới
- * @access  Public (có thể thêm middleware auth sau)
+ * @access  Private (Admin)
  */
 router.post('/', verifyToken, validate(productValidation.createProduct), productController.createProduct);
+
+/**
+ * @route   PUT /v1/api/products/:id/force-start
+ * @desc    Kích hoạt Flash Sale ngay lập tức (Force Start)
+ * @access  Private (Admin)
+ */
+router.put('/:id/force-start', verifyToken, validate(productValidation.forceStartProduct), productController.forceStartProduct);
 
 module.exports = router;

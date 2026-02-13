@@ -41,7 +41,14 @@ const createProduct = {
   }),
 };
 
+const forceStartProduct = {
+  params: Joi.object({
+    id: Joi.string().required(),
+  }),
+};
+
 module.exports = {
   getProducts,
   createProduct,
+  forceStartProduct,
 };

@@ -1,6 +1,7 @@
 const Product = require('../models/product.model');
-const { BadRequestError } = require('../core/error.response');
+const { BadRequestError, NotFoundError } = require('../core/error.response');
 const CONST = require('../constants');
+const InventoryService = require('./order.service'); // Import InventoryService
 
 // Constants nội bộ cho logic phân trang
 const DEFAULT_PAGE_SIZE = 20;
@@ -23,6 +24,34 @@ class ProductService {
     });
 
     return newProduct;
+  }
+
+  /**
+   * Force Start Flash Sale (Kích hoạt ngay)
+   * Update productStartTime = hiện tại và đồng bộ Redis
+   */
+  static async forceStartProduct(productId) {
+    // Tìm product hiện tại
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
+      throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
+    }
+
+    // Update productStartTime = hiện tại
+    const now = new Date();
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      { productStartTime: now },
+      { new: true, runValidators: true }
+    );
+
+    // Đồng bộ Redis sau khi update (invalidate cache và update stock)
+    await InventoryService.updateStock(
+      updatedProduct._id.toString(),
+      updatedProduct.productQuantity
+    );
+
+    return updatedProduct;
   }
 
   /**
