@@ -6,14 +6,14 @@ module.exports = {
     HIDDEN: 'hidden',         // Tạm ẩn
   },
 
-  // 2. CÁC TRƯỜNG CHO PHÉP SORT (Giữ nguyên)
+  // 2. CÁC TRƯỜNG CHO PHÉP SORT (Đã đổi sang camelCase)
   SORT_FIELDS: [
     'productName',
     'productPrice',
     'productQuantity',
     'createdAt',
     'updatedAt',
-    'product_start_time', // 👉 Thêm cái này để User sort theo giờ G sắp mở
+    'productStartTime', // 👉 Đổi sang camelCase để User sort theo giờ G sắp mở
   ],
 
   // 3. THÔNG BÁO (Message) - Cần thêm bộ Flash Sale
@@ -29,6 +29,7 @@ module.exports = {
     ENDED: 'Chương trình Flash Sale đã kết thúc.',
     OUT_OF_STOCK: 'Sản phẩm đã hết hàng.',
     INVALID_TIME: 'Thời gian mở bán không hợp lệ (Ngày bắt đầu phải nhỏ hơn ngày kết thúc).',
+    FORCE_START_SUCCESS: 'Kích hoạt Flash Sale thành công!',
   },
 
   // 4. CẤU HÌNH CACHE (Dùng cho Redis)

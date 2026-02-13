@@ -17,8 +17,22 @@ router.get('/', validate(productValidation.getProducts), productController.getPr
 /**
  * @route   POST /v1/api/products
  * @desc    Tạo sản phẩm mới
- * @access  Private – SHOP_ADMIN only (RBAC)
+ * @access  Private (SHOP_ADMIN only)
  */
 router.post('/', verifyToken, requireShopAdmin, validate(productValidation.createProduct), productController.createProduct);
+
+/**
+ * @route   PUT /v1/api/products/:id
+ * @desc    Cập nhật sản phẩm
+ * @access  Private (Admin)
+ */
+router.put('/:id', verifyToken, validate(productValidation.updateProduct), productController.updateProduct);
+
+/**
+ * @route   PUT /v1/api/products/:id/force-start
+ * @desc    Kích hoạt Flash Sale ngay lập tức (Force Start)
+ * @access  Private (Admin)
+ */
+router.put('/:id/force-start', verifyToken, validate(productValidation.forceStartProduct), productController.forceStartProduct);
 
 module.exports = router;
