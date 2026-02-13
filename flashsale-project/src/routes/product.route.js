@@ -17,7 +17,7 @@ router.get('/', validate(productValidation.getProducts), productController.getPr
 /**
  * @route   POST /v1/api/products
  * @desc    Tạo sản phẩm mới
- * @access  Private – SHOP_ADMIN only (RBAC)
+ * @access  Private (SHOP_ADMIN only)
  */
 router.post('/', verifyToken, requireShopAdmin, validate(productValidation.createProduct), productController.createProduct);
 

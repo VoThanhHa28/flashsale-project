@@ -6,14 +6,14 @@ module.exports = {
     HIDDEN: 'hidden',         // Tạm ẩn
   },
 
-  // 2. CÁC TRƯỜNG CHO PHÉP SORT (Giữ nguyên)
+  // 2. CÁC TRƯỜNG CHO PHÉP SORT (Đã đổi sang camelCase)
   SORT_FIELDS: [
     'productName',
     'productPrice',
     'productQuantity',
     'createdAt',
     'updatedAt',
-    'product_start_time', // 👉 Thêm cái này để User sort theo giờ G sắp mở
+    'productStartTime', // 👉 Đổi sang camelCase để User sort theo giờ G sắp mở
   ],
 
   // 3. THÔNG BÁO (Message) - Cần thêm bộ Flash Sale
