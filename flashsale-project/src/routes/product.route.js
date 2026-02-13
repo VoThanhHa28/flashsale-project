@@ -3,7 +3,8 @@ const router = express.Router();
 const productController = require('../controllers/product.controller');
 const validate = require('../middlewares/validate.middleware');
 const productValidation = require('../validation/product.validation');
-const { verifyToken } = require('../middlewares/auth'); 
+const { verifyToken } = require('../middlewares/auth');
+const { requireShopAdmin } = require('../middlewares/rbac');
 
 /**
  * @route   GET /v1/api/products/stats
@@ -23,9 +24,9 @@ router.get('/', validate(productValidation.getProducts), productController.getPr
 /**
  * @route   POST /v1/api/products
  * @desc    Tạo sản phẩm mới
- * @access  Private (Admin)
+ * @access  Private (SHOP_ADMIN only)
  */
-router.post('/', verifyToken, validate(productValidation.createProduct), productController.createProduct);
+router.post('/', verifyToken, requireShopAdmin, validate(productValidation.createProduct), productController.createProduct);
 
 /**
  * @route   PUT /v1/api/products/:id
@@ -33,5 +34,12 @@ router.post('/', verifyToken, validate(productValidation.createProduct), product
  * @access  Private (Admin)
  */
 router.put('/:id', verifyToken, validate(productValidation.updateProduct), productController.updateProduct);
+
+/**
+ * @route   PUT /v1/api/products/:id/force-start
+ * @desc    Kích hoạt Flash Sale ngay lập tức (Force Start)
+ * @access  Private (Admin)
+ */
+router.put('/:id/force-start', verifyToken, validate(productValidation.forceStartProduct), productController.forceStartProduct);
 
 module.exports = router;
