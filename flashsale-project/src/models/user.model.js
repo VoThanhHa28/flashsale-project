@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    usr_role: {
+      type: String,
+      enum: ['USER', 'SHOP_ADMIN'],
+      default: 'USER',
+    },
   },
   {
     timestamps: true,
