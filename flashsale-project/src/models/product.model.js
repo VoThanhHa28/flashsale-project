@@ -69,9 +69,26 @@ const productSchema = new mongoose.Schema(
         message: 'Product quantity must be a non-negative integer between 0 and 999999',
       },
     },
+    is_published: { 
+        type: Boolean, 
+        default: true, 
+        index: true // Đánh index để lọc nhanh sp đang bán
+      },
+    product_start_time: { 
+      type: Date, 
+      required: true, 
+      default: Date.now, // Mặc định là bán ngay
+      index: true // Để sort theo giờ mở bán
+    },
+    product_end_time: { 
+      type: Date, 
+      required: true, 
+      default: () => new Date(+new Date() + 7*24*60*60*1000) // Mặc định 7 ngày sau hết hạn
+    },
   },
   {
-    timestamps: true, // Tá»± Ä‘á»™ng thÃªm createdAt vÃ  updatedAt
+    timestamps: true,
+    collection: 'products' // Định danh rõ tên Collection
   }
 );
 
@@ -80,7 +97,7 @@ productSchema.index({ productName: 'text' });
 productSchema.index({ productPrice: 1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ productQuantity: 1 });
-
+productSchema.index({ is_published: 1, product_start_time: 1 });
 const Product = mongoose.model('Product', productSchema);
 
 module.exports = Product;
