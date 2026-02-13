@@ -8,7 +8,7 @@ class InventoryService {
     // 1. INIT INVENTORY (Safe Mode)
     static async initInventory() {
         try {
-            const query = { is_published: true }; 
+            const query = { isPublished: true }; // Đổi sang camelCase
             const products = await ProductModel.find(query).select('_id productQuantity').lean();
             
             if (!products.length) return;
@@ -39,14 +39,14 @@ class InventoryService {
         // B. CACHE MISS -> GỌI DB
         if (!productInfo) {
             const product = await ProductModel.findById(productId)
-                                .select('product_start_time product_end_time')
+                                .select('productStartTime productEndTime') // Đổi sang camelCase
                                 .lean();
             
             if (!product) throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
 
             productInfo = JSON.stringify({
-                start: new Date(product.product_start_time).getTime(),
-                end: new Date(product.product_end_time).getTime()
+                start: new Date(product.productStartTime).getTime(), // Đổi sang camelCase
+                end: new Date(product.productEndTime).getTime() // Đổi sang camelCase
             });
 
             // Set TTL từ Constant (604800s)

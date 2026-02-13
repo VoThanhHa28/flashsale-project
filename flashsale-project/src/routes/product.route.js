@@ -16,8 +16,15 @@ router.get('/', validate(productValidation.getProducts), productController.getPr
 /**
  * @route   POST /v1/api/products
  * @desc    Tạo sản phẩm mới
- * @access  Public (có thể thêm middleware auth sau)
+ * @access  Private (Admin)
  */
 router.post('/', verifyToken, validate(productValidation.createProduct), productController.createProduct);
+
+/**
+ * @route   PUT /v1/api/products/:id
+ * @desc    Cập nhật sản phẩm
+ * @access  Private (Admin)
+ */
+router.put('/:id', verifyToken, validate(productValidation.updateProduct), productController.updateProduct);
 
 module.exports = router;
