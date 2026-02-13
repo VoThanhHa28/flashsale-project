@@ -74,7 +74,8 @@ function ProductDetail() {
     setOrderSubmitting(true);
     try {
       if (api.isApiConfigured()) {
-        await api.createOrder(product.product_id, qty);
+        const price = product.product_price ?? product.productPrice ?? 0;
+        await api.createOrder(product.product_id, qty, price);
         setOrderSuccess('Đơn hàng đang được xử lý.');
         return;
       }
