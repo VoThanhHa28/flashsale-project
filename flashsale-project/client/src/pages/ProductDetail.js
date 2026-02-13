@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import * as api from '../services/api';
+import { getFlashSaleStatus } from '../utils/flashSaleUtils';
+import CountdownTimer from '../components/CountdownTimer';
 import './ProductDetail.css';
 
 function formatPrice(price) {
@@ -20,17 +22,16 @@ function ProductDetail() {
   const [orderError, setOrderError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState('');
   const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [flashSaleStatus, setFlashSaleStatus] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        // Ưu tiên dùng API chi tiết sản phẩm
         let found = await api.getProductById(id);
         if (found && !cancelled) {
           setProduct(found);
-          // Lấy danh sách để hiển thị sản phẩm liên quan
           const list = await api.getProductsList();
           if (!cancelled) {
             const related = list
@@ -40,7 +41,6 @@ function ProductDetail() {
           }
           return;
         }
-        // Fallback: dùng danh sách và tìm
         const list = await api.getProductsList();
         if (cancelled) return;
         found = list.find((p) => String(p.product_id) === String(id));
@@ -59,6 +59,24 @@ function ProductDetail() {
     load();
     return () => { cancelled = true; };
   }, [id]);
+
+  // Update Flash Sale status mỗi giây
+  useEffect(() => {
+    if (!product) return;
+
+    function updateStatus() {
+      const status = getFlashSaleStatus(
+        product.product_start_time,
+        product.product_end_time
+      );
+      setFlashSaleStatus(status);
+    }
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 1000);
+
+    return () => clearInterval(interval);
+  }, [product]);
 
   const handleBuyNow = async () => {
     setOrderError('');
@@ -79,7 +97,6 @@ function ProductDetail() {
         setOrderSuccess('Đơn hàng đang được xử lý.');
         return;
       }
-      // DEV ONLY – remove when backend ready (m sẽ tự thêm lại sau khi t merge auth vào)
       setOrderSuccess('Đơn hàng đang được xử lý. (Chưa kết nối API)');
     } catch (err) {
       setOrderError(err.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
@@ -121,6 +138,24 @@ function ProductDetail() {
 
   const qty = Math.max(1, Math.floor(Number(quantity)) || 1);
   const maxQty = product.product_quantity != null ? Math.max(1, product.product_quantity) : 99;
+  
+  // Tính toán trạng thái nút Mua
+  const isSoldOut = product.product_quantity != null && product.product_quantity <= 0;
+  const canBuy = flashSaleStatus?.canBuy && !isSoldOut && !orderSubmitting;
+  
+  // Text và disabled state cho nút Mua
+  let buyButtonText = 'MUA NGAY';
+  let buyButtonDisabled = !canBuy;
+  
+  if (orderSubmitting) {
+    buyButtonText = 'Đang xử lý...';
+  } else if (isSoldOut) {
+    buyButtonText = 'SOLD OUT';
+  } else if (flashSaleStatus?.status === 'before-start') {
+    buyButtonText = 'Chưa đến giờ mở bán';
+  } else if (flashSaleStatus?.status === 'ended') {
+    buyButtonText = 'Đã kết thúc';
+  }
 
   return (
     <div className="product-detail">
@@ -151,6 +186,21 @@ function ProductDetail() {
             {product.product_description && (
               <p className="product-detail-desc">{product.product_description}</p>
             )}
+            
+            {/* Countdown Timer */}
+            {flashSaleStatus?.status === 'before-start' && product.product_start_time && (
+              <CountdownTimer 
+                targetTime={product.product_start_time} 
+                label="Sắp mở bán"
+              />
+            )}
+            {flashSaleStatus?.status === 'active' && product.product_end_time && (
+              <CountdownTimer 
+                targetTime={product.product_end_time} 
+                label="Còn lại"
+              />
+            )}
+            
             <div className="product-detail-actions">
               <div className="product-detail-quantity">
                 <label htmlFor="product-quantity">Số lượng</label>
@@ -162,17 +212,19 @@ function ProductDetail() {
                   value={quantity}
                   onChange={handleQuantityChange}
                   className="product-detail-quantity-input"
+                  disabled={buyButtonDisabled}
                 />
               </div>
               {orderError && <p className="product-detail-order-error">{orderError}</p>}
               {orderSuccess && <p className="product-detail-order-success">{orderSuccess}</p>}
               <button
                 type="button"
-                className="product-detail-buy"
+                className={`product-detail-buy ${buyButtonDisabled ? 'product-detail-buy--disabled' : ''}`}
                 onClick={handleBuyNow}
-                disabled={orderSubmitting}
+                disabled={buyButtonDisabled}
               >
-                {orderSubmitting ? 'Đang xử lý...' : 'MUA NGAY'}
+                {orderSubmitting && <span className="product-detail-buy-spinner">⏳</span>}
+                {buyButtonText}
               </button>
               <Link to="/" className="product-detail-back">← Quay lại danh sách</Link>
             </div>
