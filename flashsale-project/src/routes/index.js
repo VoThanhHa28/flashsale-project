@@ -8,6 +8,7 @@ const orderRouter = require('./order.route');
 const authRouter = require('./auth.route');
 const userRouter = require('./user.route');
 const productRouter = require('./product.route');
+const seedRouter = require('./seed.route');
 
 // 1. Route kiểm tra Server sống hay chết (Health Check)
 router.get('/', (req, res) => {
@@ -28,5 +29,6 @@ router.use('/v1/api/products', productRouter);
 
 router.use('/v1/api/auth', authRouter);
 router.use('/v1/api/users', userRouter);
+router.use('/seed', seedRouter);
 
 module.exports = router;

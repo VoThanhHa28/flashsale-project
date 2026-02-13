@@ -1,6 +1,7 @@
 module.exports = {
   AUTH: require('./auth.constants'),
   USER: require('./user.constants'),
+  SEED: require('./seed.constants'),
   ORDER: require('./order.constants'),
   PRODUCT: require('./product.constants'),
   MESSAGES: require('./messages.constants'),
