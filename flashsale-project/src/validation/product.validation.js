@@ -83,8 +83,13 @@ const updateProduct = {
   }),
 };
 
+const getProductStats = {
+  // Không cần validation vì không có params hoặc query
+};
+
 module.exports = {
   getProducts,
   createProduct,
   updateProduct,
+  getProductStats,
 };

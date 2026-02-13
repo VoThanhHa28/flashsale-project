@@ -37,6 +37,16 @@ class ProductController {
       data: result,
     }).send(res);
   });
+
+  // GET /v1/api/products/stats
+  static getProductStats = asyncHandler(async (req, res) => {
+    const result = await ProductService.getProductStats();
+
+    new OK({
+      message: CONST.PRODUCT.MESSAGE.GET_STATS_SUCCESS,
+      data: result,
+    }).send(res);
+  });
 }
 
 module.exports = ProductController;

@@ -6,6 +6,13 @@ const productValidation = require('../validation/product.validation');
 const { verifyToken } = require('../middlewares/auth'); 
 
 /**
+ * @route   GET /v1/api/products/stats
+ * @desc    Lấy thống kê sản phẩm
+ * @access  Private (Admin)
+ */
+router.get('/stats', verifyToken, validate(productValidation.getProductStats), productController.getProductStats);
+
+/**
  * @route   GET /v1/api/products
  * @desc    Lấy danh sách sản phẩm
  * @access  Public

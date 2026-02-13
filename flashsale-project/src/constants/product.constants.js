@@ -29,6 +29,7 @@ module.exports = {
     ENDED: 'Chương trình Flash Sale đã kết thúc.',
     OUT_OF_STOCK: 'Sản phẩm đã hết hàng.',
     INVALID_TIME: 'Thời gian mở bán không hợp lệ (Ngày bắt đầu phải nhỏ hơn ngày kết thúc).',
+    GET_STATS_SUCCESS: 'Lấy thống kê sản phẩm thành công',
   },
 
   // 4. CẤU HÌNH CACHE (Dùng cho Redis)
