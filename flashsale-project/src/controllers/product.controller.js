@@ -22,7 +22,6 @@ class ProductController {
       data: result,
     }).send(res);
   });
-
   // PUT /v1/api/products/:id
   static updateProduct = asyncHandler(async (req, res) => {
     const { id } = req.params;
