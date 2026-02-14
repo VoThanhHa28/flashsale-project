@@ -92,11 +92,15 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-// Tạo index để tìm kiếm nhanh hơn
+// Index cho các trường query nhiều (tăng tốc độ) - yêu cầu Lead
 productSchema.index({ productName: 'text' });
 productSchema.index({ productPrice: 1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ updatedAt: -1 });
 productSchema.index({ productQuantity: 1 });
+productSchema.index({ isPublished: 1 });
+productSchema.index({ productStartTime: 1 });
+productSchema.index({ productStartTime: 1, productEndTime: 1 });
 productSchema.index({ isPublished: 1, productStartTime: 1 });
 const Product = mongoose.model('Product', productSchema);
 
