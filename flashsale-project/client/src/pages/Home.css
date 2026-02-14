@@ -226,3 +226,13 @@
     padding: 0 2.5rem;
   }
 }
+/* Badge số lượng (Còn X / Sắp hết / Hết hàng) – Bước 1 Landing */
+.home-card-badge--stock {
+  left: auto;
+  right: 0.5rem;
+  background: #0f3460;
+}
+.home-card-badge--stock:not(:only-of-type) {
+  top: auto;
+  bottom: 0.5rem;
+}

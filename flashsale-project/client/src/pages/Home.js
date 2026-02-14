@@ -14,6 +14,19 @@ function formatPrice(price) {
   }).format(price) + ' ₫';
 }
 
+/**
+ * Trả về text badge theo số lượng còn (cho Flash Sale).
+ * quantity undefined/null → không hiện badge.
+ * 0 → "Hết hàng", 1-9 → "Còn X", 10-19 → "Sắp hết", >= 20 → null (không badge).
+ */
+function getStockBadge(quantity) {
+  if (quantity == null || typeof quantity !== 'number') return null;
+  if (quantity === 0) return 'Hết hàng';
+  if (quantity < 10) return `Còn ${quantity}`;
+  if (quantity < 20) return 'Sắp hết';
+  return null;
+}
+
 function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,15 +34,21 @@ function Home() {
 
   useEffect(() => {
     let cancelled = false;
-
+    
     async function load() {
       try {
         const list = await api.getProductsList();
-        if (!cancelled) setProducts(list);
+        if (!cancelled) {
+          setProducts(list);
+        }
       } catch (err) {
-        if (!cancelled) setError(err.message || 'Không tải được danh sách sản phẩm.');
+        if (!cancelled) {
+          setError(err.message || 'Không tải được danh sách sản phẩm.');
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
@@ -74,28 +93,49 @@ function Home() {
       <section className="home-products">
         <div className="home-products-inner">
           <h2 className="home-section-title">Sản phẩm nổi bật</h2>
-          <div className="home-grid">
-            {products.map((p, index) => (
-              <Link
-                key={p.product_id}
-                to={`/product/${p.product_id}`}
-                className="home-card"
-              >
-                <div className="home-card-image-wrap">
-                  {index < 2 && <span className="home-card-badge">Hot</span>}
-                  <img
-                    src={p.product_thumb}
-                    alt={p.product_name}
-                    className="home-card-image"
-                  />
-                </div>
-                <div className="home-card-body">
-                  <h2 className="home-card-name">{p.product_name}</h2>
-                  <p className="home-card-price">{formatPrice(p.product_price)}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {products.length === 0 ? (
+            <div className="home-empty">
+              <p className="home-empty-message">
+                Hiện chưa có sản phẩm nào trong hệ thống.
+              </p>
+              {api.isApiConfigured() && (
+                <p className="home-empty-hint">
+                  💡 Vui lòng chạy lệnh <code>npm run seed:products</code> để thêm dữ liệu sản phẩm vào database.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="home-grid">
+              {products.map((p, index) => {
+                const stockBadge = getStockBadge(p.product_quantity);
+                return (
+                  <Link
+                    key={p.product_id}
+                    to={`/product/${p.product_id}`}
+                    className="home-card"
+                  >
+                    <div className="home-card-image-wrap">
+                      {index < 2 && <span className="home-card-badge">Hot</span>}
+                      {stockBadge && (
+                        <span className="home-card-badge home-card-badge--stock">
+                          {stockBadge}
+                        </span>
+                      )}
+                      <img
+                        src={p.product_thumb}
+                        alt={p.product_name}
+                        className="home-card-image"
+                      />
+                    </div>
+                    <div className="home-card-body">
+                      <h2 className="home-card-name">{p.product_name}</h2>
+                      <p className="home-card-price">{formatPrice(p.product_price)}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </div>
