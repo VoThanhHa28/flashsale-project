@@ -1,37 +1,38 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
 const register = {
-  body: Joi.object({
-    email: Joi.string()
-      .email()
-      .trim()
-      .lowercase()
-      .required(),
+    body: Joi.object({
+        email: Joi.string()
+            .email({ tlds: { allow: false } }) // Allow any TLD including .test for testing
+            .trim()
+            .lowercase()
+            .required(),
 
-    password: Joi.string()
-      .min(8)
-      .max(100)
-      .pattern(/[A-Z]/)
-      .pattern(/[a-z]/)
-      .pattern(/[0-9]/)
-      .pattern(/[!@#$%^&*]/)
-      .required(),
+        password: Joi.string()
+            .min(8)
+            .max(100)
+            .pattern(/[A-Z]/)
+            .pattern(/[a-z]/)
+            .pattern(/[0-9]/)
+            .pattern(/[!@#$%^&*]/)
+            .required(),
 
-    name: Joi.string()
-      .min(2)
-      .max(100)
-      .optional(),
-  }),
+        name: Joi.string().min(2).max(100).optional(),
+    }),
 };
 
 const login = {
-  body: Joi.object({
-    email: Joi.string().email().trim().lowercase().required(),
-    password: Joi.string().required(),
-  }),
+    body: Joi.object({
+        email: Joi.string()
+            .email({ tlds: { allow: false } }) // Allow any TLD including .test for testing
+            .trim()
+            .lowercase()
+            .required(),
+        password: Joi.string().required(),
+    }),
 };
 
 module.exports = {
-  register,
-  login,
+    register,
+    login,
 };
