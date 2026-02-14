@@ -1,0 +1,61 @@
+.countdown-timer {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: linear-gradient(135deg, #c00a27 0%, #8b0618 100%);
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+  }
+  
+  .countdown-timer-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+  }
+  
+  .countdown-timer-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .countdown-timer-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 50px;
+  }
+  
+  .countdown-timer-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  
+  .countdown-timer-label-unit {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+  }
+  
+  .countdown-timer-separator {
+    font-size: 1.5rem;
+    font-weight: 700;
+    opacity: 0.7;
+  }
+  
+  @media (max-width: 768px) {
+    .countdown-timer-value {
+      font-size: 1.25rem;
+    }
+    
+    .countdown-timer-label-unit {
+      font-size: 0.625rem;
+    }
+    
+    .countdown-timer-separator {
+      font-size: 1.25rem;
+    }
+  }
