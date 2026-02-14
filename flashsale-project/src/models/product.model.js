@@ -96,7 +96,6 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ productName: 'text' });
 productSchema.index({ productPrice: 1 });
 productSchema.index({ createdAt: -1 });
-productSchema.index({ updatedAt: -1 });
 productSchema.index({ productQuantity: 1 });
 productSchema.index({ isPublished: 1 });
 productSchema.index({ productStartTime: 1 });
