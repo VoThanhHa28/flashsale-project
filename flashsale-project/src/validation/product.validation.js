@@ -1,7 +1,6 @@
 // validations/product.validation.js
 const Joi = require('joi');
 
-// Constants
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 const ALLOWED_SORT_FIELDS = [
@@ -10,7 +9,7 @@ const ALLOWED_SORT_FIELDS = [
   'productQuantity',
   'createdAt',
   'updatedAt',
-  'productStartTime', // Đổi sang camelCase
+  'productStartTime',
 ];
 
 const ALLOWED_SORT_ORDERS = ['asc', 'desc'];
@@ -69,7 +68,6 @@ const updateProduct = {
     endTime: Joi.date().iso(),
     isPublished: Joi.boolean(),
   }).custom((value, helpers) => {
-    // Custom validation: nếu có cả startTime và endTime thì phải startTime < endTime
     if (value.startTime && value.endTime) {
       const start = new Date(value.startTime);
       const end = new Date(value.endTime);
@@ -83,6 +81,8 @@ const updateProduct = {
   }),
 };
 
+const getProductStats = {};
+
 const forceStartProduct = {
   params: Joi.object({
     id: Joi.string().required(),
@@ -93,5 +93,6 @@ module.exports = {
   getProducts,
   createProduct,
   updateProduct,
+  getProductStats,
   forceStartProduct,
 };

@@ -190,6 +190,57 @@ class ProductService {
       },
     };
   }
+
+  /**
+   * Lấy thống kê sản phẩm
+   */
+  static async getProductStats() {
+    const now = new Date();
+
+    // Query song song để tối ưu performance
+    const [
+      totalProducts,
+      publishedProducts,
+      outOfStockProducts,
+      activeFlashSaleProducts,
+      upcomingFlashSaleProducts,
+      endedFlashSaleProducts,
+    ] = await Promise.all([
+      // Tổng số sản phẩm
+      Product.countDocuments({}),
+      
+      // Số sản phẩm đang bán (isPublished: true)
+      Product.countDocuments({ isPublished: true }),
+      
+      // Số sản phẩm đã hết hàng (productQuantity: 0)
+      Product.countDocuments({ productQuantity: 0 }),
+      
+      // Số sản phẩm đang trong Flash Sale (productStartTime <= now <= productEndTime)
+      Product.countDocuments({
+        productStartTime: { $lte: now },
+        productEndTime: { $gte: now },
+      }),
+      
+      // Số sản phẩm sắp bắt đầu Flash Sale (productStartTime > now)
+      Product.countDocuments({
+        productStartTime: { $gt: now },
+      }),
+      
+      // Số sản phẩm đã kết thúc Flash Sale (productEndTime < now)
+      Product.countDocuments({
+        productEndTime: { $lt: now },
+      }),
+    ]);
+
+    return {
+      total: totalProducts,
+      published: publishedProducts,
+      outOfStock: outOfStockProducts,
+      activeFlashSale: activeFlashSaleProducts,
+      upcomingFlashSale: upcomingFlashSaleProducts,
+      endedFlashSale: endedFlashSaleProducts,
+    };
+  }
 }
 
 module.exports = ProductService;
