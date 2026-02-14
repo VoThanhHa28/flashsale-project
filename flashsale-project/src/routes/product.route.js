@@ -11,7 +11,7 @@ const { requireShopAdmin } = require('../middlewares/rbac');
  * @desc    Lấy thống kê sản phẩm
  * @access  Private (Admin)
  */
-router.get('/stats', verifyToken, validate(productValidation.getProductStats), productController.getProductStats);
+router.get('/stats', verifyToken, requireShopAdmin, validate(productValidation.getProductStats), productController.getProductStats);
 
 /**
  * @route   GET /v1/api/products
@@ -29,17 +29,17 @@ router.get('/', validate(productValidation.getProducts), productController.getPr
 router.post('/', verifyToken, requireShopAdmin, validate(productValidation.createProduct), productController.createProduct);
 
 /**
- * @route   PUT /v1/api/products/:id
- * @desc    Cập nhật sản phẩm
- * @access  Private (Admin)
- */
-router.put('/:id', verifyToken, validate(productValidation.updateProduct), productController.updateProduct);
-
-/**
  * @route   PUT /v1/api/products/:id/force-start
  * @desc    Kích hoạt Flash Sale ngay lập tức (Force Start)
  * @access  Private (Admin)
  */
-router.put('/:id/force-start', verifyToken, validate(productValidation.forceStartProduct), productController.forceStartProduct);
+router.put('/:id/force-start', verifyToken, requireShopAdmin, validate(productValidation.forceStartProduct), productController.forceStartProduct);
+
+/**
+ * @route   PUT /v1/api/products/:id
+ * @desc    Cập nhật sản phẩm
+ * @access  Private (Admin)
+ */
+router.put('/:id', verifyToken, requireShopAdmin, validate(productValidation.updateProduct), productController.updateProduct);
 
 module.exports = router;
