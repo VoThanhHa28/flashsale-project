@@ -3,6 +3,11 @@ module.exports = {
     ADMIN: 'admin',
     USER: 'user',
   },
+  /** Dùng cho RBAC – khớp với user.model usr_role */
+  USR_ROLE: {
+    USER: 'USER',
+    SHOP_ADMIN: 'SHOP_ADMIN',
+  },
 
   JWT: {
     EXPIRES_IN: '1d',
