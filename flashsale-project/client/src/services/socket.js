@@ -15,6 +15,7 @@ class SocketService {
       onConnect: [],
       onDisconnect: [],
       onReconnect: [],
+      onReconnecting: [],
       onError: [],
     };
   }
@@ -71,6 +72,7 @@ class SocketService {
     this.socket.on('reconnect_attempt', () => {
       console.log('🔄 Socket reconnecting...');
       this.connectionStatus = 'reconnecting';
+      this.callbacks.onReconnecting.forEach(cb => cb());
     });
 
     this.socket.on('connect_error', (error) => {
@@ -132,22 +134,47 @@ class SocketService {
   }
 
   /**
-   * Đăng ký callback cho connection events
+   * Đăng ký callback cho connection events.
+   * Trả về hàm unsubscribe để cleanup khi không dùng nữa.
    */
   onConnect(callback) {
     this.callbacks.onConnect.push(callback);
+    return () => {
+      const idx = this.callbacks.onConnect.indexOf(callback);
+      if (idx > -1) this.callbacks.onConnect.splice(idx, 1);
+    };
   }
 
   onDisconnect(callback) {
     this.callbacks.onDisconnect.push(callback);
+    return () => {
+      const idx = this.callbacks.onDisconnect.indexOf(callback);
+      if (idx > -1) this.callbacks.onDisconnect.splice(idx, 1);
+    };
   }
 
   onReconnect(callback) {
     this.callbacks.onReconnect.push(callback);
+    return () => {
+      const idx = this.callbacks.onReconnect.indexOf(callback);
+      if (idx > -1) this.callbacks.onReconnect.splice(idx, 1);
+    };
+  }
+
+  onReconnecting(callback) {
+    this.callbacks.onReconnecting.push(callback);
+    return () => {
+      const idx = this.callbacks.onReconnecting.indexOf(callback);
+      if (idx > -1) this.callbacks.onReconnecting.splice(idx, 1);
+    };
   }
 
   onError(callback) {
     this.callbacks.onError.push(callback);
+    return () => {
+      const idx = this.callbacks.onError.indexOf(callback);
+      if (idx > -1) this.callbacks.onError.splice(idx, 1);
+    };
   }
 
   /**

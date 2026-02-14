@@ -4,40 +4,29 @@
  */
 import { createContext, useContext, useEffect, useState } from 'react';
 import socketService from '../services/socket';
+import { SOCKET_EVENTS } from '../contracts';
 
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [productStockUpdates, setProductStockUpdates] = useState(new Map());
+  const [lastFlashSaleStart, setLastFlashSaleStart] = useState(null);
 
   useEffect(() => {
-    // Kết nối Socket khi component mount
     socketService.connect();
 
-    // Đăng ký callbacks để update state
-    const handleConnect = () => {
-      setConnectionStatus('connected');
-    };
+    const handleConnect = () => setConnectionStatus('connected');
+    const handleDisconnect = () => setConnectionStatus('disconnected');
+    const handleReconnect = () => setConnectionStatus('connected');
+    const handleReconnecting = () => setConnectionStatus('reconnecting');
 
-    const handleDisconnect = () => {
-      setConnectionStatus('disconnected');
-    };
+    const unsubConnect = socketService.onConnect(handleConnect);
+    const unsubDisconnect = socketService.onDisconnect(handleDisconnect);
+    const unsubReconnect = socketService.onReconnect(handleReconnect);
+    const unsubReconnecting = socketService.onReconnecting(handleReconnecting);
 
-    const handleReconnect = () => {
-      setConnectionStatus('connected');
-    };
-
-    const handleReconnecting = () => {
-      setConnectionStatus('reconnecting');
-    };
-
-    socketService.onConnect(handleConnect);
-    socketService.onDisconnect(handleDisconnect);
-    socketService.onReconnect(handleReconnect);
-
-    // Lắng nghe update-stock event
-    const unsubscribeStock = socketService.on('update-stock', (data) => {
+    const unsubscribeStock = socketService.on(SOCKET_EVENTS.UPDATE_STOCK, (data) => {
       const { productId, quantity } = data;
       setProductStockUpdates(prev => {
         const newMap = new Map(prev);
@@ -46,24 +35,24 @@ export function SocketProvider({ children }) {
       });
     });
 
-    // Update connection status mỗi giây để catch reconnecting state
-    const statusInterval = setInterval(() => {
-      const status = socketService.getConnectionStatus();
-      if (status === 'reconnecting') {
-        setConnectionStatus('reconnecting');
-      }
-    }, 1000);
+    const unsubscribeFlashSaleStart = socketService.on(SOCKET_EVENTS.FLASH_SALE_START, (data) => {
+      setLastFlashSaleStart(data || { productId: null, startTime: null });
+    });
 
     return () => {
+      unsubConnect();
+      unsubDisconnect();
+      unsubReconnect();
+      unsubReconnecting();
       unsubscribeStock();
-      clearInterval(statusInterval);
-      // Không disconnect Socket ở đây vì có thể các component khác đang dùng
+      unsubscribeFlashSaleStart();
     };
   }, []);
 
   const value = {
     connectionStatus,
     productStockUpdates,
+    lastFlashSaleStart,
     socket: socketService,
   };
 

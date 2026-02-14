@@ -6,8 +6,7 @@
         "start": "node src/app.js",
         "dev": "nodemon ./bin/www",
         "worker": "node src/workers/order.worker.js",
-        "test-worker": "node src/workers/test_worker.js",
-        "seed:products": "node src/scripts/seedProducts.js"
+        "test-worker": "node src/workers/test_worker.js"
     },
     "dependencies": {
         "amqplib": "^0.10.9",
