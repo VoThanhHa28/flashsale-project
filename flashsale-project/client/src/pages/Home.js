@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import * as api from '../services/api';
+import { useSocket } from '../contexts/SocketContext';
 import BannerCarousel from '../components/BannerCarousel';
 import SidebarLeft from '../components/SidebarLeft';
 import SidebarRight from '../components/SidebarRight';
@@ -31,6 +32,7 @@ function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { productStockUpdates } = useSocket();
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +57,19 @@ function Home() {
     load();
     return () => { cancelled = true; };
   }, []);
+
+  // Update products quantity từ Socket real-time
+  useEffect(() => {
+    if (!productStockUpdates || productStockUpdates.size === 0) return;
+
+    setProducts(prev => prev.map(p => {
+      const updatedQuantity = productStockUpdates.get(String(p.product_id));
+      if (updatedQuantity !== undefined) {
+        return { ...p, product_quantity: updatedQuantity };
+      }
+      return p;
+    }));
+  }, [productStockUpdates]);
 
   if (loading) {
     return (

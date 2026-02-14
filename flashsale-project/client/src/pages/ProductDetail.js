@@ -4,6 +4,7 @@ import * as api from '../services/api';
 import { getFlashSaleStatus } from '../utils/flashSaleUtils';
 import CountdownTimer from '../components/CountdownTimer';
 import './ProductDetail.css';
+import { useSocket } from '../contexts/SocketContext';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN', {
@@ -23,6 +24,7 @@ function ProductDetail() {
   const [orderSuccess, setOrderSuccess] = useState('');
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [flashSaleStatus, setFlashSaleStatus] = useState(null);
+  const { productStockUpdates, socket } = useSocket();
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +79,42 @@ function ProductDetail() {
 
     return () => clearInterval(interval);
   }, [product]);
+
+  // Update product quantity từ Socket real-time
+  useEffect(() => {
+    if (!product || !productStockUpdates) return;
+
+    const updatedQuantity = productStockUpdates.get(String(product.product_id));
+    if (updatedQuantity !== undefined) {
+      setProduct(prev => ({
+        ...prev,
+        product_quantity: updatedQuantity,
+      }));
+    }
+  }, [product?.product_id, productStockUpdates]);
+
+  // Lắng nghe flash-sale-start event để reload nút MUA
+  useEffect(() => {
+    if (!product || !socket) return;
+
+    const handleFlashSaleStart = (data) => {
+      // Nếu event có productId và match với product hiện tại, reload product
+      if (data?.productId && String(data.productId) === String(product.product_id)) {
+        // Reload product để lấy start_time mới
+        api.getProductById(product.product_id).then((updated) => {
+          if (updated) {
+            setProduct(updated);
+          }
+        });
+      }
+    };
+
+    const unsubscribe = socket.on('flash-sale-start', handleFlashSaleStart);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [product?.product_id, socket]);
 
   const handleBuyNow = async () => {
     setOrderError('');
