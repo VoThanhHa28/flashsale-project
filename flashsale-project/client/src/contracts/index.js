@@ -5,14 +5,17 @@
 
 /** Tên event Socket (M2 thống nhất với M5) */
 export const SOCKET_EVENTS = {
-    UPDATE_STOCK: 'update-stock',
-    FLASH_SALE_START: 'flash-sale-start',
-  };
-  
-  /**
-   * Payload Socket update-stock (M2 emit): { productId: string, quantity: number }
-   * Payload Socket flash-sale-start (M2 emit khi M3 bấm Kích hoạt ngay): reload nút MUA
-   */
+  UPDATE_STOCK: 'update-stock',
+  FLASH_SALE_START: 'flash-sale-start',
+};
+
+/**
+ * Payload Socket update-stock (M2 emit): 
+ * { productId: string, quantity: number }
+ * 
+ * Payload Socket flash-sale-start (M2 emit khi M3 bấm Kích hoạt ngay): 
+ * { productId: string, startTime: Date } hoặc {} (reload nút MUA)
+ */
   
   /**
    * GET /v1/api/products – response.data = { products: Product[], pagination: { page, pageSize, total, totalPages } }

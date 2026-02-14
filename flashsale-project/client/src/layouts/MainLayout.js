@@ -1,7 +1,13 @@
 import Layout from '../components/Layout';
+import ConnectionStatus from '../components/ConnectionStatus';
 
 function MainLayout() {
-  return <Layout />;
+  return (
+    <>
+      <ConnectionStatus />
+      <Layout />
+    </>
+  );
 }
 
 export default MainLayout;
