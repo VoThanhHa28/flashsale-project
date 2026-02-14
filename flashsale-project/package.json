@@ -3,10 +3,23 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "start": "node src/app.js",
-        "dev": "nodemon ./bin/www",
+        "start": "node ./bin/www",
         "worker": "node src/workers/order.worker.js",
-        "test-worker": "node src/workers/test_worker.js"
+        "test-worker": "node src/workers/test_worker.js",
+        "test-mongodb": "node src/test_mongodb.js",
+        "seed:products": "node src/scripts/seedProducts.js",
+        "seed:users": "node src/scripts/seedUsers.js",
+        "seed:users:clean": "node src/scripts/seedUsers.js clean",
+        "get:products": "node src/scripts/getProducts.js",
+        "test:login": "node src/scripts/testLogin.js",
+        "test:order": "node src/scripts/testOrder.js",
+        "purge:queue": "node src/scripts/purgeQueue.js",
+        "purge:messages": "node src/scripts/purgeQueueMessages.js",
+        "test:k6": "k6 run src/tests/k6/order.load.test.js",
+        "test:k6-auth": "k6 run src/tests/k6/order.load.test.auth.js",
+        "test:k6-simple": "k6 run src/tests/k6/simple.test.js",
+        "dev": "nodemon ./bin/www",
+        "dev-worker": "nodemon src/workers/order.worker.js"
     },
     "dependencies": {
         "amqplib": "^0.10.9",
@@ -21,7 +34,8 @@
         "jsonwebtoken": "^9.0.3",
         "mongoose": "^9.1.6",
         "morgan": "~1.9.1",
-        "redis": "^5.10.0"
+        "redis": "^5.10.0",
+        "socket.io": "^4.8.3"
     },
     "devDependencies": {
         "nodemon": "^3.1.11"

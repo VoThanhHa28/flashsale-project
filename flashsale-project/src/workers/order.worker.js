@@ -1,12 +1,19 @@
+"use strict";
+
 require("dotenv").config();
+
 const { getChannel, connectToRabbitMQ } = require("../config/rabbitmq");
-const OrderModel = require("../models/order.model");
+const { initSocket } = require("../config/socket");
+const OrderService = require("../services/order.service");
 const mongoose = require("mongoose");
-const CONST = require("../constants/constants");
+const http = require("http");
+const { RABBIT_QUEUE } = require("../constants");
+
+// Alias for backward compatibility
+const QUEUE_NAME = { ORDER: RABBIT_QUEUE.ORDER_QUEUE };
 
 // Cấu hình
-const QUEUE_NAME = CONST.RABBIT_QUEUE.ORDER;
-const PREFETCH_COUNT = 10; // Xử lý tối đa 10 message cùng lúc
+const PREFETCH_COUNT = parseInt(process.env.PREFETCH_COUNT) || 10;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/flashsale";
 
 /**
@@ -14,26 +21,53 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/flashs
  */
 const connectMongoDB = async () => {
     try {
-        console.log("[MongoDB] Đang kết nối đến:", MONGODB_URI);
+        console.log("[MongoDB] Đang kết nối...");
         await mongoose.connect(MONGODB_URI);
-        console.log("[MongoDB] Kết nối thành công!");
-        console.log("[MongoDB] Database name:", mongoose.connection.name);
-        console.log("[MongoDB] Host:", mongoose.connection.host);
-        console.log("[MongoDB] Port:", mongoose.connection.port);
-
-        // List all collections
-        const collections = await mongoose.connection.db.listCollections().toArray();
-        console.log(
-            "[MongoDB] Collections:",
-            collections.map((c) => c.name),
-        );
-
-        // Check OrderModel collection name
-        console.log("[MongoDB] OrderModel collection:", OrderModel.collection.name);
+        console.log("[MongoDB] ✅ Kết nối thành công!");
     } catch (error) {
-        console.error("[MongoDB] Lỗi kết nối:", error.message);
+        console.error("[MongoDB] ❌ Lỗi kết nối:", error.message);
         process.exit(1);
     }
+};
+
+/**
+ * Khởi tạo Socket.io cho Worker
+ */
+const initWorkerSocket = () => {
+    return new Promise((resolve, reject) => {
+        try {
+            // Tạo HTTP server đơn giản cho Socket.io
+            const server = http.createServer();
+            let port = parseInt(process.env.SOCKET_PORT) || 3001;
+
+            // Khởi tạo Socket.io
+            initSocket(server);
+
+            // Xử lý lỗi khi port bị chiếm
+            server.on("error", (err) => {
+                if (err.code === "EADDRINUSE") {
+                    console.log(`[Socket.io] ⚠️  Port ${port} đã được sử dụng, thử port ${port + 1}...`);
+                    port++;
+                    setTimeout(() => {
+                        server.close();
+                        server.listen(port);
+                    }, 100);
+                } else {
+                    console.error("[Socket.io] ❌ Lỗi khởi tạo:", err.message);
+                    reject(err);
+                }
+            });
+
+            // Lắng nghe port
+            server.listen(port, () => {
+                console.log(`[Socket.io] ✅ Đang chạy trên port ${port}`);
+                resolve(server);
+            });
+        } catch (error) {
+            console.error("[Socket.io] ❌ Lỗi khởi tạo:", error.message);
+            reject(error);
+        }
+    });
 };
 
 /**
@@ -43,43 +77,44 @@ const processOrder = async (orderData, channel, msg) => {
     const startTime = Date.now();
 
     try {
-        console.log(`[Worker] Nhận đơn hàng:`, orderData);
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("[Worker] 📦 Nhận đơn hàng mới");
+        console.log("[Worker] Dữ liệu:", JSON.stringify(orderData, null, 2));
 
-        // Validate format cơ bản (không validate nghiệp vụ - đã xử lý ở API)
-        if (orderData.quantity && orderData.quantity <= 0) {
-            throw new Error("Quantity không hợp lệ");
-        }
+        // Xử lý đơn hàng qua Service
+        const order = await OrderService.processOrderFromQueue(orderData);
 
-        // Lưu đơn hàng vào MongoDB
-        console.log(`[Worker] MongoDB ReadyState: ${mongoose.connection.readyState}`);
-        console.log(`[Worker] Connected DB: ${mongoose.connection.name}`);
+        // Phát sự kiện Socket.io
+        await OrderService.notifyStockUpdate(
+            order.productId,
+            order.quantity,
+            null, // remainingStock - có thể query từ Product model nếu cần
+        );
 
-        const order = await OrderModel.create({
-            userId: orderData.userId,
-            productId: orderData.productId,
-            quantity: orderData.quantity,
-            status: "Pending",
-            totalPrice: orderData.price || 0,
-            processedAt: orderData.orderTime || new Date(),
-        });
+        // Thông báo cho user (nếu cần)
+        // await OrderService.notifyOrderSuccess(order.userId, order);
 
         const processingTime = Date.now() - startTime;
-        console.log(`[Worker] ✅ Đã lưu đơn hàng ID: ${order._id} (${processingTime}ms)`);
+        console.log(`[Worker] ✅ Hoàn thành trong ${processingTime}ms`);
+        console.log(`[Worker] Order ID: ${order._id}`);
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        // Verify ngay sau khi lưu
-        const count = await OrderModel.countDocuments();
-        console.log(`[Worker] 📊 Tổng số đơn hàng trong DB: ${count}`);
-
-        // ACK tin nhắn - quan trọng!
+        // ACK tin nhắn
         channel.ack(msg);
 
         return order;
     } catch (error) {
-        console.error("[Worker] ❌ Lỗi xử lý đơn hàng:", error.message);
-        console.error("[Worker] Dữ liệu lỗi:", orderData);
+        console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.error("[Worker] ❌ LỖI XỬ LÝ ĐỜN HÀNG");
+        console.error("[Worker] Message:", error.message);
+        console.error("[Worker] Stack:", error.stack);
+        console.error("[Worker] Dữ liệu lỗi:", JSON.stringify(orderData, null, 2));
+        console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        // NACK message nhưng không requeue (tránh loop vô hạn)
-        // Nếu muốn retry, dùng Dead Letter Exchange
+        // Lưu đơn hàng lỗi vào DB
+        await OrderService.saveFailedOrder(orderData, error.message);
+
+        // NACK message (không requeue để tránh loop vô hạn)
         channel.nack(msg, false, false);
     }
 };
@@ -88,35 +123,56 @@ const processOrder = async (orderData, channel, msg) => {
  * Khởi động Worker
  */
 const startWorker = async () => {
+    let socketServer = null;
+
     try {
-        console.log("[Worker] Đang khởi động Order Worker...");
+        console.log("");
+        console.log("╔════════════════════════════════════════╗");
+        console.log("║   🚀 FLASHSALE ORDER WORKER v1.0.0    ║");
+        console.log("╚════════════════════════════════════════╝");
+        console.log("");
 
         // 1. Kết nối MongoDB
         await connectMongoDB();
 
-        // 2. Kết nối RabbitMQ
+        // 2. Khởi tạo Socket.io
+        socketServer = await initWorkerSocket();
+
+        // 3. Kết nối RabbitMQ
+        console.log("[RabbitMQ] Đang kết nối...");
         await connectToRabbitMQ();
         const channel = await getChannel();
+        console.log("[RabbitMQ] ✅ Kết nối thành công!");
 
-        // 3. Khai báo Queue (durable: true để tin nhắn không mất khi restart)
-        await channel.assertQueue(QUEUE_NAME, {
+        // 4. Khai báo Queue
+        await channel.assertQueue(QUEUE_NAME.ORDER, {
             durable: true,
             arguments: {
-                // Có thể thêm Dead Letter Exchange cho tin nhắn lỗi
+                // Có thể thêm Dead Letter Exchange
                 // 'x-dead-letter-exchange': 'dlx-exchange',
                 // 'x-dead-letter-routing-key': 'failed-orders'
             },
         });
 
-        // 4. Giới hạn số message xử lý đồng thời (tránh quá tải)
+        // 5. Giới hạn số message xử lý đồng thời
         channel.prefetch(PREFETCH_COUNT);
 
-        console.log(`[Worker] 🚀 Đang lắng nghe queue: ${QUEUE_NAME}`);
-        console.log(`[Worker] Prefetch count: ${PREFETCH_COUNT}`);
+        console.log("");
+        console.log("╔═════��══════════════════════════════════╗");
+        console.log("║          ✅ WORKER READY              ║");
+        console.log("╠════════════════════════════════════════╣");
+        console.log(`║  Queue: ${QUEUE_NAME.ORDER.padEnd(29)}║`);
+        console.log(`║  Prefetch: ${PREFETCH_COUNT.toString().padEnd(26)}║`);
+        console.log(`║  MongoDB: Connected                   ║`);
+        console.log(`║  RabbitMQ: Connected                  ║`);
+        console.log(`║  Socket.io: Running                   ║`);
+        console.log("╚════════════════════════════════════════╝");
+        console.log("");
+        console.log("⏳ Đang lắng nghe đơn hàng...\n");
 
-        // 5. Consume messages
+        // 6. Consume messages
         channel.consume(
-            QUEUE_NAME,
+            QUEUE_NAME.ORDER,
             async (msg) => {
                 if (msg !== null) {
                     try {
@@ -126,8 +182,11 @@ const startWorker = async () => {
                         // Xử lý đơn hàng
                         await processOrder(orderData, channel, msg);
                     } catch (parseError) {
-                        console.error("[Worker] ❌ Lỗi parse JSON:", parseError.message);
-                        console.error("[Worker] Raw message:", msg.content.toString());
+                        console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                        console.error("[Worker] ❌ LỖI PARSE JSON");
+                        console.error("[Worker] Message:", parseError.message);
+                        console.error("[Worker] Raw data:", msg.content.toString());
+                        console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
                         // ACK tin nhắn lỗi format để không bị stuck
                         channel.ack(msg);
@@ -138,29 +197,60 @@ const startWorker = async () => {
                 noAck: false, // Bắt buộc phải ACK thủ công
             },
         );
-
-        console.log("[Worker] ✅ Worker đã sẵn sàng xử lý đơn hàng!");
     } catch (error) {
-        console.error("[Worker] ❌ Lỗi khởi động Worker:", error.message);
+        console.error("");
+        console.error("╔════════════════════════════════════════╗");
+        console.error("║     ❌ WORKER KHỞI ĐỘNG THẤT BẠI      ║");
+        console.error("╚════════════════════════════════════════╝");
+        console.error("");
+        console.error("[Worker] Lỗi:", error.message);
+        console.error("[Worker] Stack:", error.stack);
+
+        // Đóng các kết nối nếu có
+        if (socketServer) {
+            socketServer.close();
+        }
+
         process.exit(1);
     }
 };
 
 // Xử lý graceful shutdown
-const { closeConnection } = require("../config/rabbitmq");
-
 process.on("SIGINT", async () => {
-    console.log("[Worker] Đang tắt Worker...");
-    await closeConnection();
-    await mongoose.connection.close();
+    console.log("\n[Worker] 🛑 Đang tắt Worker...");
+
+    try {
+        await mongoose.connection.close();
+        console.log("[Worker] ✅ Đã đóng MongoDB");
+    } catch (error) {
+        console.error("[Worker] ❌ Lỗi đóng MongoDB:", error.message);
+    }
+
     process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-    console.log("[Worker] Đang tắt Worker...");
-    await closeConnection();
-    await mongoose.connection.close();
+    console.log("\n[Worker] 🛑 Nhận SIGTERM, đang tắt...");
+
+    try {
+        await mongoose.connection.close();
+        console.log("[Worker] ✅ Đã đóng MongoDB");
+    } catch (error) {
+        console.error("[Worker] ❌ Lỗi đóng MongoDB:", error.message);
+    }
+
     process.exit(0);
+});
+
+// Xử lý uncaught exception
+process.on("uncaughtException", (error) => {
+    console.error("[Worker] ❌ Uncaught Exception:", error);
+    process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("[Worker] ❌ Unhandled Rejection at:", promise);
+    console.error("[Worker] Reason:", reason);
 });
 
 // Khởi động Worker

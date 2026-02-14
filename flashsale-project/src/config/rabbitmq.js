@@ -89,16 +89,11 @@ const getChannel = async () => {
 };
 
 // Hàm gửi tin nhắn (Dùng cho Controller)
-const sendToQueue = async (msg) => {
+const sendToQueue = async (queueName, msg) => {
     const ch = await getChannel();
 
-    ch.sendToQueue(
-        'order-queue',
-        Buffer.from(JSON.stringify(msg)),
-        { persistent: true }
-    );
+    ch.sendToQueue(queueName, Buffer.from(JSON.stringify(msg)), { persistent: true });
 };
-
 
 /**
  * Đóng kết nối RabbitMQ
