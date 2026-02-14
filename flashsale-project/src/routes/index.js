@@ -7,6 +7,7 @@ const authRouter = require("./auth.route");
 const productRouter = require("./product.route");
 const adminRouter = require("./admin.route");
 const seedRouter = require("./seed.route");
+const userRouter = require("./user.route");
 
 // 1. Route kiểm tra Server sống hay chết (Health Check)
 router.get("/", (req, res) => {
