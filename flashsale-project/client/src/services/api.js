@@ -1,7 +1,8 @@
 /**
- * API layer – base URL, token, parse response (metadata/data).
- * Khi có backend: thêm REACT_APP_API_URL vào .env (vd: http://localhost:3000)
+ * API layer – base URL, token, parse response.
+ * Toàn bộ gọi backend đi qua file này; component chỉ dùng các hàm export.
  */
+import { normalizeProduct, normalizeProducts } from '../utils/productShape';
 
 const BASE_URL = process.env.REACT_APP_API_URL || '';
 
@@ -44,31 +45,18 @@ export function clearAuth() {
   localStorage.removeItem(USER_KEY);
 }
 
-/**
- * Chuẩn hóa payload từ response (backend trả { status, data: ... } hoặc { code, metadata: ... }).
- * Hỗ trợ cả 2 format để tương thích.
- */
 export function getPayload(res) {
-  // Hỗ trợ format mới: { code, metadata }
   if (res.metadata !== undefined) return res.metadata;
-  // Hỗ trợ format cũ: { status, data }
   if (res.data !== undefined) return res.data;
-  // Fallback: trả về chính response nếu không có data/metadata
   return res;
 }
 
-/**
- * Lấy message lỗi từ response (status, message, hoặc data.message).
- */
 export function getErrorMessage(res) {
   if (res && typeof res.message === 'string') return res.message;
   if (res && res.data && typeof res.data.message === 'string') return res.data.message;
   return 'Đã xảy ra lỗi. Vui lòng thử lại.';
 }
 
-/**
- * Gọi fetch với JSON body và optional Authorization header.
- */
 export async function request(url, options = {}) {
   const token = getToken();
   const headers = {
@@ -84,8 +72,6 @@ export async function request(url, options = {}) {
   try {
     res = await fetch(fullUrl, { ...options, headers });
   } catch (networkError) {
-    // Lỗi network (backend tắt, CORS, timeout, ...).
-    // Ném ra Error với message chuẩn để UI hiển thị.
     const err = new Error('Không thể kết nối tới máy chủ. Vui lòng thử lại sau.');
     err.isNetworkError = true;
     err.cause = networkError;
@@ -100,8 +86,6 @@ export async function request(url, options = {}) {
     err.status = res.status;
     err.response = json;
 
-    // Nếu là 401 nhưng KHÔNG phải login/register → auto logout + redirect.
-    // Các màn đăng nhập / đăng ký sẽ tự xử lý 401 để hiển thị message.
     const isAuthRoute =
       typeof url === 'string' &&
       (url.includes('/v1/api/auth/login') || url.includes('/v1/api/auth/register'));
@@ -125,84 +109,62 @@ export async function request(url, options = {}) {
   return json;
 }
 
-/**
- * GET /v1/api/product – danh sách sản phẩm.
- * Nếu chưa cấu hình API thì trả về null để caller dùng fallback (JSON).
- */
+/** GET /v1/api/products → mảng sản phẩm đã chuẩn hóa, hoặc null khi lỗi. */
 export async function getProducts() {
   if (!isApiConfigured()) return null;
 
   try {
-    const res = await request('/v1/api/product');
-    const list = getPayload(res);
-    return Array.isArray(list) ? list : [];
+    const res = await request('/v1/api/products');
+    const data = getPayload(res);
+    const products = data?.products;
+    if (Array.isArray(products)) return normalizeProducts(products);
+    return [];
   } catch (err) {
-    // Nếu là lỗi network hoặc server down, cho phép fallback sang JSON tĩnh.
-    // Log ra console để tiện debug, nhưng không làm vỡ UI.
-    // eslint-disable-next-line no-console
-    console.error('Lỗi gọi API /v1/api/product:', err);
+    console.error('Lỗi gọi API /v1/api/products:', err);
     return null;
   }
 }
 
-/**
- * Lấy danh sách sản phẩm: dùng API nếu đã cấu hình, không thì fetch JSON.
- */
+/** Danh sách sản phẩm: API trước, fallback JSON; luôn trả mảng đã chuẩn hóa. */
 export async function getProductsList() {
   try {
     const list = await getProducts();
-    // Nếu API trả về list (kể cả rỗng) thì dùng luôn.
     if (Array.isArray(list)) return list;
-  } catch (err) {
-    // Đã log ở getProducts, không cần log thêm.
-  }
+  } catch (err) {}
 
-  // Fallback: fetch JSON giả (có thể dùng metadata hoặc data)
   const res = await fetch('/data/products.json');
   if (!res.ok) throw new Error('Không tải được danh sách sản phẩm.');
   const data = await res.json();
-  // File JSON giả có thể dùng metadata hoặc data
   const payload = data.metadata ?? data.data ?? data;
-  return Array.isArray(payload) ? payload : [];
+  const arr = Array.isArray(payload) ? payload : [];
+  return normalizeProducts(arr);
 }
 
-/**
- * GET /v1/api/product/:id – lấy chi tiết sản phẩm theo ID.
- * Nếu chưa cấu hình API thì trả về null để caller dùng fallback (JSON).
- */
+/** Chi tiết 1 sản phẩm theo ID (lấy từ list, chuẩn hóa). */
 export async function getProductById(id) {
-  if (!isApiConfigured()) return null;
-
   try {
-    const res = await request(`/v1/api/product/${id}`);
-    const product = getPayload(res);
-    return product || null;
+    const list = await getProductsList();
+    const found = list.find((p) => String(p.product_id) === String(id));
+    return found ? normalizeProduct(found) : null;
   } catch (err) {
-    // Nếu backend không kết nối được (hoặc lỗi mạng), cho phép fallback sang JSON tĩnh ở tầng gọi (ProductDetail).
-    // eslint-disable-next-line no-console
-    console.error(`Lỗi gọi API /v1/api/product/${id}:`, err);
+    console.error('Lỗi getProductById:', err);
     return null;
   }
 }
 
-/**
- * POST /v1/api/auth/login – body { email, password }.
- */
+/** POST login; token lấy từ payload.accessToken. */
 export async function login(email, password) {
   const res = await request('/v1/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
   const payload = getPayload(res);
-  // Hỗ trợ cả 2 format: tokens.accessToken (spec mới) và token (format hiện tại)
-  const token = payload?.tokens?.accessToken || payload?.token;
+  const token = payload?.accessToken || payload?.tokens?.accessToken || payload?.token;
   const user = payload?.user;
   return { token, user, response: res };
 }
 
-/**
- * POST /v1/api/auth/register – body { email, password, name }.
- */
+/** POST register. */
 export async function register(email, password, name) {
   const res = await request('/v1/api/auth/register', {
     method: 'POST',
@@ -212,13 +174,11 @@ export async function register(email, password, name) {
   return { user: payload?.user || payload, response: res };
 }
 
-/**
- * POST /v1/api/order – body { productId, quantity }, cần Authorization.
- */
-export async function createOrder(productId, quantity) {
+/** POST order – body { productId, quantity, price }. */
+export async function createOrder(productId, quantity, price) {
   const res = await request('/v1/api/order', {
     method: 'POST',
-    body: JSON.stringify({ productId, quantity }),
+    body: JSON.stringify({ productId, quantity, price }),
   });
   const payload = getPayload(res);
   return { message: res.message || payload?.message, metadata: payload, response: res };
