@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { flushSync } from 'react-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import { getFlashSaleStatus } from '../utils/flashSaleUtils';
 import CountdownTimer from '../components/CountdownTimer';
@@ -15,6 +16,7 @@ function formatPrice(price) {
 
 function ProductDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,10 @@ function ProductDetail() {
   const [orderError, setOrderError] = useState('');
   const [orderSuccess, setOrderSuccess] = useState('');
   const [orderSubmitting, setOrderSubmitting] = useState(false);
+  /** 4b.1: Trạng thái màn kết quả đơn hàng — 'success' | 'error' | null */
+  const [orderResult, setOrderResult] = useState(null);
+  const [orderResultMessage, setOrderResultMessage] = useState('');
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [flashSaleStatus, setFlashSaleStatus] = useState(null);
   const { productStockUpdates, socket, connectionStatus, systemError } = useSocket();
   const prevConnectionStatusRef = useRef(undefined);
@@ -61,6 +67,14 @@ function ProductDetail() {
 
     load();
     return () => { cancelled = true; };
+  }, [id]);
+
+  // 4b.4: Reset kết quả đơn hàng khi đổi sản phẩm hoặc vào lại trang
+  useEffect(() => {
+    setOrderResult(null);
+    setOrderResultMessage('');
+    setOrderError('');
+    setOrderSuccess('');
   }, [id]);
 
   // Update Flash Sale status mỗi giây
@@ -136,25 +150,40 @@ function ProductDetail() {
   const handleBuyNow = async () => {
     setOrderError('');
     setOrderSuccess('');
+    setOrderResult(null);
+    setOrderResultMessage('');
 
     const token = api.getToken();
     if (!token) {
-      setOrderError('Vui lòng đăng nhập để đặt hàng.');
+      setShowLoginModal(true);
       return;
     }
 
     const qty = Math.max(1, Math.floor(Number(quantity)) || 1);
     setOrderSubmitting(true);
+    flushSync(() => {}); // Ép React vẽ overlay trước khi gọi API
     try {
       if (api.isApiConfigured()) {
         const price = product.product_price ?? product.productPrice ?? 0;
-        await api.createOrder(product.product_id, qty, price);
-        setOrderSuccess('Đơn hàng đang được xử lý.');
+        const result = await api.createOrder(product.product_id, qty, price);
+        const msg = result?.message || 'Đơn hàng đang được xử lý.';
+        setOrderSuccess(msg);
+        setOrderResult('success');
+        setOrderResultMessage(msg);
+        // Giữ overlay ít nhất 800ms để user thấy "Đơn hàng đang được xử lý…"
+        await new Promise((r) => setTimeout(r, 200));
         return;
       }
-      setOrderSuccess('Đơn hàng đang được xử lý. (Chưa kết nối API)');
+      const msg = 'Đơn hàng đang được xử lý. (Chưa kết nối API)';
+      setOrderSuccess(msg);
+      setOrderResult('success');
+      setOrderResultMessage(msg);
+      await new Promise((r) => setTimeout(r, 800));
     } catch (err) {
-      setOrderError(err.message || 'Đặt hàng thất bại. Vui lòng thử lại.');
+      const msg = err.message || 'Đặt hàng thất bại. Vui lòng thử lại.';
+      setOrderError(msg);
+      setOrderResult('error');
+      setOrderResultMessage(msg);
     } finally {
       setOrderSubmitting(false);
     }
@@ -319,6 +348,160 @@ function ProductDetail() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* 4a.3 Overlay Loading/Queue khi đang gửi đơn */}
+      {orderSubmitting && (
+        <div
+          className="product-detail-order-overlay"
+          role="status"
+          aria-live="polite"
+          aria-label="Đơn hàng đang được xử lý"
+        >
+          <div className="product-detail-order-overlay-box">
+            <div className="product-detail-order-overlay-spinner" aria-hidden="true" />
+            <p className="product-detail-order-overlay-text">Đơn hàng đang được xử lý…</p>
+            <p className="product-detail-order-overlay-hint">Vui lòng chờ, không đóng trang.</p>
+          </div>
+        </div>
+      )}
+
+      {/* 4b.2 Modal kết quả thành công */}
+      {orderResult === 'success' && (
+        <div
+          className="product-detail-result-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="order-result-success-title"
+        >
+          <div className="product-detail-result-modal product-detail-result-modal--success">
+            <button
+              type="button"
+              className="product-detail-result-modal-close"
+              onClick={() => {
+                setOrderResult(null);
+                setOrderResultMessage('');
+                setOrderSuccess('');
+                setOrderError('');
+              }}
+              aria-label="Đóng thông báo"
+            >
+              ×
+            </button>
+            <h2 id="order-result-success-title" className="product-detail-result-modal-title">
+              Đặt hàng thành công
+            </h2>
+            <p className="product-detail-result-modal-message">{orderResultMessage}</p>
+            <div className="product-detail-result-modal-actions">
+              <button
+                type="button"
+                className="product-detail-result-modal-btn product-detail-result-modal-btn--primary"
+                onClick={() => navigate('/')}
+              >
+                Về trang chủ
+              </button>
+              <button
+                type="button"
+                className="product-detail-result-modal-btn product-detail-result-modal-btn--secondary"
+                onClick={() => navigate('/account')}
+              >
+                Xem đơn hàng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4b.3 Modal kết quả thất bại */}
+      {orderResult === 'error' && (
+        <div
+          className="product-detail-result-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="order-result-error-title"
+        >
+          <div className="product-detail-result-modal product-detail-result-modal--error">
+            <button
+              type="button"
+              className="product-detail-result-modal-close"
+              onClick={() => {
+                setOrderResult(null);
+                setOrderResultMessage('');
+                setOrderError('');
+                setOrderSuccess('');
+              }}
+              aria-label="Đóng và thử lại"
+            >
+              ×
+            </button>
+            <h2 id="order-result-error-title" className="product-detail-result-modal-title">
+              Đặt hàng thất bại
+            </h2>
+            <p className="product-detail-result-modal-message">{orderResultMessage}</p>
+            <div className="product-detail-result-modal-actions">
+              <button
+                type="button"
+                className="product-detail-result-modal-btn product-detail-result-modal-btn--primary"
+                onClick={() => {
+                  setOrderResult(null);
+                  setOrderResultMessage('');
+                  setOrderError('');
+                  setOrderSuccess('');
+                }}
+              >
+                Thử lại
+              </button>
+              <button
+                type="button"
+                className="product-detail-result-modal-btn product-detail-result-modal-btn--secondary"
+                onClick={() => {
+                  setOrderResult(null);
+                  setOrderResultMessage('');
+                  setOrderError('');
+                  setOrderSuccess('');
+                  navigate('/');
+                }}
+              >
+                Quay lại
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4a.2 Modal đăng nhập khi bấm Mua Ngay chưa login */}
+      {showLoginModal && (
+        <div
+          className="product-detail-login-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="login-modal-title"
+        >
+          <div className="product-detail-login-modal">
+            <h2 id="login-modal-title" className="product-detail-login-modal-title">
+              Vui lòng đăng nhập để đặt hàng
+            </h2>
+            <p className="product-detail-login-modal-text">
+              Bạn cần đăng nhập để thực hiện mua sản phẩm này.
+            </p>
+            <div className="product-detail-login-modal-actions">
+              <button
+                type="button"
+                className="product-detail-login-modal-btn product-detail-login-modal-btn--primary"
+                onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`, { replace: false })}
+              >
+                Đăng nhập
+              </button>
+              <button
+                type="button"
+                className="product-detail-login-modal-btn product-detail-login-modal-btn--secondary"
+                onClick={() => setShowLoginModal(false)}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

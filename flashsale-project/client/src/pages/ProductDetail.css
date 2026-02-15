@@ -366,3 +366,226 @@
     gap: 3rem;
   }
 }
+
+/* 4a.2 Modal đăng nhập khi chưa login */
+.product-detail-login-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.product-detail-login-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.product-detail-login-modal-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-detail-login-modal-text {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.product-detail-login-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.product-detail-login-modal-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.product-detail-login-modal-btn--primary {
+  background: #c00a27;
+  color: #fff;
+}
+
+.product-detail-login-modal-btn--primary:hover {
+  background: #a00820;
+}
+
+.product-detail-login-modal-btn--secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.product-detail-login-modal-btn--secondary:hover {
+  background: #e0e0e0;
+}
+
+/* 4b.2 + 4b.3 Modal kết quả đơn hàng (thành công / thất bại) */
+.product-detail-result-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+  padding: 1rem;
+}
+
+.product-detail-result-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.product-detail-result-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.product-detail-result-modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.product-detail-result-modal--success .product-detail-result-modal-title {
+  color: #0a7c42;
+}
+
+.product-detail-result-modal--error .product-detail-result-modal-title {
+  color: #c00a27;
+}
+
+.product-detail-result-modal-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-detail-result-modal-message {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.product-detail-result-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.product-detail-result-modal-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.product-detail-result-modal-btn--primary {
+  background: #c00a27;
+  color: #fff;
+}
+
+.product-detail-result-modal-btn--primary:hover {
+  background: #a00820;
+}
+
+.product-detail-result-modal-btn--secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.product-detail-result-modal-btn--secondary:hover {
+  background: #e0e0e0;
+}
+
+/* 4a.3 Overlay Loading/Queue khi đang gửi đơn */
+.product-detail-order-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  padding: 1rem;
+  pointer-events: auto;
+}
+
+.product-detail-order-overlay-box {
+  text-align: center;
+  max-width: 320px;
+}
+
+.product-detail-order-overlay-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem auto;
+  border: 4px solid #eee;
+  border-top-color: #c00a27;
+  border-radius: 50%;
+  animation: product-detail-spin 0.9s linear infinite;
+}
+
+.product-detail-order-overlay-text {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-detail-order-overlay-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+@keyframes product-detail-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

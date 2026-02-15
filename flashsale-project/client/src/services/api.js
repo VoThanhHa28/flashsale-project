@@ -51,10 +51,29 @@ export function getPayload(res) {
   return res;
 }
 
+/** Ánh xạ thông báo lỗi tiếng Anh (backend/HTTP) sang tiếng Việt */
+const ERROR_MESSAGES_VI = {
+  'Internal Server Error': 'Lỗi máy chủ. Vui lòng thử lại sau.',
+  'Bad Request': 'Yêu cầu không hợp lệ. Vui lòng thử lại.',
+  'Not Found': 'Không tìm thấy.',
+  'Unauthorized': 'Vui lòng đăng nhập.',
+  'Forbidden': 'Bạn không có quyền thực hiện.',
+  'Network Error': 'Không thể kết nối. Vui lòng thử lại.',
+  'Failed to fetch': 'Không thể kết nối tới máy chủ. Vui lòng thử lại sau.',
+  'The client is closed': 'Kết nối dịch vụ đã đóng. Vui lòng thử lại sau.',
+};
+
+function translateErrorToVietnamese(msg) {
+  if (!msg || typeof msg !== 'string') return 'Đã xảy ra lỗi. Vui lòng thử lại.';
+  const trimmed = msg.trim();
+  return ERROR_MESSAGES_VI[trimmed] || ERROR_MESSAGES_VI[trimmed.toLowerCase()] || trimmed;
+}
+
 export function getErrorMessage(res) {
-  if (res && typeof res.message === 'string') return res.message;
-  if (res && res.data && typeof res.data.message === 'string') return res.data.message;
-  return 'Đã xảy ra lỗi. Vui lòng thử lại.';
+  let raw = '';
+  if (res && typeof res.message === 'string') raw = res.message;
+  else if (res && res.data && typeof res.data.message === 'string') raw = res.data.message;
+  return translateErrorToVietnamese(raw || 'Đã xảy ra lỗi. Vui lòng thử lại.');
 }
 
 export async function request(url, options = {}) {
@@ -81,7 +100,12 @@ export async function request(url, options = {}) {
   json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const message = getErrorMessage(json) || res.statusText;
+    const raw =
+      (json && typeof json.message === 'string' && json.message) ||
+      (json && json.data && typeof json.data.message === 'string' && json.data.message) ||
+      res.statusText ||
+      '';
+    const message = translateErrorToVietnamese(raw || 'Đã xảy ra lỗi. Vui lòng thử lại.');
     const err = new Error(message);
     err.status = res.status;
     err.response = json;
