@@ -4,6 +4,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import { getFlashSaleStatus } from '../utils/flashSaleUtils';
 import CountdownTimer from '../components/CountdownTimer';
+import OrderResultModal from '../components/OrderResultModal';
+import { useOrderResult } from '../hooks/useOrderResult';
 import './ProductDetail.css';
 import { useSocket } from '../contexts/SocketContext';
 
@@ -22,16 +24,26 @@ function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [orderError, setOrderError] = useState('');
-  const [orderSuccess, setOrderSuccess] = useState('');
-  const [orderSubmitting, setOrderSubmitting] = useState(false);
-  /** 4b.1: Trạng thái màn kết quả đơn hàng — 'success' | 'error' | null */
-  const [orderResult, setOrderResult] = useState(null);
-  const [orderResultMessage, setOrderResultMessage] = useState('');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [flashSaleStatus, setFlashSaleStatus] = useState(null);
+  const {
+    orderResult,
+    setOrderResult,
+    orderResultMessage,
+    setOrderResultMessage,
+    orderSubmitting,
+    setOrderSubmitting,
+    orderError,
+    setOrderError,
+    orderSuccess,
+    setOrderSuccess,
+    resetOrderResult,
+  } = useOrderResult();
   const { productStockUpdates, socket, connectionStatus, systemError } = useSocket();
   const prevConnectionStatusRef = useRef(undefined);
+  const successModalCloseRef = useRef(null);
+  const errorModalCloseRef = useRef(null);
+  const loginModalFirstRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,11 +83,19 @@ function ProductDetail() {
 
   // 4b.4: Reset kết quả đơn hàng khi đổi sản phẩm hoặc vào lại trang
   useEffect(() => {
-    setOrderResult(null);
-    setOrderResultMessage('');
-    setOrderError('');
-    setOrderSuccess('');
-  }, [id]);
+    resetOrderResult();
+  }, [id, resetOrderResult]);
+
+  // 5.3 Accessibility: focus vào nút đầu tiên khi mở modal
+  useEffect(() => {
+    if (orderResult === 'success') successModalCloseRef.current?.focus();
+  }, [orderResult]);
+  useEffect(() => {
+    if (orderResult === 'error') errorModalCloseRef.current?.focus();
+  }, [orderResult]);
+  useEffect(() => {
+    if (showLoginModal) loginModalFirstRef.current?.focus();
+  }, [showLoginModal]);
 
   // Update Flash Sale status mỗi giây
   useEffect(() => {
@@ -171,7 +191,7 @@ function ProductDetail() {
         setOrderResult('success');
         setOrderResultMessage(msg);
         // Giữ overlay ít nhất 800ms để user thấy "Đơn hàng đang được xử lý…"
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 800));
         return;
       }
       const msg = 'Đơn hàng đang được xử lý. (Chưa kết nối API)';
@@ -274,27 +294,47 @@ function ProductDetail() {
             <div className="product-detail-price-block">
               <span className="product-detail-price">{formatPrice(product.product_price)}</span>
               {product.product_quantity != null && (
-                <span className="product-detail-stock">Còn lại: {product.product_quantity} sản phẩm</span>
+                <span
+                  className={`product-detail-stock-badge ${
+                    product.product_quantity <= 5 ? 'product-detail-stock-badge--low' : ''
+                  }`}
+                  role="status"
+                >
+                  {product.product_quantity <= 5 && <span className="product-detail-stock-badge-icon" aria-hidden>🔥</span>}
+                  Còn {product.product_quantity} sản phẩm
+                </span>
               )}
             </div>
             {product.product_description && (
               <p className="product-detail-desc">{product.product_description}</p>
             )}
-            
-            {/* Countdown Timer */}
-            {flashSaleStatus?.status === 'before-start' && product.product_start_time && (
-              <CountdownTimer 
-                targetTime={product.product_start_time} 
-                label="Sắp mở bán"
-              />
+
+            {/* Flash Sale: countdown nổi bật + copy gấp/khan hiếm */}
+            {(flashSaleStatus?.status === 'before-start' || flashSaleStatus?.status === 'active') && (
+              <div className="product-detail-flash-block">
+                <span className="product-detail-flash-badge">FLASH SALE</span>
+                {flashSaleStatus?.status === 'before-start' && product.product_start_time && (
+                  <CountdownTimer
+                    targetTime={product.product_start_time}
+                    label="Sắp mở bán"
+                  />
+                )}
+                {flashSaleStatus?.status === 'active' && product.product_end_time && (
+                  <>
+                    <CountdownTimer
+                      targetTime={product.product_end_time}
+                      label="Kết thúc sau"
+                    />
+                    {product.product_quantity != null && product.product_quantity <= 0 ? (
+                      <p className="product-detail-flash-cta product-detail-flash-cta--soldout">Đã hết hàng.</p>
+                    ) : (
+                      <p className="product-detail-flash-cta">Số lượng có hạn – Đặt hàng sớm để tránh hết hàng.</p>
+                    )}
+                  </>
+                )}
+              </div>
             )}
-            {flashSaleStatus?.status === 'active' && product.product_end_time && (
-              <CountdownTimer 
-                targetTime={product.product_end_time} 
-                label="Còn lại"
-              />
-            )}
-            
+
             <div className="product-detail-actions">
               <div className="product-detail-quantity">
                 <label htmlFor="product-quantity">Số lượng</label>
@@ -311,13 +351,20 @@ function ProductDetail() {
               </div>
               {orderError && <p className="product-detail-order-error">{orderError}</p>}
               {orderSuccess && <p className="product-detail-order-success">{orderSuccess}</p>}
+              {/* 5.1 Gợi ý khi nút Mua bị khóa */}
+              {buyButtonDisabled && buyButtonText !== 'MUA NGAY' && (
+                <p className="product-detail-buy-hint" role="status">
+                  {buyButtonText}
+                </p>
+              )}
               <button
                 type="button"
                 className={`product-detail-buy ${buyButtonDisabled ? 'product-detail-buy--disabled' : ''}`}
                 onClick={handleBuyNow}
                 disabled={buyButtonDisabled}
+                aria-label={buyButtonDisabled ? `${buyButtonText}. Nút tạm khóa.` : 'Mua ngay sản phẩm này'}
               >
-                {orderSubmitting && <span className="product-detail-buy-spinner">⏳</span>}
+                {orderSubmitting && <span className="product-detail-buy-spinner" aria-hidden="true">⏳</span>}
                 {buyButtonText}
               </button>
               <Link to="/" className="product-detail-back">← Quay lại danh sách</Link>
@@ -368,105 +415,39 @@ function ProductDetail() {
 
       {/* 4b.2 Modal kết quả thành công */}
       {orderResult === 'success' && (
-        <div
-          className="product-detail-result-modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="order-result-success-title"
-        >
-          <div className="product-detail-result-modal product-detail-result-modal--success">
-            <button
-              type="button"
-              className="product-detail-result-modal-close"
-              onClick={() => {
-                setOrderResult(null);
-                setOrderResultMessage('');
-                setOrderSuccess('');
-                setOrderError('');
-              }}
-              aria-label="Đóng thông báo"
-            >
-              ×
-            </button>
-            <h2 id="order-result-success-title" className="product-detail-result-modal-title">
-              Đặt hàng thành công
-            </h2>
-            <p className="product-detail-result-modal-message">{orderResultMessage}</p>
-            <div className="product-detail-result-modal-actions">
-              <button
-                type="button"
-                className="product-detail-result-modal-btn product-detail-result-modal-btn--primary"
-                onClick={() => navigate('/')}
-              >
-                Về trang chủ
-              </button>
-              <button
-                type="button"
-                className="product-detail-result-modal-btn product-detail-result-modal-btn--secondary"
-                onClick={() => navigate('/account')}
-              >
-                Xem đơn hàng
-              </button>
-            </div>
-          </div>
-        </div>
+        <OrderResultModal
+          variant="success"
+          title="Đặt hàng thành công"
+          message={orderResultMessage}
+          titleId="order-result-success-title"
+          descId="order-result-success-desc"
+          closeButtonRef={successModalCloseRef}
+          onClose={resetOrderResult}
+          onPrimary={() => navigate('/')}
+          onSecondary={() => navigate('/account')}
+          primaryLabel="Về trang chủ"
+          secondaryLabel="Xem đơn hàng"
+        />
       )}
 
       {/* 4b.3 Modal kết quả thất bại */}
       {orderResult === 'error' && (
-        <div
-          className="product-detail-result-modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="order-result-error-title"
-        >
-          <div className="product-detail-result-modal product-detail-result-modal--error">
-            <button
-              type="button"
-              className="product-detail-result-modal-close"
-              onClick={() => {
-                setOrderResult(null);
-                setOrderResultMessage('');
-                setOrderError('');
-                setOrderSuccess('');
-              }}
-              aria-label="Đóng và thử lại"
-            >
-              ×
-            </button>
-            <h2 id="order-result-error-title" className="product-detail-result-modal-title">
-              Đặt hàng thất bại
-            </h2>
-            <p className="product-detail-result-modal-message">{orderResultMessage}</p>
-            <div className="product-detail-result-modal-actions">
-              <button
-                type="button"
-                className="product-detail-result-modal-btn product-detail-result-modal-btn--primary"
-                onClick={() => {
-                  setOrderResult(null);
-                  setOrderResultMessage('');
-                  setOrderError('');
-                  setOrderSuccess('');
-                }}
-              >
-                Thử lại
-              </button>
-              <button
-                type="button"
-                className="product-detail-result-modal-btn product-detail-result-modal-btn--secondary"
-                onClick={() => {
-                  setOrderResult(null);
-                  setOrderResultMessage('');
-                  setOrderError('');
-                  setOrderSuccess('');
-                  navigate('/');
-                }}
-              >
-                Quay lại
-              </button>
-            </div>
-          </div>
-        </div>
+        <OrderResultModal
+          variant="error"
+          title="Đặt hàng thất bại"
+          message={orderResultMessage}
+          titleId="order-result-error-title"
+          descId="order-result-error-desc"
+          closeButtonRef={errorModalCloseRef}
+          onClose={resetOrderResult}
+          onPrimary={resetOrderResult}
+          onSecondary={() => {
+            resetOrderResult();
+            navigate('/');
+          }}
+          primaryLabel="Thử lại"
+          secondaryLabel="Quay lại"
+        />
       )}
 
       {/* 4a.2 Modal đăng nhập khi bấm Mua Ngay chưa login */}
@@ -476,16 +457,18 @@ function ProductDetail() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="login-modal-title"
+          aria-describedby="login-modal-desc"
         >
           <div className="product-detail-login-modal">
             <h2 id="login-modal-title" className="product-detail-login-modal-title">
               Vui lòng đăng nhập để đặt hàng
             </h2>
-            <p className="product-detail-login-modal-text">
+            <p id="login-modal-desc" className="product-detail-login-modal-text">
               Bạn cần đăng nhập để thực hiện mua sản phẩm này.
             </p>
             <div className="product-detail-login-modal-actions">
               <button
+                ref={loginModalFirstRef}
                 type="button"
                 className="product-detail-login-modal-btn product-detail-login-modal-btn--primary"
                 onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/product/${id}`)}`, { replace: false })}

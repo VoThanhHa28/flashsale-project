@@ -36,6 +36,21 @@
   text-decoration: underline;
 }
 
+/* 5.3 Accessibility: focus visible cho keyboard */
+.product-detail-back:focus-visible,
+.product-detail-buy:focus-visible,
+.product-detail-result-modal-close:focus-visible,
+.product-detail-result-modal-btn:focus-visible,
+.product-detail-login-modal-btn:focus-visible {
+  outline: 2px solid #c00a27;
+  outline-offset: 2px;
+}
+
+.product-detail-quantity-input:focus-visible {
+  outline: 2px solid #c00a27;
+  outline-offset: 0;
+}
+
 /* Khối chính: nền trắng, full width với padding */
 .product-detail-main {
   width: 100%;
@@ -124,6 +139,66 @@
   color: #666;
 }
 
+/* Flash Sale: badge số lượng có hạn */
+.product-detail-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0a7c42;
+  background: #e8f5ee;
+  border-radius: 999px;
+}
+
+.product-detail-stock-badge--low {
+  color: #b45309;
+  background: #fff4e6;
+}
+
+.product-detail-stock-badge-icon {
+  font-size: 1rem;
+}
+
+/* Flash Sale: block countdown + CTA */
+.product-detail-flash-block {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  border: 1px solid rgba(192, 10, 39, 0.2);
+  border-radius: 12px;
+}
+
+.product-detail-flash-badge {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: linear-gradient(135deg, #c00a27 0%, #8b0618 100%);
+  border-radius: 6px;
+}
+
+.product-detail-flash-block .countdown-timer {
+  margin: 0.5rem 0;
+  box-shadow: 0 2px 8px rgba(192, 10, 39, 0.15);
+}
+
+.product-detail-flash-cta {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #8b0618;
+  line-height: 1.4;
+}
+
+.product-detail-flash-cta--soldout {
+  color: #666;
+}
+
 .product-detail-desc {
   margin: 0;
   font-size: 1rem;
@@ -152,6 +227,7 @@
 
 .product-detail-quantity-input {
   width: 5rem;
+  min-height: 44px;
   padding: 0.6rem 0.5rem;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -208,6 +284,13 @@
 
 .product-detail-buy:active {
   transform: scale(0.99);
+}
+
+/* 5.1 Gợi ý khi nút Mua bị khóa (trạng thái đồng bộ) */
+.product-detail-buy-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+  color: #666;
 }
 
 /* Sản phẩm liên quan: full width, nền xám */
@@ -289,6 +372,27 @@
   font-size: 1rem;
   font-weight: 600;
   color: #c00a27;
+}
+
+/* 5.3 Responsive: modal trên màn nhỏ */
+@media (max-width: 380px) {
+  .product-detail-result-modal-overlay,
+  .product-detail-login-modal-overlay {
+    padding: 0.5rem;
+  }
+  .product-detail-result-modal,
+  .product-detail-login-modal {
+    padding: 1.25rem 1rem;
+    max-width: 100%;
+  }
+  .product-detail-result-modal-actions,
+  .product-detail-login-modal-actions {
+    flex-direction: column;
+  }
+  .product-detail-result-modal-btn,
+  .product-detail-login-modal-btn {
+    min-width: 100%;
+  }
 }
 
 @media (min-width: 640px) {

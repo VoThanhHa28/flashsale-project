@@ -18,8 +18,8 @@ function ConnectionStatus() {
 
   return (
     <div className="connection-status" role="alert" aria-live="polite">
-      <span className="connection-status-icon">⚠️</span>
-      <span className="connection-status-text">Đang kết nối lại...</span>
+      <span className="connection-status-icon" aria-hidden="true">⚠️</span>
+      <span className="connection-status-text">Đang kết nối lại... Vui lòng chờ.</span>
     </div>
   );
 }
