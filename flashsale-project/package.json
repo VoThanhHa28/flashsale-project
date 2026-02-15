@@ -11,6 +11,7 @@
         "seed:users": "node src/scripts/seedUsers.js",
         "seed:users:clean": "node src/scripts/seedUsers.js clean",
         "get:products": "node src/scripts/getProducts.js",
+        "extend:flashsale": "node src/scripts/extendFlashSale.js",
         "test:login": "node src/scripts/testLogin.js",
         "test:order": "node src/scripts/testOrder.js",
         "purge:queue": "node src/scripts/purgeQueue.js",
@@ -22,6 +23,7 @@
         "dev-worker": "nodemon src/workers/order.worker.js"
     },
     "dependencies": {
+        "@socket.io/redis-adapter": "^8.3.0",
         "amqplib": "^0.10.9",
         "bcrypt": "^6.0.0",
         "cookie-parser": "~1.4.4",

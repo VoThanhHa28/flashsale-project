@@ -35,6 +35,6 @@ router.use("/v1/api/admin", adminRouter);
 
 // Seed routes (chỉ dùng trong development/testing)
 router.use("/v1/api/seed", seedRouter);
-router.use('/v1/api/users', userRouter);
+//router.use('/v1/api/users', userRouter);
 
 module.exports = router;

@@ -1,11 +1,13 @@
 "use strict";
 
 const { Server } = require("socket.io");
+const { createAdapter } = require("@socket.io/redis-adapter");
+const { createClient } = require("redis");
 const { SOCKET_EVENT, SOCKET_ROOM, SOCKET_MESSAGE } = require("../constants/socket.constant");
 
 let io = null;
 
-const initSocket = (server) => {
+const initSocket = async (server) => {
     if (io) {
         console.log("[Socket.io] Đã khởi tạo trước đó");
         return io;
@@ -13,13 +15,29 @@ const initSocket = (server) => {
 
     io = new Server(server, {
         cors: {
-            origin: process.env.CLIENT_URL || "http://localhost:3001",
+            origin: [process.env.CLIENT_URL || "http://localhost:3001", "http://localhost:3000", "http://localhost:3002", "http://localhost:5173"],
             methods: ["GET", "POST"],
             credentials: true,
         },
         pingTimeout: 60000,
         pingInterval: 25000,
     });
+
+    // Setup Redis Adapter (cho phép nhiều Socket.io servers share events)
+    try {
+        const pubClient = createClient({
+            url: process.env.REDIS_URL || "redis://localhost:6379",
+        });
+        const subClient = pubClient.duplicate();
+
+        await Promise.all([pubClient.connect(), subClient.connect()]);
+
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log("[Socket.io] ✅ Redis Adapter kích hoạt - Multi-server mode");
+    } catch (error) {
+        console.warn("[Socket.io] ⚠️  Redis Adapter không khả dụng:", error.message);
+        console.warn("[Socket.io] ⚠️  Chạy ở Single-server mode");
+    }
 
     console.log("[Socket.io] Khởi tạo thành công");
 

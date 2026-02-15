@@ -33,17 +33,17 @@ const connectMongoDB = async () => {
 /**
  * Khởi tạo Socket.io cho Worker
  */
-const initWorkerSocket = () => {
-    return new Promise((resolve, reject) => {
-        try {
-            // Tạo HTTP server đơn giản cho Socket.io
-            const server = http.createServer();
-            let port = parseInt(process.env.SOCKET_PORT) || 3001;
+const initWorkerSocket = async () => {
+    try {
+        // Tạo HTTP server đơn giản cho Socket.io
+        const server = http.createServer();
+        let port = parseInt(process.env.SOCKET_PORT) || 3001;
 
-            // Khởi tạo Socket.io
-            initSocket(server);
+        // Khởi tạo Socket.io với Redis Adapter
+        await initSocket(server);
 
-            // Xử lý lỗi khi port bị chiếm
+        // Lắng nghe port (cho worker process monitoring)
+        await new Promise((resolve, reject) => {
             server.on("error", (err) => {
                 if (err.code === "EADDRINUSE") {
                     console.log(`[Socket.io] ⚠️  Port ${port} đã được sử dụng, thử port ${port + 1}...`);
@@ -58,16 +58,17 @@ const initWorkerSocket = () => {
                 }
             });
 
-            // Lắng nghe port
             server.listen(port, () => {
-                console.log(`[Socket.io] ✅ Đang chạy trên port ${port}`);
+                console.log(`[Socket.io] ✅ Worker Socket running on port ${port}`);
                 resolve(server);
             });
-        } catch (error) {
-            console.error("[Socket.io] ❌ Lỗi khởi tạo:", error.message);
-            reject(error);
-        }
-    });
+        });
+
+        return server;
+    } catch (error) {
+        console.error("[Socket.io] ❌ Lỗi khởi tạo:", error.message);
+        throw error;
+    }
 };
 
 /**

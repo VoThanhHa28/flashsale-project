@@ -132,14 +132,15 @@ class OrderService {
                 remainingStock = await redisClient.get(keyStock);
             }
 
-            io.to(roomName).emit(CONST.SOCKET.SOCKET_EVENT.UPDATE_STOCK, {
+            // Broadcast to ALL clients (không dùng room)
+            io.emit(CONST.SOCKET.SOCKET_EVENT.UPDATE_STOCK, {
                 productId,
                 quantity,
                 remainingStock: remainingStock ? parseInt(remainingStock) : 0,
                 timestamp: Date.now(),
             });
 
-            console.log(`[OrderService] 📡 Đã phát socket event: ${roomName}`);
+            console.log(`[OrderService] 📡 Đã broadcast stock update cho product ${productId}`);
         } catch (error) {
             console.error(`[OrderService] ❌ Lỗi notifyStockUpdate:`, error.message);
             // Không throw error để worker không bị crash nếu socket có vấn đề
