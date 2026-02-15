@@ -141,16 +141,14 @@ class OrderService {
             console.log(`[OrderService] 📡 Đã phát socket event update-stock (broadcast)`);
         } catch (error) {
             console.error(`[OrderService] ❌ Lỗi notifyStockUpdate:`, error.message);
-            // Case 3: BE sống, DB/Redis chết → báo FE disable nút Mua, hiện "Bảo trì"
-            // Worker chạy process riêng; Socket.IO dùng Redis adapter nên khi Redis chết emit từ Worker không tới client.
-            // → Luôn gọi Main App qua HTTP để Main App emit system-error tới client đang kết nối.
+            // Hồng sửa – khi Redis chết Worker emit Socket không tới client, nên gọi Main App qua HTTP để emit system-error cho FE hiện "Bảo trì" (Case 3)
             try {
                 const io = getIO();
                 io.emit(CONST.SOCKET.SOCKET_EVENT.SYSTEM_ERROR, { message: "Hệ thống đang bảo trì" });
             } catch (_) {
                 // Bỏ qua nếu Worker emit fail (vd không có adapter)
             }
-            // APP_URL: khi Worker chạy trong Docker thì set APP_URL=http://backend:3000 (tên service)
+            // Hồng sửa – gọi Main App POST /internal/emit-system-error để broadcast system-error tới client
             const appUrl = process.env.APP_URL || process.env.BACKEND_URL || "http://localhost:3000";
             const secret = process.env.INTERNAL_EMIT_SECRET || "flashsale-internal-dev";
             const httpRes = await fetch(`${appUrl}/internal/emit-system-error`, {

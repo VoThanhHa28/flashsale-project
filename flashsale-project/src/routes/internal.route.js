@@ -1,6 +1,9 @@
 "use strict";
 
 /**
+ * Hồng sửa – route nội bộ để Worker gọi Main App emit system-error khi Redis chết (Case 3);
+ * FE chỉ lắng nghe event nên cần BE có endpoint này để client nhận "Hệ thống đang bảo trì".
+ *
  * Route nội bộ: chỉ cho Worker (hoặc service cùng hệ thống) gọi.
  * Dùng khi Redis chết → Worker không emit Socket qua Redis adapter được
  * → Worker gọi HTTP tới Main App → Main App emit system-error tới client (Case 3).
