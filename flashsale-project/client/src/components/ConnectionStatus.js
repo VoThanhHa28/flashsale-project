@@ -6,10 +6,13 @@ import { useSocket } from '../contexts/SocketContext';
 import './ConnectionStatus.css';
 
 function ConnectionStatus() {
-  const { connectionStatus } = useSocket();
+  const { connectionStatus, connectionAttempted } = useSocket();
 
-  // Chỉ hiển thị khi đang reconnect
-  if (connectionStatus !== 'reconnecting') {
+  // Hiển thị khi mất kết nối hoặc đang thử kết nối lại (và đã từng có attempt, tránh hiện lúc mới load)
+  const showBanner =
+    connectionAttempted &&
+    (connectionStatus === 'reconnecting' || connectionStatus === 'disconnected');
+  if (!showBanner) {
     return null;
   }
 

@@ -124,7 +124,6 @@ class OrderService {
     static async notifyStockUpdate(productId, quantity, remainingStock) {
         try {
             const io = getIO();
-            const roomName = CONST.SOCKET.SOCKET_ROOM.PRODUCT(productId);
 
             // Lấy remaining stock từ Redis nếu không được cung cấp
             if (remainingStock === null || remainingStock === undefined) {
@@ -132,17 +131,43 @@ class OrderService {
                 remainingStock = await redisClient.get(keyStock);
             }
 
-            io.to(roomName).emit(CONST.SOCKET.SOCKET_EVENT.UPDATE_STOCK, {
+            io.emit(CONST.SOCKET.SOCKET_EVENT.UPDATE_STOCK, {
                 productId,
                 quantity,
                 remainingStock: remainingStock ? parseInt(remainingStock) : 0,
                 timestamp: Date.now(),
             });
 
-            console.log(`[OrderService] 📡 Đã phát socket event: ${roomName}`);
+            console.log(`[OrderService] 📡 Đã phát socket event update-stock (broadcast)`);
         } catch (error) {
             console.error(`[OrderService] ❌ Lỗi notifyStockUpdate:`, error.message);
-            // Không throw error để worker không bị crash nếu socket có vấn đề
+            // Case 3: BE sống, DB/Redis chết → báo FE disable nút Mua, hiện "Bảo trì"
+            // Worker chạy process riêng; Socket.IO dùng Redis adapter nên khi Redis chết emit từ Worker không tới client.
+            // → Luôn gọi Main App qua HTTP để Main App emit system-error tới client đang kết nối.
+            try {
+                const io = getIO();
+                io.emit(CONST.SOCKET.SOCKET_EVENT.SYSTEM_ERROR, { message: "Hệ thống đang bảo trì" });
+            } catch (_) {
+                // Bỏ qua nếu Worker emit fail (vd không có adapter)
+            }
+            // APP_URL: khi Worker chạy trong Docker thì set APP_URL=http://backend:3000 (tên service)
+            const appUrl = process.env.APP_URL || process.env.BACKEND_URL || "http://localhost:3000";
+            const secret = process.env.INTERNAL_EMIT_SECRET || "flashsale-internal-dev";
+            const httpRes = await fetch(`${appUrl}/internal/emit-system-error`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Internal-Secret": secret,
+                },
+                body: JSON.stringify({ message: "Hệ thống đang bảo trì" }),
+            }).catch((e) => {
+                console.warn("[OrderService] Gọi internal emit-system-error thất bại:", e?.message);
+            });
+            if (httpRes && !httpRes.ok) {
+                const text = await httpRes.text().catch(() => "");
+                console.warn("[OrderService] Main App trả lỗi:", httpRes.status, text);
+            }
+            // Không throw để worker không crash
         }
     }
 

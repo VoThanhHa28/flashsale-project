@@ -15,6 +15,9 @@ const SOCKET_EVENT = {
     FLASH_SALE_END: "flash-sale-end",
     FLASH_SALE_UPDATE: "flash-sale-update",
 
+    // Case 3: BE sống, DB/Redis chết → báo FE hiện "Hệ thống đang bảo trì"
+    SYSTEM_ERROR: "system-error",
+
     // Client → Server Events
     JOIN_PRODUCT_ROOM: "join-product-room",
     LEAVE_PRODUCT_ROOM: "leave-product-room",

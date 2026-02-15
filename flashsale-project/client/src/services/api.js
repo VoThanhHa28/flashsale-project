@@ -174,11 +174,11 @@ export async function register(email, password, name) {
   return { user: payload?.user || payload, response: res };
 }
 
-/** POST order – body { productId, quantity, price }. */
+/** POST order – body { items: [{ productId, quantity }] } (BE lấy giá từ DB). */
 export async function createOrder(productId, quantity, price) {
   const res = await request('/v1/api/order', {
     method: 'POST',
-    body: JSON.stringify({ productId, quantity, price }),
+    body: JSON.stringify({ items: [{ productId, quantity }] }),
   });
   const payload = getPayload(res);
   return { message: res.message || payload?.message, metadata: payload, response: res };

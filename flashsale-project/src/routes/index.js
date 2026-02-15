@@ -8,6 +8,8 @@ const productRouter = require("./product.route");
 const adminRouter = require("./admin.route");
 const seedRouter = require("./seed.route");
 const userRouter = require("./user.route");
+// Route nội bộ: Worker gọi để Main App emit system-error khi Redis chết (Case 3)
+const internalRouter = require("./internal.route");
 
 // 1. Route kiểm tra Server sống hay chết (Health Check)
 router.get("/", (req, res) => {
@@ -37,5 +39,8 @@ router.use("/v1/api/admin", adminRouter);
 // Seed routes (chỉ dùng trong development/testing)
 router.use("/v1/api/seed", seedRouter);
 router.use('/v1/api/users', userRouter);
+
+// Internal: Worker → Main App emit system-error (Case 3, Redis down)
+router.use("/internal", internalRouter);
 
 module.exports = router;

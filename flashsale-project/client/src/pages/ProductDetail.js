@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import * as api from '../services/api';
 import { getFlashSaleStatus } from '../utils/flashSaleUtils';
@@ -24,7 +24,8 @@ function ProductDetail() {
   const [orderSuccess, setOrderSuccess] = useState('');
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [flashSaleStatus, setFlashSaleStatus] = useState(null);
-  const { productStockUpdates, socket } = useSocket();
+  const { productStockUpdates, socket, connectionStatus, systemError } = useSocket();
+  const prevConnectionStatusRef = useRef(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +93,22 @@ function ProductDetail() {
       }));
     }
   }, [product?.product_id, productStockUpdates]);
+
+  // Case 2: Khi kết nối lại thành công → refetch product để lấy stock mới nhất
+  useEffect(() => {
+    if (!id) return;
+    if (connectionStatus !== 'connected') {
+      prevConnectionStatusRef.current = connectionStatus;
+      return;
+    }
+    const prev = prevConnectionStatusRef.current;
+    prevConnectionStatusRef.current = connectionStatus;
+    if (prev === 'disconnected' || prev === 'reconnecting') {
+      api.getProductById(id).then((updated) => {
+        if (updated) setProduct(updated);
+      });
+    }
+  }, [connectionStatus, id]);
 
   // Lắng nghe flash-sale-start event để reload nút MUA
   useEffect(() => {
@@ -176,16 +193,26 @@ function ProductDetail() {
 
   const qty = Math.max(1, Math.floor(Number(quantity)) || 1);
   const maxQty = product.product_quantity != null ? Math.max(1, product.product_quantity) : 99;
-  
+
+  // Case 1: Mất kết nối → khóa nút Mua. Case 3: system-error → bảo trì
+  const isConnected = connectionStatus === 'connected';
+  const maintenanceMode = Boolean(systemError?.message);
+
   // Tính toán trạng thái nút Mua
   const isSoldOut = product.product_quantity != null && product.product_quantity <= 0;
-  const canBuy = flashSaleStatus?.canBuy && !isSoldOut && !orderSubmitting;
-  
+  const canBuy = flashSaleStatus?.canBuy && !isSoldOut && !orderSubmitting && isConnected && !maintenanceMode;
+
   // Text và disabled state cho nút Mua
   let buyButtonText = 'MUA NGAY';
   let buyButtonDisabled = !canBuy;
-  
-  if (orderSubmitting) {
+
+  if (maintenanceMode) {
+    buyButtonText = systemError?.message || 'Hệ thống đang bảo trì';
+    buyButtonDisabled = true;
+  } else if (!isConnected) {
+    buyButtonText = 'Mất kết nối – vui lòng chờ';
+    buyButtonDisabled = true;
+  } else if (orderSubmitting) {
     buyButtonText = 'Đang xử lý...';
   } else if (isSoldOut) {
     buyButtonText = 'SOLD OUT';

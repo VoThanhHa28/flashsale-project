@@ -31,43 +31,14 @@ const connectMongoDB = async () => {
 };
 
 /**
- * Khởi tạo Socket.io cho Worker
+ * Khởi tạo Socket.io cho Worker (không listen port).
+ * Dùng chung Redis adapter với App → emit từ Worker vẫn tới client đang connect App.
  */
-const initWorkerSocket = () => {
-    return new Promise((resolve, reject) => {
-        try {
-            // Tạo HTTP server đơn giản cho Socket.io
-            const server = http.createServer();
-            let port = parseInt(process.env.SOCKET_PORT) || 3001;
-
-            // Khởi tạo Socket.io
-            initSocket(server);
-
-            // Xử lý lỗi khi port bị chiếm
-            server.on("error", (err) => {
-                if (err.code === "EADDRINUSE") {
-                    console.log(`[Socket.io] ⚠️  Port ${port} đã được sử dụng, thử port ${port + 1}...`);
-                    port++;
-                    setTimeout(() => {
-                        server.close();
-                        server.listen(port);
-                    }, 100);
-                } else {
-                    console.error("[Socket.io] ❌ Lỗi khởi tạo:", err.message);
-                    reject(err);
-                }
-            });
-
-            // Lắng nghe port
-            server.listen(port, () => {
-                console.log(`[Socket.io] ✅ Đang chạy trên port ${port}`);
-                resolve(server);
-            });
-        } catch (error) {
-            console.error("[Socket.io] ❌ Lỗi khởi tạo:", error.message);
-            reject(error);
-        }
-    });
+const initWorkerSocket = async () => {
+    const server = http.createServer();
+    await initSocket(server);
+    console.log("[Socket.io] Worker đã gắn Redis adapter, emit sẽ tới client của App");
+    return server;
 };
 
 /**
@@ -165,7 +136,7 @@ const startWorker = async () => {
         console.log(`║  Prefetch: ${PREFETCH_COUNT.toString().padEnd(26)}║`);
         console.log(`║  MongoDB: Connected                   ║`);
         console.log(`║  RabbitMQ: Connected                  ║`);
-        console.log(`║  Socket.io: Running                   ║`);
+        console.log(`║  Socket.io: Redis adapter (emit → App)  ║`);
         console.log("╚════════════════════════════════════════╝");
         console.log("");
         console.log("⏳ Đang lắng nghe đơn hàng...\n");

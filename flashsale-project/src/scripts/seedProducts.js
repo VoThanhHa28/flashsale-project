@@ -39,7 +39,7 @@ const FAKE_PRODUCTS = [
     productThumb: 'https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-s24.jpg',
     productDescription: 'Samsung Galaxy S24 256GB - Điện thoại Android flagship với chip Snapdragon 8 Gen 3, camera 50MP, màn hình Dynamic AMOLED 2X',
     productPrice: 18000000,
-    productQuantity: 15,
+    productQuantity: 19,
 
     // ĐÃ KẾT THÚC
     productStartTime: new Date(now.getTime() - 2 * oneHour),

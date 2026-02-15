@@ -22,6 +22,7 @@
         "dev-worker": "nodemon src/workers/order.worker.js"
     },
     "dependencies": {
+        "@socket.io/redis-adapter": "^8.3.0",
         "amqplib": "^0.10.9",
         "bcrypt": "^6.0.0",
         "cookie-parser": "~1.4.4",
