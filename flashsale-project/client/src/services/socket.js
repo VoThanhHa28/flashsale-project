@@ -38,7 +38,7 @@ class SocketService {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: Infinity,
+      reconnectionAttempts: 5,
     });
 
     this.setupEventListeners();
@@ -95,6 +95,13 @@ class SocketService {
     this.socket.on(SOCKET_EVENTS.FLASH_SALE_START, (data) => {
       console.log('🚀 Received flash-sale-start:', data);
       const listeners = this.listeners.get(SOCKET_EVENTS.FLASH_SALE_START) || [];
+      listeners.forEach(callback => callback(data));
+    });
+
+    // Lắng nghe system-error (Case 3: BE sống, DB chết)
+    this.socket.on(SOCKET_EVENTS.SYSTEM_ERROR, (data) => {
+      console.warn('⚠️ System error from server:', data);
+      const listeners = this.listeners.get(SOCKET_EVENTS.SYSTEM_ERROR) || [];
       listeners.forEach(callback => callback(data));
     });
   }

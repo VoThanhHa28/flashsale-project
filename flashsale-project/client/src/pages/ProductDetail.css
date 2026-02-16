@@ -36,6 +36,21 @@
   text-decoration: underline;
 }
 
+/* 5.3 Accessibility: focus visible cho keyboard */
+.product-detail-back:focus-visible,
+.product-detail-buy:focus-visible,
+.product-detail-result-modal-close:focus-visible,
+.product-detail-result-modal-btn:focus-visible,
+.product-detail-login-modal-btn:focus-visible {
+  outline: 2px solid #c00a27;
+  outline-offset: 2px;
+}
+
+.product-detail-quantity-input:focus-visible {
+  outline: 2px solid #c00a27;
+  outline-offset: 0;
+}
+
 /* Khối chính: nền trắng, full width với padding */
 .product-detail-main {
   width: 100%;
@@ -124,6 +139,66 @@
   color: #666;
 }
 
+/* Flash Sale: badge số lượng có hạn */
+.product-detail-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0a7c42;
+  background: #e8f5ee;
+  border-radius: 999px;
+}
+
+.product-detail-stock-badge--low {
+  color: #b45309;
+  background: #fff4e6;
+}
+
+.product-detail-stock-badge-icon {
+  font-size: 1rem;
+}
+
+/* Flash Sale: block countdown + CTA */
+.product-detail-flash-block {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  border: 1px solid rgba(192, 10, 39, 0.2);
+  border-radius: 12px;
+}
+
+.product-detail-flash-badge {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: linear-gradient(135deg, #c00a27 0%, #8b0618 100%);
+  border-radius: 6px;
+}
+
+.product-detail-flash-block .countdown-timer {
+  margin: 0.5rem 0;
+  box-shadow: 0 2px 8px rgba(192, 10, 39, 0.15);
+}
+
+.product-detail-flash-cta {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #8b0618;
+  line-height: 1.4;
+}
+
+.product-detail-flash-cta--soldout {
+  color: #666;
+}
+
 .product-detail-desc {
   margin: 0;
   font-size: 1rem;
@@ -152,6 +227,7 @@
 
 .product-detail-quantity-input {
   width: 5rem;
+  min-height: 44px;
   padding: 0.6rem 0.5rem;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -208,6 +284,13 @@
 
 .product-detail-buy:active {
   transform: scale(0.99);
+}
+
+/* 5.1 Gợi ý khi nút Mua bị khóa (trạng thái đồng bộ) */
+.product-detail-buy-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+  color: #666;
 }
 
 /* Sản phẩm liên quan: full width, nền xám */
@@ -291,6 +374,27 @@
   color: #c00a27;
 }
 
+/* 5.3 Responsive: modal trên màn nhỏ */
+@media (max-width: 380px) {
+  .product-detail-result-modal-overlay,
+  .product-detail-login-modal-overlay {
+    padding: 0.5rem;
+  }
+  .product-detail-result-modal,
+  .product-detail-login-modal {
+    padding: 1.25rem 1rem;
+    max-width: 100%;
+  }
+  .product-detail-result-modal-actions,
+  .product-detail-login-modal-actions {
+    flex-direction: column;
+  }
+  .product-detail-result-modal-btn,
+  .product-detail-login-modal-btn {
+    min-width: 100%;
+  }
+}
+
 @media (min-width: 640px) {
   .product-detail-main {
     padding: 2rem 1.5rem 2.5rem;
@@ -364,5 +468,228 @@
 
   .product-detail-grid {
     gap: 3rem;
+  }
+}
+
+/* 4a.2 Modal đăng nhập khi chưa login */
+.product-detail-login-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.product-detail-login-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.product-detail-login-modal-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-detail-login-modal-text {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.product-detail-login-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.product-detail-login-modal-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.product-detail-login-modal-btn--primary {
+  background: #c00a27;
+  color: #fff;
+}
+
+.product-detail-login-modal-btn--primary:hover {
+  background: #a00820;
+}
+
+.product-detail-login-modal-btn--secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.product-detail-login-modal-btn--secondary:hover {
+  background: #e0e0e0;
+}
+
+/* 4b.2 + 4b.3 Modal kết quả đơn hàng (thành công / thất bại) */
+.product-detail-result-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+  padding: 1rem;
+}
+
+.product-detail-result-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem 1.75rem;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.product-detail-result-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.product-detail-result-modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.product-detail-result-modal--success .product-detail-result-modal-title {
+  color: #0a7c42;
+}
+
+.product-detail-result-modal--error .product-detail-result-modal-title {
+  color: #c00a27;
+}
+
+.product-detail-result-modal-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-detail-result-modal-message {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.product-detail-result-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.product-detail-result-modal-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.product-detail-result-modal-btn--primary {
+  background: #c00a27;
+  color: #fff;
+}
+
+.product-detail-result-modal-btn--primary:hover {
+  background: #a00820;
+}
+
+.product-detail-result-modal-btn--secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.product-detail-result-modal-btn--secondary:hover {
+  background: #e0e0e0;
+}
+
+/* 4a.3 Overlay Loading/Queue khi đang gửi đơn */
+.product-detail-order-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  padding: 1rem;
+  pointer-events: auto;
+}
+
+.product-detail-order-overlay-box {
+  text-align: center;
+  max-width: 320px;
+}
+
+.product-detail-order-overlay-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem auto;
+  border: 4px solid #eee;
+  border-top-color: #c00a27;
+  border-radius: 50%;
+  animation: product-detail-spin 0.9s linear infinite;
+}
+
+.product-detail-order-overlay-text {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.product-detail-order-overlay-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+@keyframes product-detail-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

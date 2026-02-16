@@ -124,7 +124,6 @@ class OrderService {
     static async notifyStockUpdate(productId, quantity, remainingStock) {
         try {
             const io = getIO();
-            const roomName = CONST.SOCKET.SOCKET_ROOM.PRODUCT(productId);
 
             // Lấy remaining stock từ Redis nếu không được cung cấp
             if (remainingStock === null || remainingStock === undefined) {
@@ -132,7 +131,6 @@ class OrderService {
                 remainingStock = await redisClient.get(keyStock);
             }
 
-            // Broadcast to ALL clients (không dùng room)
             io.emit(CONST.SOCKET.SOCKET_EVENT.UPDATE_STOCK, {
                 productId,
                 quantity,
@@ -140,10 +138,34 @@ class OrderService {
                 timestamp: Date.now(),
             });
 
-            console.log(`[OrderService] 📡 Đã broadcast stock update cho product ${productId}`);
+            console.log(`[OrderService] 📡 Đã phát socket event update-stock (broadcast)`);
         } catch (error) {
             console.error(`[OrderService] ❌ Lỗi notifyStockUpdate:`, error.message);
-            // Không throw error để worker không bị crash nếu socket có vấn đề
+            // Hồng sửa – khi Redis chết Worker emit Socket không tới client, nên gọi Main App qua HTTP để emit system-error cho FE hiện "Bảo trì" (Case 3)
+            try {
+                const io = getIO();
+                io.emit(CONST.SOCKET.SOCKET_EVENT.SYSTEM_ERROR, { message: "Hệ thống đang bảo trì" });
+            } catch (_) {
+                // Bỏ qua nếu Worker emit fail (vd không có adapter)
+            }
+            // Hồng sửa – gọi Main App POST /internal/emit-system-error để broadcast system-error tới client
+            const appUrl = process.env.APP_URL || process.env.BACKEND_URL || "http://localhost:3000";
+            const secret = process.env.INTERNAL_EMIT_SECRET || "flashsale-internal-dev";
+            const httpRes = await fetch(`${appUrl}/internal/emit-system-error`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Internal-Secret": secret,
+                },
+                body: JSON.stringify({ message: "Hệ thống đang bảo trì" }),
+            }).catch((e) => {
+                console.warn("[OrderService] Gọi internal emit-system-error thất bại:", e?.message);
+            });
+            if (httpRes && !httpRes.ok) {
+                const text = await httpRes.text().catch(() => "");
+                console.warn("[OrderService] Main App trả lỗi:", httpRes.status, text);
+            }
+            // Không throw để worker không crash
         }
     }
 

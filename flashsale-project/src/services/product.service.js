@@ -2,6 +2,7 @@ const Product = require('../models/product.model');
 const { BadRequestError, NotFoundError } = require('../core/error.response');
 const CONST = require('../constants');
 const InventoryService = require('./order.service'); // Import InventoryService
+const redisClient = require('../config/redis');
 
 // Constants nội bộ cho logic phân trang
 const DEFAULT_PAGE_SIZE = 20;
@@ -177,7 +178,23 @@ class ProductService {
       Product.countDocuments(query),
     ]);
 
-    // 4. Tính toán Pagination metadata
+    // 4. Sync productQuantity từ Redis (số tồn thực tế khi đặt hàng)
+    try {
+      if (products.length > 0 && redisClient?.mGet) {
+        const keys = products.map((p) => CONST.REDIS.PRODUCT_STOCK(p._id.toString()));
+        const redisStocks = await redisClient.mGet(keys);
+        redisStocks.forEach((val, i) => {
+          if (val !== null && val !== undefined && products[i]) {
+            const num = parseInt(val, 10);
+            if (!Number.isNaN(num)) products[i].productQuantity = num;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn('[ProductService] Redis get stock bỏ qua, dùng MongoDB:', err?.message);
+    }
+
+    // 5. Tính toán Pagination metadata
     const totalPages = Math.ceil(total / limitNum);
 
     return {

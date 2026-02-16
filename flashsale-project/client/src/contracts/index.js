@@ -7,6 +7,7 @@
 export const SOCKET_EVENTS = {
   UPDATE_STOCK: 'update-stock',
   FLASH_SALE_START: 'flash-sale-start',
+  SYSTEM_ERROR: 'system-error',
 };
 
 /**

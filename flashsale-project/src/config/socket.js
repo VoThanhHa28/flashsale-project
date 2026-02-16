@@ -10,12 +10,14 @@ let io = null;
 const initSocket = async (server) => {
     if (io) {
         console.log("[Socket.io] Đã khởi tạo trước đó");
-        return io;
+        return Promise.resolve(io);
     }
 
     io = new Server(server, {
         cors: {
-            origin: [process.env.CLIENT_URL || "http://localhost:3001", "http://localhost:3000", "http://localhost:3002", "http://localhost:5173"],
+            origin: process.env.CLIENT_URL
+                ? process.env.CLIENT_URL.split(",").map((s) => s.trim())
+                : ["http://localhost:3001", "http://localhost:3002"],
             methods: ["GET", "POST"],
             credentials: true,
         },
@@ -114,7 +116,25 @@ const initSocket = async (server) => {
         console.error("[Socket.io] Server error:", error);
     });
 
-    return io;
+    // Redis adapter: Worker và App dùng chung, emit từ Worker vẫn tới client connect App
+    const redisUrl = process.env.REDIS_URI || process.env.REDIS_URL;
+    if (redisUrl) {
+        const redis = require("redis");
+        const { createAdapter } = require("@socket.io/redis-adapter");
+        const pubClient = redis.createClient({ url: redisUrl });
+        const subClient = pubClient.duplicate();
+        return Promise.all([pubClient.connect(), subClient.connect()])
+            .then(() => {
+                io.adapter(createAdapter(pubClient, subClient));
+                console.log("[Socket.io] Redis adapter đã gắn");
+                return io;
+            })
+            .catch((err) => {
+                console.warn("[Socket.io] Redis adapter bỏ qua:", err.message);
+                return io;
+            });
+    }
+    return Promise.resolve(io);
 };
 
 /**

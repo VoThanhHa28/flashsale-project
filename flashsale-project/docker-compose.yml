@@ -11,7 +11,8 @@ services:
       # 👇 SỬA LẠI CHO KHỚP VỚI TÊN SERVICE BÊN DƯỚI
       - MONGO_URI=${MONGO_URI}
       - REDIS_URI=${REDIS_URI}
-      - RABBITMQ_URI=${RABBITMQ_URI}
+      #sua URI->URL(lam sửa)
+      - RABBITMQ_URL=${RABBITMQ_URI}
     depends_on:
       - redis
       - rabbitmq
