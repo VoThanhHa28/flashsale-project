@@ -1,80 +1,131 @@
+/**
+ * Sidebar Right Component Styles
+ * Modern promo blocks với cards và hover effects
+ * Sử dụng Design System variables
+ */
+
 .sidebar-right {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--spacing-4);
   flex-shrink: 0;
 }
 
 .sidebar-right-block {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-gray-200);
+  transition: all var(--transition-base);
+}
+
+.sidebar-right-block:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
 }
 
 .sidebar-right-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #333;
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--spacing-2);
 }
 
 .sidebar-right-logo {
-  font-size: 1.1rem;
+  font-size: var(--font-size-lg);
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 .sidebar-right-text {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.4;
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-relaxed);
 }
 
 .sidebar-right-actions {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
 }
 
 .sidebar-right-btn {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  border-radius: 6px;
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-lg);
   text-decoration: none;
-  transition: opacity 0.2s;
+  transition: all var(--transition-base);
+  min-height: var(--button-height-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-right-btn:first-child {
-  background: #c00a27;
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-right-btn:first-child:hover {
-  opacity: 0.9;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .sidebar-right-btn:last-child {
-  border: 1px solid #ddd;
-  color: #333;
+  border: 1px solid var(--color-gray-300);
+  color: var(--color-text-secondary);
+  background: var(--color-gray-50);
 }
 
 .sidebar-right-btn:last-child:hover {
-  border-color: #c00a27;
-  color: #c00a27;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 .sidebar-right-link {
-  font-size: 0.85rem;
-  color: #c00a27;
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
   text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-base);
+  display: inline-block;
+  position: relative;
+}
+
+.sidebar-right-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: width var(--transition-base);
 }
 
 .sidebar-right-link:hover {
-  text-decoration: underline;
+  color: var(--color-primary-dark);
+}
+
+.sidebar-right-link:hover::after {
+  width: 100%;
 }
 
 .sidebar-right-offers {
@@ -84,14 +135,26 @@
 }
 
 .sidebar-right-offers li {
-  padding: 0.35rem 0;
-  font-size: 0.85rem;
-  color: #555;
+  padding: var(--spacing-2) 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.sidebar-right-offers li:hover {
+  color: var(--color-primary);
+  transform: translateX(4px);
 }
 
 .sidebar-right-offer-icon {
-  font-size: 1rem;
+  font-size: var(--font-size-base);
+  transition: transform var(--transition-base);
+}
+
+.sidebar-right-offers li:hover .sidebar-right-offer-icon {
+  transform: scale(1.2) rotate(5deg);
 }

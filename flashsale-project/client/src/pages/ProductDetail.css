@@ -1,303 +1,505 @@
+/**
+ * Product Detail Page Styles
+ * Modern product detail với animations và visual effects đẹp mắt
+ * Sử dụng Design System variables
+ */
+
 .product-detail {
   width: 100%;
   padding: 0;
 }
 
 .product-detail--state {
-  padding: 2rem 1.5rem;
+  padding: var(--spacing-8) var(--spacing-6);
 }
 
 .product-detail-loading,
 .product-detail-error,
 .product-detail-notfound {
-  margin: 0 0 1rem 0;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
+  margin: 0 0 var(--spacing-4) 0;
+  padding: var(--spacing-4) var(--spacing-6);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.product-detail-loading {
+  background: var(--color-gray-50);
+  color: var(--color-text-tertiary);
 }
 
 .product-detail-error,
 .product-detail-notfound {
-  background: #ffe5e5;
-  color: #c00;
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error-light);
 }
 
 .product-detail-back {
-  display: inline-block;
-  margin-top: 0.75rem;
-  color: #c00a27;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-3);
+  color: var(--color-primary);
   text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem 0;
-  min-height: 44px;
-  line-height: 1.5;
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-2) 0;
+  min-height: var(--button-height-md);
+  line-height: var(--line-height-normal);
+  transition: all var(--transition-base);
 }
 
 .product-detail-back:hover {
-  text-decoration: underline;
+  color: var(--color-primary-dark);
+  transform: translateX(-4px);
 }
 
-/* 5.3 Accessibility: focus visible cho keyboard */
+.product-detail-back::before {
+  content: '←';
+  font-size: 1.2em;
+  transition: transform var(--transition-base);
+}
+
+.product-detail-back:hover::before {
+  transform: translateX(-2px);
+}
+
+/* Accessibility: Focus visible cho keyboard navigation */
 .product-detail-back:focus-visible,
 .product-detail-buy:focus-visible,
 .product-detail-result-modal-close:focus-visible,
 .product-detail-result-modal-btn:focus-visible,
 .product-detail-login-modal-btn:focus-visible {
-  outline: 2px solid #c00a27;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 .product-detail-quantity-input:focus-visible {
-  outline: 2px solid #c00a27;
+  outline: 2px solid var(--color-primary);
   outline-offset: 0;
 }
 
-/* Khối chính: nền trắng, full width với padding */
+/* Main Content Area */
 .product-detail-main {
   width: 100%;
-  background: #fff;
-  padding: 1.5rem 1rem 2rem;
+  background: var(--color-bg-primary);
+  padding: var(--spacing-6) var(--spacing-4) var(--spacing-8);
 }
 
+/* Breadcrumb Navigation */
 .product-detail-breadcrumb {
-  margin-bottom: 1.25rem;
-  font-size: 0.9rem;
-  color: #666;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #eee;
+  margin-bottom: var(--spacing-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .product-detail-breadcrumb a {
-  color: #c00a27;
+  color: var(--color-primary);
   text-decoration: none;
+  transition: all var(--transition-base);
+  padding: var(--spacing-1) 0;
 }
 
 .product-detail-breadcrumb a:hover {
+  color: var(--color-primary-dark);
   text-decoration: underline;
 }
 
 .product-detail-breadcrumb-sep {
-  margin: 0 0.35rem;
-  color: #999;
+  margin: 0 var(--spacing-2);
+  color: var(--color-text-disabled);
 }
 
 .product-detail-breadcrumb-current {
-  color: #333;
-  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
 }
 
+/* Product Grid Layout */
 .product-detail-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: var(--spacing-6);
   align-items: start;
 }
 
+/* Product Image - Modern với zoom effect */
 .product-detail-image-wrap {
   width: 100%;
   max-width: 100%;
   aspect-ratio: 1;
-  background: #f8f8f8;
-  border-radius: 12px;
+  background: var(--color-gray-100);
+  border-radius: var(--radius-2xl);
   overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-base);
+}
+
+.product-detail-image-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(192, 10, 39, 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.product-detail-image-wrap:hover::before {
+  opacity: 1;
+}
+
+.product-detail-image-wrap:hover {
+  box-shadow: var(--shadow-xl);
 }
 
 .product-detail-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--transition-slower);
 }
 
+.product-detail-image-wrap:hover .product-detail-image {
+  transform: scale(1.05);
+}
+
+/* Product Info Section */
 .product-detail-info {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--spacing-5);
 }
 
 .product-detail-name {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #333;
-  line-height: 1.3;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
 }
 
+/* Price Block với gradient text */
 .product-detail-price-block {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 1rem;
+  gap: var(--spacing-4);
 }
 
 .product-detail-price {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #c00a27;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: var(--line-height-tight);
 }
 
 .product-detail-stock {
-  font-size: 0.95rem;
-  color: #666;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 
-/* Flash Sale: badge số lượng có hạn */
+/* Stock Badge - Modern với animation */
 .product-detail-stock-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #0a7c42;
-  background: #e8f5ee;
-  border-radius: 999px;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success);
+  background: var(--color-success-bg);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-xs);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    box-shadow: var(--shadow-xs);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(10, 124, 66, 0.2);
+  }
 }
 
 .product-detail-stock-badge--low {
-  color: #b45309;
-  background: #fff4e6;
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  animation: pulse-badge-warning 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge-warning {
+  0%, 100% {
+    box-shadow: var(--shadow-xs);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(180, 83, 9, 0.2);
+  }
 }
 
 .product-detail-stock-badge-icon {
-  font-size: 1rem;
+  font-size: var(--font-size-base);
+  animation: pulse-icon 1.5s ease-in-out infinite;
 }
 
-/* Flash Sale: block countdown + CTA */
+@keyframes pulse-icon {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Flash Sale Block - Highlighted với animations */
 .product-detail-flash-block {
-  margin: 1rem 0;
-  padding: 1rem;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
-  border: 1px solid rgba(192, 10, 39, 0.2);
-  border-radius: 12px;
+  margin: var(--spacing-4) 0;
+  padding: var(--spacing-5);
+  background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-primary-bg-light) 100%);
+  border: 2px solid rgba(192, 10, 39, 0.2);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.product-detail-flash-block::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(192, 10, 39, 0.1) 0%, transparent 70%);
+  animation: rotate-gradient 10s linear infinite;
+}
+
+@keyframes rotate-gradient {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .product-detail-flash-badge {
   display: inline-block;
-  margin-bottom: 0.75rem;
-  padding: 0.25rem 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: #fff;
-  background: linear-gradient(135deg, #c00a27 0%, #8b0618 100%);
-  border-radius: 6px;
+  margin-bottom: var(--spacing-3);
+  padding: var(--spacing-1) var(--spacing-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.1em;
+  color: var(--color-text-inverse);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-primary);
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+  animation: pulse-flash-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-flash-badge {
+  0%, 100% {
+    box-shadow: var(--shadow-primary);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(192, 10, 39, 0.3);
+  }
 }
 
 .product-detail-flash-block .countdown-timer {
-  margin: 0.5rem 0;
-  box-shadow: 0 2px 8px rgba(192, 10, 39, 0.15);
+  margin: var(--spacing-2) 0;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 1;
 }
 
 .product-detail-flash-cta {
-  margin: 0.75rem 0 0 0;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #8b0618;
-  line-height: 1.4;
+  margin: var(--spacing-3) 0 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-dark);
+  line-height: var(--line-height-relaxed);
+  position: relative;
+  z-index: 1;
 }
 
 .product-detail-flash-cta--soldout {
-  color: #666;
+  color: var(--color-text-tertiary);
 }
 
 .product-detail-desc {
   margin: 0;
-  font-size: 1rem;
-  color: #555;
-  line-height: 1.6;
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-relaxed);
 }
 
+/* Actions Section */
 .product-detail-actions {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding-top: 0.5rem;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-2);
 }
 
 .product-detail-quantity {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
 }
 
 .product-detail-quantity label {
-  font-weight: 500;
-  color: #333;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
   min-width: 4.5rem;
+  font-size: var(--font-size-sm);
 }
 
 .product-detail-quantity-input {
   width: 5rem;
-  min-height: 44px;
-  padding: 0.6rem 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
+  min-height: var(--input-height-md);
+  padding: var(--spacing-2) var(--spacing-2);
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  text-align: center;
+  transition: all var(--transition-base);
+  background: var(--color-bg-primary);
 }
 
 .product-detail-quantity-input:focus {
   outline: none;
-  border-color: #c00a27;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(192, 10, 39, 0.1);
 }
 
+.product-detail-quantity-input:disabled {
+  background: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+/* Error/Success Messages */
 .product-detail-order-error {
   margin: 0;
-  padding: 0.6rem 0.75rem;
-  background: #ffe5e5;
-  color: #c00;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-error-light);
+  animation: slideInDown 0.3s var(--ease-out);
 }
 
 .product-detail-order-success {
   margin: 0;
-  padding: 0.6rem 0.75rem;
-  background: #e5f5e5;
-  color: #2d6a2d;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-success-light);
+  animation: slideInDown 0.3s var(--ease-out);
 }
 
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Buy Button - Modern với gradient và pulse effect */
 .product-detail-buy {
-  padding: 1rem 2rem;
-  min-height: 56px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #fff;
-  background: #c00a27;
+  padding: var(--spacing-4) var(--spacing-8);
+  min-height: var(--button-height-xl);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-inverse);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-  box-shadow: 0 4px 14px rgba(192, 10, 39, 0.35);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-primary);
   letter-spacing: 0.02em;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-detail-buy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.product-detail-buy:hover:not(:disabled)::before {
+  opacity: 1;
 }
 
 .product-detail-buy:hover:not(:disabled) {
-  background: #a00820;
-  transform: scale(1.01);
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary-lg);
+}
+
+.product-detail-buy:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .product-detail-buy:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
+  background: var(--color-gray-400);
+  box-shadow: none;
 }
 
-.product-detail-buy:active {
-  transform: scale(0.99);
+/* Loading spinner trong button */
+.product-detail-buy-spinner {
+  display: inline-block;
+  margin-right: var(--spacing-2);
+  animation: spin 1s linear infinite;
 }
 
-/* 5.1 Gợi ý khi nút Mua bị khóa (trạng thái đồng bộ) */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hint text khi button disabled */
 .product-detail-buy-hint {
-  margin: 0.5rem 0 0 0;
-  font-size: 0.9rem;
-  color: #666;
+  margin: var(--spacing-2) 0 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
 }
 
-/* Sản phẩm liên quan: full width, nền xám */
+/* Related Products Section */
 .product-detail-related {
   width: 100%;
-  background: #f2f2f2;
-  padding: 2rem 1rem 2.5rem;
+  background: var(--color-bg-secondary);
+  padding: var(--spacing-8) var(--spacing-4) var(--spacing-10);
   margin-top: 0;
 }
 
@@ -307,16 +509,29 @@
 }
 
 .product-detail-related-title {
-  margin: 0 0 1.25rem 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #333;
+  margin: 0 0 var(--spacing-5) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  position: relative;
+  padding-bottom: var(--spacing-2);
+}
+
+.product-detail-related-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, transparent 100%);
+  border-radius: var(--radius-full);
 }
 
 .product-detail-related-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: var(--spacing-4);
 }
 
 .product-detail-related-card {
@@ -324,65 +539,78 @@
   flex-direction: column;
   text-decoration: none;
   color: inherit;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 10px;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .product-detail-related-card:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--color-primary-light);
 }
 
 .product-detail-related-image-wrap {
   aspect-ratio: 1;
-  background: #f8f8f8;
+  background: var(--color-gray-100);
   overflow: hidden;
+  position: relative;
 }
 
 .product-detail-related-image-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform var(--transition-slower);
+}
+
+.product-detail-related-card:hover .product-detail-related-image-wrap img {
+  transform: scale(1.05);
 }
 
 .product-detail-related-body {
-  padding: 0.75rem 1rem;
+  padding: var(--spacing-3) var(--spacing-4);
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--spacing-2);
 }
 
 .product-detail-related-name {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #333;
-  line-height: 1.35;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  min-height: 2.6em;
 }
 
 .product-detail-related-price {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #c00a27;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* 5.3 Responsive: modal trên màn nhỏ */
+/* Responsive - Mobile Small */
 @media (max-width: 380px) {
   .product-detail-result-modal-overlay,
   .product-detail-login-modal-overlay {
-    padding: 0.5rem;
+    padding: var(--spacing-2);
   }
   .product-detail-result-modal,
   .product-detail-login-modal {
-    padding: 1.25rem 1rem;
+    padding: var(--spacing-5) var(--spacing-4);
     max-width: 100%;
   }
   .product-detail-result-modal-actions,
@@ -395,301 +623,363 @@
   }
 }
 
+/* Responsive - Tablet */
 @media (min-width: 640px) {
   .product-detail-main {
-    padding: 2rem 1.5rem 2.5rem;
+    padding: var(--spacing-8) var(--spacing-6) var(--spacing-10);
   }
 
   .product-detail-related {
-    padding: 2rem 1.5rem 2.5rem;
+    padding: var(--spacing-8) var(--spacing-6) var(--spacing-10);
   }
 
   .product-detail-related-grid {
     grid-template-columns: repeat(4, 1fr);
-    gap: 1.25rem;
+    gap: var(--spacing-5);
   }
 }
 
+/* Responsive - Desktop */
 @media (min-width: 768px) {
   .product-detail-grid {
-    grid-template-columns: minmax(260px, 360px) 1fr;
-    gap: 2.5rem;
+    grid-template-columns: minmax(280px, 400px) 1fr;
+    gap: var(--spacing-10);
     align-items: start;
   }
 
   .product-detail-image-wrap {
     max-width: 100%;
     position: sticky;
-    top: 1rem;
+    top: var(--spacing-4);
   }
 
   .product-detail-name {
-    font-size: 1.75rem;
+    font-size: var(--font-size-3xl);
   }
 
   .product-detail-price {
-    font-size: 2rem;
+    font-size: var(--font-size-4xl);
   }
 
   .product-detail-buy {
-    padding: 1.2rem 2.5rem;
-    min-height: 58px;
-    font-size: 1.25rem;
+    padding: var(--spacing-4) var(--spacing-10);
+    min-height: 60px;
+    font-size: var(--font-size-xl);
   }
 }
 
+/* Responsive - Desktop Large */
 @media (min-width: 1024px) {
   .product-detail-main {
-    padding: 2rem 2rem 2.5rem;
+    padding: var(--spacing-8) var(--spacing-8) var(--spacing-10);
   }
 
   .product-detail-related {
-    padding: 2.5rem 2rem 3rem;
-  }
-
-  .product-detail-related-inner {
-    padding: 0;
+    padding: var(--spacing-10) var(--spacing-8) var(--spacing-12);
   }
 
   .product-detail-related-title {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-6);
   }
 }
 
+/* Responsive - Desktop XL */
 @media (min-width: 1280px) {
   .product-detail-main {
-    padding: 2rem 2.5rem 3rem;
+    padding: var(--spacing-8) var(--spacing-10) var(--spacing-12);
   }
 
   .product-detail-related {
-    padding: 3rem 2.5rem;
+    padding: var(--spacing-12) var(--spacing-10);
   }
 
   .product-detail-grid {
-    gap: 3rem;
+    gap: var(--spacing-12);
   }
 }
 
-/* 4a.2 Modal đăng nhập khi chưa login */
+/* Login Modal - Modern với backdrop blur */
 .product-detail-login-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-bg-overlay);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+  z-index: var(--z-modal-backdrop);
+  padding: var(--spacing-4);
+  animation: fadeIn 0.2s var(--ease-out);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .product-detail-login-modal {
-  background: #fff;
-  border-radius: 12px;
-  padding: 1.5rem 1.75rem;
-  max-width: 360px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-6) var(--spacing-7);
+  max-width: 400px;
   width: 100%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-2xl);
+  animation: slideUp 0.3s var(--ease-bounce);
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .product-detail-login-modal-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
 }
 
 .product-detail-login-modal-text {
-  margin: 0 0 1.25rem 0;
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.5;
+  margin: 0 0 var(--spacing-5) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-relaxed);
 }
 
 .product-detail-login-modal-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   flex-wrap: wrap;
 }
 
 .product-detail-login-modal-btn {
   flex: 1;
   min-width: 120px;
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 8px;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-lg);
   border: none;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all var(--transition-base);
+  min-height: var(--button-height-md);
 }
 
 .product-detail-login-modal-btn--primary {
-  background: #c00a27;
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-primary);
 }
 
 .product-detail-login-modal-btn--primary:hover {
-  background: #a00820;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary-lg);
+}
+
+.product-detail-login-modal-btn--primary:active {
+  transform: translateY(0);
 }
 
 .product-detail-login-modal-btn--secondary {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-gray-300);
 }
 
 .product-detail-login-modal-btn--secondary:hover {
-  background: #e0e0e0;
+  background: var(--color-gray-200);
+  border-color: var(--color-gray-400);
 }
 
-/* 4b.2 + 4b.3 Modal kết quả đơn hàng (thành công / thất bại) */
+/* Result Modal - Success/Error với animations */
 .product-detail-result-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-bg-overlay);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1002;
-  padding: 1rem;
+  z-index: var(--z-modal);
+  padding: var(--spacing-4);
+  animation: fadeIn 0.2s var(--ease-out);
 }
 
 .product-detail-result-modal {
   position: relative;
-  background: #fff;
-  border-radius: 12px;
-  padding: 1.5rem 1.75rem;
-  max-width: 380px;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-6) var(--spacing-7);
+  max-width: 420px;
   width: 100%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-2xl);
+  animation: slideUp 0.3s var(--ease-bounce);
 }
 
 .product-detail-result-modal-close {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  width: 32px;
-  height: 32px;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: none;
   background: transparent;
-  color: #666;
-  font-size: 1.75rem;
+  color: var(--color-text-tertiary);
+  font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, color 0.2s;
+  transition: all var(--transition-base);
 }
 
 .product-detail-result-modal-close:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+  transform: rotate(90deg);
 }
 
 .product-detail-result-modal--success .product-detail-result-modal-title {
-  color: #0a7c42;
+  color: var(--color-success);
 }
 
 .product-detail-result-modal--error .product-detail-result-modal-title {
-  color: #c00a27;
+  color: var(--color-error);
 }
 
 .product-detail-result-modal-title {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
 }
 
 .product-detail-result-modal-message {
-  margin: 0 0 1.25rem 0;
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.5;
+  margin: 0 0 var(--spacing-5) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-relaxed);
 }
 
 .product-detail-result-modal-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   flex-wrap: wrap;
 }
 
 .product-detail-result-modal-btn {
   flex: 1;
   min-width: 120px;
-  padding: 0.6rem 1rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 8px;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-lg);
   border: none;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all var(--transition-base);
+  min-height: var(--button-height-md);
 }
 
 .product-detail-result-modal-btn--primary {
-  background: #c00a27;
-  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-primary);
 }
 
 .product-detail-result-modal-btn--primary:hover {
-  background: #a00820;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary-lg);
+}
+
+.product-detail-result-modal-btn--primary:active {
+  transform: translateY(0);
 }
 
 .product-detail-result-modal-btn--secondary {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-gray-300);
 }
 
 .product-detail-result-modal-btn--secondary:hover {
-  background: #e0e0e0;
+  background: var(--color-gray-200);
+  border-color: var(--color-gray-400);
 }
 
-/* 4a.3 Overlay Loading/Queue khi đang gửi đơn */
+/* Loading Overlay - Modern với backdrop blur */
 .product-detail-order-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--color-bg-overlay-light);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1001;
-  padding: 1rem;
+  z-index: var(--z-popover);
+  padding: var(--spacing-4);
   pointer-events: auto;
+  animation: fadeIn 0.2s var(--ease-out);
 }
 
 .product-detail-order-overlay-box {
   text-align: center;
-  max-width: 320px;
+  max-width: 360px;
+  background: var(--color-bg-primary);
+  padding: var(--spacing-8) var(--spacing-6);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  animation: slideUp 0.3s var(--ease-bounce);
 }
 
 .product-detail-order-overlay-spinner {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 1rem auto;
-  border: 4px solid #eee;
-  border-top-color: #c00a27;
-  border-radius: 50%;
-  animation: product-detail-spin 0.9s linear infinite;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--spacing-4) auto;
+  border: 4px solid var(--color-gray-200);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin 0.9s linear infinite;
+  position: relative;
+}
+
+.product-detail-order-overlay-spinner::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--color-primary-light);
+  border-radius: var(--radius-full);
+  animation: spin 1.2s linear infinite reverse;
+  opacity: 0.5;
 }
 
 .product-detail-order-overlay-text {
-  margin: 0 0 0.35rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
 }
 
 .product-detail-order-overlay-hint {
   margin: 0;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-@keyframes product-detail-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  line-height: var(--line-height-relaxed);
 }

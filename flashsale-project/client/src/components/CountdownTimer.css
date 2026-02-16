@@ -1,61 +1,126 @@
+/**
+ * Countdown Timer Component Styles
+ * Modern countdown với animations và visual effects
+ * Sử dụng Design System variables
+ */
+
 .countdown-timer {
-    margin: 1rem 0;
-    padding: 1rem;
-    background: linear-gradient(135deg, #c00a27 0%, #8b0618 100%);
-    border-radius: 8px;
-    color: white;
-    text-align: center;
+  margin: var(--spacing-4) 0;
+  padding: var(--spacing-5);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-xl);
+  color: var(--color-text-inverse);
+  text-align: center;
+  box-shadow: var(--shadow-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-timer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: rotate-gradient 8s linear infinite;
+}
+
+.countdown-timer-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-2);
+  opacity: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 1;
+}
+
+.countdown-timer-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  position: relative;
+  z-index: 1;
+}
+
+.countdown-timer-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+  padding: var(--spacing-2);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(4px);
+  transition: transform var(--transition-base);
+}
+
+.countdown-timer-unit:hover {
+  transform: scale(1.05);
+}
+
+.countdown-timer-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse-value 1s ease-in-out infinite;
+}
+
+@keyframes pulse-value {
+  0%, 100% {
+    transform: scale(1);
   }
-  
-  .countdown-timer-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    opacity: 0.9;
+  50% {
+    transform: scale(1.05);
   }
-  
-  .countdown-timer-display {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+}
+
+.countdown-timer-label-unit {
+  font-size: var(--font-size-xs);
+  opacity: 0.9;
+  margin-top: var(--spacing-1);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.countdown-timer-separator {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  opacity: 0.8;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 0.8;
   }
-  
-  .countdown-timer-unit {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 50px;
+  50% {
+    opacity: 0.4;
   }
-  
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
   .countdown-timer-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    line-height: 1.2;
+    font-size: var(--font-size-xl);
   }
   
   .countdown-timer-label-unit {
-    font-size: 0.75rem;
-    opacity: 0.8;
-    margin-top: 0.25rem;
+    font-size: var(--font-size-xs);
   }
   
   .countdown-timer-separator {
-    font-size: 1.5rem;
-    font-weight: 700;
-    opacity: 0.7;
+    font-size: var(--font-size-xl);
   }
   
-  @media (max-width: 768px) {
-    .countdown-timer-value {
-      font-size: 1.25rem;
-    }
-    
-    .countdown-timer-label-unit {
-      font-size: 0.625rem;
-    }
-    
-    .countdown-timer-separator {
-      font-size: 1.25rem;
-    }
+  .countdown-timer-unit {
+    min-width: 50px;
+    padding: var(--spacing-1);
   }
+}
