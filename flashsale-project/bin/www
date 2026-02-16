@@ -7,6 +7,7 @@
 var app = require("../app");
 var debug = require("debug")("flashsale-project:server");
 var http = require("http");
+var { initSocket } = require("../src/config/socket");
 
 /**
  * Get port from environment and store in Express.
@@ -24,7 +25,7 @@ var server = http.createServer(app);
 var { initSocket } = require("../src/config/socket");
 
 /**
- * Listen on provided port, on all network interfaces.
+ * Initialize server with async Socket.io setup
  */
 function startListening() {
     server.listen(port);
