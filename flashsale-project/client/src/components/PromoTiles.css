@@ -1,61 +1,115 @@
+/**
+ * Promo Tiles Component Styles
+ * Modern promo cards với gradient và smooth animations
+ * Sử dụng Design System variables
+ */
+
 .promo-tiles {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-6);
 }
 
 .promo-tile {
   display: block;
-  background: var(--tile-color, #c00a27);
-  border-radius: 10px;
-  padding: 1.25rem 1rem;
+  background: var(--tile-color, var(--color-primary));
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-5) var(--spacing-4);
   text-decoration: none;
-  color: #fff;
-  transition: opacity 0.2s, transform 0.15s;
+  color: var(--color-text-inverse);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Gradient overlay on hover */
+.promo-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.promo-tile::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-slower);
 }
 
 .promo-tile:hover {
-  opacity: 0.95;
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.promo-tile:hover::before {
+  opacity: 1;
+}
+
+.promo-tile:hover::after {
+  opacity: 1;
+}
+
+.promo-tile:active {
   transform: translateY(-2px);
 }
 
 .promo-tile-inner {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-1);
+  position: relative;
+  z-index: 1;
 }
 
 .promo-tile-subtitle {
-  font-size: 0.8rem;
+  font-size: var(--font-size-xs);
   opacity: 0.9;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  font-weight: var(--font-weight-medium);
 }
 
 .promo-tile-title {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
 }
 
 .promo-tile-cta {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  margin-top: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   text-decoration: underline;
+  opacity: 0.95;
+  transition: opacity var(--transition-base);
 }
 
+.promo-tile:hover .promo-tile-cta {
+  opacity: 1;
+}
+
+/* Responsive - Tablet & Desktop */
 @media (min-width: 640px) {
   .promo-tiles {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: var(--spacing-4);
   }
 
   .promo-tile {
-    padding: 1.5rem;
+    padding: var(--spacing-6) var(--spacing-5);
   }
 
   .promo-tile-title {
-    font-size: 1.25rem;
+    font-size: var(--font-size-xl);
   }
 }

@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { FiSearch } from 'react-icons/fi';
 import * as api from '../services/api';
 import TopPromoStrip from './TopPromoStrip';
 import Footer from './Footer';
@@ -26,6 +27,7 @@ function Layout() {
           Flash Sale
         </Link>
         <div className="layout-search-wrap">
+          <FiSearch className="layout-search-icon" aria-hidden="true" />
           <input
             type="search"
             className="layout-search"

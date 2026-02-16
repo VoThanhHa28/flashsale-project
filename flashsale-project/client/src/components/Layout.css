@@ -1,153 +1,231 @@
+/**
+ * Layout Component Styles
+ * Nâng cấp với Design System: màu sắc, shadows, transitions mượt mà
+ * Giữ nguyên logic, chỉ cải thiện visual
+ */
+
 .layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f2f2f2;
+  background: var(--color-bg-secondary);
 }
 
+/* ============================================
+   HEADER - Modern với gradient và shadow đẹp
+   ============================================ */
 .layout-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: #fff;
-  color: #333;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  transition: box-shadow var(--transition-base);
 }
 
+.layout-header:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Search Bar - Modern với icon và focus state đẹp */
 .layout-search-wrap {
   flex: 1;
   min-width: 120px;
-  max-width: 320px;
+  max-width: 400px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.layout-search-icon {
+  position: absolute;
+  left: var(--spacing-3);
+  color: var(--color-text-disabled);
+  font-size: 1.125rem;
+  pointer-events: none;
+  transition: color var(--transition-base);
+  z-index: 1;
+}
+
+.layout-search:focus + .layout-search-icon,
+.layout-search-wrap:focus-within .layout-search-icon {
+  color: var(--color-primary);
 }
 
 .layout-search {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
-  color: #333;
-  font-size: 0.9rem;
+  padding: var(--spacing-2) var(--spacing-3) var(--spacing-2) 2.75rem;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-full);
+  background: var(--color-gray-50);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  transition: all var(--transition-base);
 }
 
 .layout-search::placeholder {
-  color: #999;
+  color: var(--color-text-disabled);
 }
 
 .layout-search:focus {
   outline: none;
-  border-color: #c00a27;
+  border-color: var(--color-primary);
+  background: var(--color-bg-primary);
+  box-shadow: 0 0 0 3px rgba(192, 10, 39, 0.1);
 }
 
+/* Logo - Gradient text effect */
 .layout-logo {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #c00a27;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-decoration: none;
-  padding: 0.25rem 0;
-  min-height: 44px;
+  padding: var(--spacing-1) 0;
+  min-height: var(--button-height-md);
   display: inline-flex;
   align-items: center;
+  transition: transform var(--transition-fast);
+  letter-spacing: -0.02em;
 }
 
 .layout-logo:hover {
-  color: #a00820;
+  transform: scale(1.05);
 }
 
+/* Navigation Links - Smooth hover với background */
 .layout-nav {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .layout-link {
-  color: #333;
+  color: var(--color-text-secondary);
   text-decoration: none;
-  font-weight: 500;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  min-height: 44px;
-  min-width: 44px;
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  min-height: var(--button-height-md);
+  min-width: var(--button-height-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s, background 0.2s;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.layout-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-bg);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.layout-link:hover::before {
+  opacity: 1;
 }
 
 .layout-link:hover {
-  color: #c00a27;
-  background: #fff5f5;
+  color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
-.layout-user {
-  color: #555;
-  font-size: 0.95rem;
-  padding: 0.5rem 0.25rem;
+.layout-link:active {
+  transform: translateY(0);
 }
 
-.layout-logout {
-  background: transparent;
-  border: none;
-  color: #333;
-  font-weight: 500;
-  font-size: 1rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  cursor: pointer;
-  min-height: 44px;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.layout-logout:hover {
-  color: #c00a27;
-  background: #fff5f5;
-}
-
+/* User Chip - Modern với avatar gradient */
 .layout-user-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid #eee;
-  background: #f8f8f8;
+  gap: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-gray-50);
   cursor: pointer;
   min-height: 40px;
+  transition: all var(--transition-base);
 }
 
 .layout-user-chip:hover {
-  background: #fff5f5;
-  border-color: #c00a27;
+  background: var(--color-primary-bg);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .layout-user-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: #c00a27;
-  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.85rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  box-shadow: var(--shadow-xs);
+  transition: transform var(--transition-base);
+}
+
+.layout-user-chip:hover .layout-user-avatar {
+  transform: scale(1.1);
 }
 
 .layout-user-name {
-  font-size: 0.9rem;
-  color: #333;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
   max-width: 140px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  font-weight: var(--font-weight-medium);
 }
 
+/* Logout Button - Subtle hover effect */
+.layout-logout {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  min-height: var(--button-height-md);
+  min-width: var(--button-height-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+}
+
+.layout-logout:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.layout-logout:active {
+  transform: scale(0.98);
+}
+
+/* Main Content Area */
 .layout-main {
   flex: 1;
   padding: 0;
@@ -156,21 +234,33 @@
   box-sizing: border-box;
 }
 
+/* Responsive - Tablet & Desktop */
 @media (min-width: 640px) {
   .layout-header {
-    padding: 0.75rem 1.5rem;
+    padding: var(--spacing-3) var(--spacing-6);
   }
 
   .layout-logo {
-    font-size: 1.4rem;
+    font-size: var(--font-size-2xl);
   }
 
   .layout-nav {
-    gap: 1rem;
+    gap: var(--spacing-4);
   }
 
   .layout-link {
-    padding: 0.5rem 0;
+    padding: var(--spacing-2) 0;
     min-width: auto;
+  }
+  
+  .layout-search-wrap {
+    max-width: 480px;
+  }
+}
+
+/* Desktop - Enhanced spacing */
+@media (min-width: 1024px) {
+  .layout-header {
+    padding: var(--spacing-4) var(--spacing-8);
   }
 }
