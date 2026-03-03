@@ -1,0 +1,56 @@
+/**
+ * Connection Status Component Styles
+ * Modern connection indicator với smooth animations
+ * Sử dụng Design System variables
+ */
+
+.connection-status {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-toast);
+  background: linear-gradient(135deg, var(--color-error) 0%, #8b0000 100%);
+  color: var(--color-text-inverse);
+  padding: var(--spacing-2) var(--spacing-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--shadow-lg);
+  animation: slideDown 0.3s var(--ease-out);
+  backdrop-filter: blur(8px);
+}
+
+.connection-status-icon {
+  font-size: var(--font-size-base);
+  animation: pulse-icon 1.5s ease-in-out infinite;
+}
+
+.connection-status-text {
+  font-weight: var(--font-weight-medium);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-icon {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}

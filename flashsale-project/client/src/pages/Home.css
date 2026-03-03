@@ -1,0 +1,497 @@
+/**
+ * Home Page Styles
+ * Modern product cards với hover effects đẹp mắt
+ * Sử dụng Design System variables
+ */
+
+.home {
+  width: 100%;
+}
+
+.home--full {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--spacing-4);
+}
+
+/* Top Section - Banner & Sidebars */
+.home-top {
+  width: 100%;
+  background: var(--color-bg-primary);
+  padding: var(--spacing-4) 0 var(--spacing-6);
+  margin-bottom: 0;
+}
+
+.home-top-inner {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+  padding: 0 var(--spacing-4);
+}
+
+.home-sidebar-left {
+  display: none;
+}
+
+.home-sidebar-right {
+  display: none;
+}
+
+.home-center {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Products Section */
+.home-products {
+  width: 100%;
+  padding: var(--spacing-6) var(--spacing-4) var(--spacing-8);
+  background: var(--color-bg-secondary);
+}
+
+.home-products-inner {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ============================================
+   SECTION HEADER - Flash Sale branding
+   ============================================ */
+.home-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-5);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 2px solid var(--color-gray-200);
+  position: relative;
+}
+
+.home-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, transparent 100%);
+  border-radius: var(--radius-full);
+}
+
+.home-section-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.home-section-title-icon {
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(238, 77, 45, 0.5));
+}
+
+.home-section-title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+/* LIVE badge khi Flash Sale đang diễn ra */
+.home-section-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 2px var(--spacing-2);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  border-radius: var(--radius-full);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.home-section-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-inverse);
+  animation: dot-blink 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(238, 77, 45, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(238, 77, 45, 0); }
+}
+
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.home-section-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-disabled);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Stagger fade-in animation cho product cards */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-title {
+  margin: 0 0 var(--spacing-4) 0;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-bold);
+}
+
+.home-loading,
+.home-error {
+  margin: 0;
+  padding: var(--spacing-4);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.home-loading {
+  background: var(--color-gray-50);
+  color: var(--color-text-tertiary);
+}
+
+.home-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid var(--color-error-light);
+}
+
+/* Product Grid */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+}
+
+/* Product Card - Modern với hover effects + stagger enter animation */
+.home-card {
+  display: block;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-base);
+  position: relative;
+  /* Stagger enter animation */
+  animation: cardEnter 0.45s var(--ease-out) both;
+}
+
+/* Flash Sale active card - border glow đỏ */
+.home-card--flash-active {
+  border-color: rgba(238, 77, 45, 0.35);
+  box-shadow: var(--shadow-sm), 0 0 0 1px rgba(238, 77, 45, 0.15);
+}
+
+.home-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(192, 10, 39, 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.home-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--color-primary-light);
+}
+
+.home-card:hover::before {
+  opacity: 1;
+}
+
+.home-card:active {
+  transform: translateY(-2px);
+}
+
+/* Product Image Container */
+.home-card-image-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--color-gray-100);
+  overflow: hidden;
+}
+
+.home-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slower);
+}
+
+.home-card:hover .home-card-image {
+  transform: scale(1.05);
+}
+
+/* Badge System */
+.home-card-badge {
+  position: absolute;
+  top: var(--spacing-2);
+  left: var(--spacing-2);
+  padding: var(--spacing-1) var(--spacing-2);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  z-index: 2;
+  box-shadow: var(--shadow-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    box-shadow: var(--shadow-sm);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(192, 10, 39, 0.2);
+  }
+}
+
+.home-card-badge--stock {
+  left: auto;
+  right: var(--spacing-2);
+  background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-dark) 100%);
+}
+
+.home-card-badge--stock:not(:only-of-type) {
+  top: auto;
+  bottom: var(--spacing-2);
+}
+
+/* Flash Sale badge - đỏ nổi bật với shimmer */
+.home-card-badge--flash {
+  background: linear-gradient(135deg, #ff4500 0%, var(--color-primary) 50%, #ff4500 100%);
+  background-size: 200% auto;
+  animation: badge-shimmer 2.5s linear infinite, pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes badge-shimmer {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+/* Upcoming badge - màu secondary */
+.home-card-badge--upcoming {
+  background: linear-gradient(135deg, var(--color-warning) 0%, #d97706 100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Flash shimmer overlay khi card đang trong sale */
+.home-card-flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 300% 300%;
+  animation: flash-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes flash-sweep {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* Card Body */
+.home-card-body {
+  padding: var(--spacing-4);
+  position: relative;
+  z-index: 1;
+}
+
+.home-card-name {
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-tight);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+}
+
+.home-card-price {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Flash Sale đang diễn ra tag */
+.home-card-sale-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: var(--spacing-2);
+  padding: 3px var(--spacing-2);
+  background: var(--color-primary-bg-light);
+  color: var(--color-primary-dark);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(238, 77, 45, 0.25);
+}
+
+.home-card-sale-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+  animation: dot-blink 1.2s ease-in-out infinite;
+}
+
+/* Sắp mở bán tag */
+.home-card-upcoming-tag {
+  display: inline-block;
+  margin-top: var(--spacing-2);
+  padding: 3px var(--spacing-2);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(180, 83, 9, 0.2);
+}
+
+/* Responsive - Mobile Large */
+@media (min-width: 480px) {
+  .home-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-4);
+  }
+}
+
+/* Responsive - Tablet */
+@media (min-width: 768px) {
+  .home-section-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .home-section-title-icon {
+    font-size: var(--font-size-2xl);
+  }
+
+  .home-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-5);
+  }
+
+  .home-top-inner,
+  .home-products-inner {
+    padding: 0 var(--spacing-6);
+  }
+  
+  .home-card-name {
+    font-size: var(--font-size-base);
+  }
+  
+  .home-card-price {
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* Responsive - Desktop */
+@media (min-width: 1024px) {
+  .home-top-inner {
+    grid-template-columns: 220px 1fr 280px;
+    gap: var(--spacing-5);
+    padding: 0 var(--spacing-6);
+  }
+
+  .home-sidebar-left,
+  .home-sidebar-right {
+    display: block;
+  }
+
+  .home-center {
+    min-width: 0;
+  }
+
+  .home-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-5);
+  }
+
+  .home-products-inner {
+    padding: 0 var(--spacing-6);
+  }
+}
+
+/* Responsive - Desktop Large */
+@media (min-width: 1280px) {
+  .home-top-inner {
+    grid-template-columns: 240px 1fr 300px;
+    padding: 0 var(--spacing-8);
+  }
+
+  .home-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .home-products-inner {
+    padding: 0 var(--spacing-8);
+  }
+}
+
+/* Responsive - Desktop XL */
+@media (min-width: 1536px) {
+  .home-top-inner {
+    padding: 0 var(--spacing-10);
+  }
+
+  .home-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .home-products-inner {
+    padding: 0 var(--spacing-10);
+  }
+}
