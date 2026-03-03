@@ -78,13 +78,40 @@
   outline: none;
   border-color: var(--color-primary);
   background: var(--color-bg-primary);
-  box-shadow: 0 0 0 3px rgba(192, 10, 39, 0.1);
+  box-shadow: 0 0 0 3px rgba(238, 77, 45, 0.12);
 }
 
-/* Logo - Gradient text effect */
+/* Submit button xuất hiện khi có text search */
+.layout-search-btn {
+  position: absolute;
+  right: var(--spacing-2);
+  padding: 4px var(--spacing-3);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  animation: fadeInScale 0.15s ease-out;
+}
+
+.layout-search-btn:hover {
+  background: var(--color-primary-dark);
+  transform: scale(1.03);
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Logo - Gradient text + lightning bolt */
 .layout-logo {
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: 800;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -95,11 +122,14 @@
   display: inline-flex;
   align-items: center;
   transition: transform var(--transition-fast);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  filter: drop-shadow(0 1px 2px rgba(238, 77, 45, 0.15));
 }
 
 .layout-logo:hover {
   transform: scale(1.05);
+  filter: drop-shadow(0 2px 6px rgba(238, 77, 45, 0.3));
 }
 
 /* Navigation Links - Smooth hover với background */
@@ -196,6 +226,45 @@
   text-overflow: ellipsis;
   overflow: hidden;
   font-weight: var(--font-weight-medium);
+}
+
+/* Cart link với icon */
+.layout-cart-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-2) var(--spacing-3);
+}
+
+.layout-cart-label {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .layout-cart-label {
+    display: inline;
+  }
+}
+
+/* Đăng ký button - nổi bật hơn link thường */
+.layout-link--register {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse) !important;
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-4);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-primary);
+  transition: all var(--transition-base);
+}
+
+.layout-link--register:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-primary-lg) !important;
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+}
+
+.layout-link--register::before {
+  display: none;
 }
 
 /* Logout Button - Subtle hover effect */

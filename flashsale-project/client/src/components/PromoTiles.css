@@ -1,68 +1,96 @@
 /**
  * Promo Tiles Component Styles
- * Modern promo cards với gradient và smooth animations
- * Sử dụng Design System variables
+ * 3 tile màu nổi bật với emoji icon + shimmer hover + circle decoration.
+ * Sử dụng Design System variables + CSS custom properties từ component.
  */
 
 .promo-tiles {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--spacing-3);
-  margin-bottom: var(--spacing-6);
+  margin-bottom: 0;
 }
 
+/* ============================================
+   TILE CARD
+   ============================================ */
 .promo-tile {
   display: block;
   background: var(--tile-color, var(--color-primary));
   border-radius: var(--radius-xl);
-  padding: var(--spacing-5) var(--spacing-4);
+  padding: var(--spacing-4) var(--spacing-4);
   text-decoration: none;
   color: var(--color-text-inverse);
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-/* Gradient overlay on hover */
-.promo-tile::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
-  opacity: 0;
-  transition: opacity var(--transition-base);
-}
-
-.promo-tile::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity var(--transition-slower);
+  box-shadow: 0 4px 12px var(--tile-shadow, rgba(0, 0, 0, 0.25));
+  min-height: 80px;
 }
 
 .promo-tile:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.promo-tile:hover::before {
-  opacity: 1;
-}
-
-.promo-tile:hover::after {
-  opacity: 1;
+  box-shadow: 0 8px 24px var(--tile-shadow, rgba(0, 0, 0, 0.3));
 }
 
 .promo-tile:active {
   transform: translateY(-2px);
 }
 
+/* Shimmer sweep on hover */
+.promo-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transition: none;
+  pointer-events: none;
+}
+
+.promo-tile:hover::before {
+  animation: tile-shimmer 0.55s ease-out forwards;
+}
+
+@keyframes tile-shimmer {
+  from { left: -60%; }
+  to   { left: 160%; }
+}
+
+/* ── Decorative circle (bottom-right) ── */
+.promo-tile-circle {
+  position: absolute;
+  bottom: -30px;
+  right: -25px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  transition: transform var(--transition-slower);
+}
+
+.promo-tile:hover .promo-tile-circle {
+  transform: scale(1.3);
+}
+
+/* Second smaller circle */
+.promo-tile-circle::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ============================================
+   TILE INNER LAYOUT
+   ============================================ */
 .promo-tile-inner {
   display: flex;
   flex-direction: column;
@@ -71,45 +99,70 @@
   z-index: 1;
 }
 
+/* ── Emoji icon ── */
+.promo-tile-emoji {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  transition: transform var(--transition-base);
+  display: block;
+  margin-bottom: var(--spacing-1);
+}
+
+.promo-tile:hover .promo-tile-emoji {
+  transform: scale(1.15) rotate(-5deg);
+}
+
+.promo-tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .promo-tile-subtitle {
   font-size: var(--font-size-xs);
-  opacity: 0.9;
+  opacity: 0.82;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: var(--font-weight-medium);
 }
 
 .promo-tile-title {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
 }
 
+/* ── CTA text ── */
 .promo-tile-cta {
   margin-top: var(--spacing-2);
-  font-size: var(--font-size-sm);
+  font-size: 11px;
   font-weight: var(--font-weight-semibold);
-  text-decoration: underline;
-  opacity: 0.95;
-  transition: opacity var(--transition-base);
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  transition: all var(--transition-base);
+  display: inline-block;
 }
 
 .promo-tile:hover .promo-tile-cta {
   opacity: 1;
+  transform: translateX(3px);
 }
 
-/* Responsive - Tablet & Desktop */
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (min-width: 640px) {
   .promo-tiles {
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--spacing-4);
+    gap: var(--spacing-3);
   }
 
   .promo-tile {
-    padding: var(--spacing-6) var(--spacing-5);
+    padding: var(--spacing-4) var(--spacing-4);
+    min-height: 90px;
   }
 
   .promo-tile-title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-sm);
   }
 }
