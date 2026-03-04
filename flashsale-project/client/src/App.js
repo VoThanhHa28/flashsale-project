@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
-import { Home, Login, Register, ProductDetail, Cart, Account } from './routes/AppRoutes';
+import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory } from './routes/AppRoutes';
 
 function App() {
   return (
@@ -15,6 +15,7 @@ function App() {
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
           <Route path="account" element={<Account />} />
+          <Route path="orders" element={<OrderHistory />} />
         </Route>
       </Routes>
     </BrowserRouter>

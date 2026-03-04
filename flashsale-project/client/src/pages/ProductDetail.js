@@ -364,7 +364,7 @@ function ProductDetail() {
                 disabled={buyButtonDisabled}
                 aria-label={buyButtonDisabled ? `${buyButtonText}. Nút tạm khóa.` : 'Mua ngay sản phẩm này'}
               >
-                {orderSubmitting && <span className="product-detail-buy-spinner" aria-hidden="true">⏳</span>}
+                {orderSubmitting && <span className="product-detail-buy-spinner" aria-hidden="true" />}
                 {buyButtonText}
               </button>
               <Link to="/" className="product-detail-back">← Quay lại danh sách</Link>

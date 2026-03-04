@@ -1,35 +1,44 @@
 /**
  * Banner Carousel Component Styles
- * Modern carousel với smooth transitions và hover effects
- * Sử dụng Design System variables
+ * Left-aligned modern layout + progress bar + glassmorphism badge.
+ * Sử dụng Design System variables.
  */
 
+/* ============================================
+   CONTAINER
+   ============================================ */
 .banner-carousel {
   position: relative;
   width: 100%;
-  margin: 0 0 var(--spacing-5) 0;
+  margin: 0 0 var(--spacing-4) 0;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  background: var(--color-gray-100);
+  box-shadow: var(--shadow-lg);
+  background: var(--color-gray-900);
 }
 
+/* ============================================
+   TRACK
+   ============================================ */
 .banner-carousel-track {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 1;
+  aspect-ratio: 16 / 7;
   min-height: 160px;
   max-height: 280px;
 }
 
+/* ============================================
+   SLIDE
+   ============================================ */
 .banner-carousel-slide {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   opacity: 0;
-  transition: opacity var(--transition-slower) var(--ease-out);
+  transition: opacity 0.55s var(--ease-out);
+  overflow: hidden;
 }
 
 .banner-carousel-slide--active {
@@ -37,64 +46,166 @@
   z-index: 1;
 }
 
-.banner-carousel-content {
-  text-align: center;
-  color: var(--color-text-inverse);
-  padding: var(--spacing-6);
-  position: relative;
-  z-index: 1;
-  animation: fadeInUp 0.6s var(--ease-out);
+/* ── Decorative diagonal stripe pattern ── */
+.banner-carousel-deco {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0px,
+    transparent 20px,
+    rgba(255, 255, 255, 0.025) 20px,
+    rgba(255, 255, 255, 0.025) 21px
+  );
+  pointer-events: none;
 }
 
-@keyframes fadeInUp {
+/* ── Glowing circle (right side decoration) ── */
+.banner-carousel-glow {
+  position: absolute;
+  right: -10%;
+  top: -30%;
+  width: 70%;
+  height: 160%;
+  pointer-events: none;
+}
+
+/* ── Right-side abstract shape ── */
+.banner-carousel-slide::after {
+  content: '';
+  position: absolute;
+  right: -5%;
+  bottom: -15%;
+  width: 45%;
+  height: 130%;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  transform: rotate(15deg);
+  pointer-events: none;
+}
+
+/* ============================================
+   CONTENT — Left-aligned
+   ============================================ */
+.banner-carousel-content {
+  position: relative;
+  z-index: 2;
+  color: var(--color-text-inverse);
+  padding: var(--spacing-5) var(--spacing-8);
+  max-width: 68%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  /* Slide-in animation khi slide active */
+  animation: slide-content-in 0.6s var(--ease-out) both;
+}
+
+@keyframes slide-content-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(-20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
-.banner-carousel-title {
-  margin: 0 0 var(--spacing-2) 0;
-  font-size: var(--font-size-2xl);
+/* ── Badge trên tiêu đề ── */
+.banner-carousel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 4px var(--spacing-3);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.04em;
+  color: var(--color-text-inverse);
+  width: fit-content;
+}
+
+.banner-carousel-title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  letter-spacing: -0.03em;
+  line-height: var(--line-height-tight);
 }
 
 .banner-carousel-subtitle {
   margin: 0;
-  font-size: var(--font-size-sm);
-  opacity: 0.95;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  font-size: var(--font-size-xs);
+  opacity: 0.88;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  line-height: var(--line-height-relaxed);
 }
 
-/* Navigation Buttons */
+/* ── CTA Button ── */
+.banner-carousel-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-primary-dark);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  width: fit-content;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.banner-carousel-cta:hover {
+  background: var(--color-text-inverse);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.banner-carousel-cta:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   NAVIGATION BUTTONS
+   ============================================ */
 .banner-carousel-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 2;
-  width: 44px;
-  height: 44px;
+  z-index: 3;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(8px);
   cursor: pointer;
   transition: all var(--transition-base);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-inverse);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Hide tinh tế, show khi hover vào banner */
+  opacity: 0.6;
+}
+
+.banner-carousel:hover .banner-carousel-btn {
+  opacity: 1;
 }
 
 .banner-carousel-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.3);
   transform: translateY(-50%) scale(1.1);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .banner-carousel-btn:active {
@@ -104,8 +215,8 @@
 .banner-carousel-btn::after {
   content: '';
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border: solid var(--color-text-inverse);
   border-width: 2px 2px 0 0;
 }
@@ -116,7 +227,7 @@
 
 .banner-carousel-btn--prev::after {
   transform: rotate(-135deg);
-  margin-left: 4px;
+  margin-left: 3px;
 }
 
 .banner-carousel-btn--next {
@@ -125,74 +236,126 @@
 
 .banner-carousel-btn--next::after {
   transform: rotate(45deg);
-  margin-right: 4px;
+  margin-right: 3px;
 }
 
-/* Dots Indicator */
-.banner-carousel-dots {
+/* ============================================
+   FOOTER — Dots + Counter
+   ============================================ */
+.banner-carousel-footer {
   position: absolute;
   bottom: var(--spacing-3);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
+  right: var(--spacing-4);
+  z-index: 3;
   display: flex;
-  gap: var(--spacing-2);
-  background: rgba(0, 0, 0, 0.2);
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.banner-carousel-dots {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
   padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--radius-full);
   backdrop-filter: blur(8px);
 }
 
 .banner-carousel-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border: none;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.45);
   cursor: pointer;
   padding: 0;
   transition: all var(--transition-base);
 }
 
 .banner-carousel-dot:hover {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.75);
   transform: scale(1.2);
 }
 
 .banner-carousel-dot--active {
   background: var(--color-text-inverse);
-  transform: scale(1.3);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  width: 20px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
 }
 
-/* Responsive - Tablet */
+/* Slide counter "1 / 4" */
+.banner-carousel-counter {
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px var(--spacing-2);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(8px);
+}
+
+/* ============================================
+   PROGRESS BAR — đáy banner
+   ============================================ */
+.banner-carousel-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  z-index: 3;
+}
+
+.banner-carousel-progress-fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 0 var(--radius-full) var(--radius-full) 0;
+  animation: progress-fill 4.5s linear forwards;
+  transform-origin: left;
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (min-width: 640px) {
   .banner-carousel-title {
-    font-size: var(--font-size-4xl);
+    font-size: var(--font-size-3xl);
   }
 
   .banner-carousel-subtitle {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-sm);
   }
 
   .banner-carousel-track {
     min-height: 200px;
   }
-  
+
   .banner-carousel-btn {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
   }
 }
 
-/* Responsive - Desktop */
 @media (min-width: 768px) {
   .banner-carousel-title {
-    font-size: var(--font-size-5xl);
+    font-size: var(--font-size-4xl);
   }
 
   .banner-carousel-track {
     min-height: 220px;
-    max-height: 320px;
+    max-height: 300px;
+  }
+
+  .banner-carousel-content {
+    padding: var(--spacing-6) var(--spacing-10);
+    gap: var(--spacing-3);
   }
 }

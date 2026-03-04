@@ -56,24 +56,101 @@
   max-width: 100%;
 }
 
+/* ============================================
+   SECTION HEADER - Flash Sale branding
+   ============================================ */
+.home-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-5);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 2px solid var(--color-gray-200);
+  position: relative;
+}
+
+.home-section-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, transparent 100%);
+  border-radius: var(--radius-full);
+}
+
+.home-section-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.home-section-title-icon {
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(238, 77, 45, 0.5));
+}
+
 .home-section-title {
-  margin: 0 0 var(--spacing-4) 0;
+  margin: 0;
   font-size: var(--font-size-xl);
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-bold);
-  position: relative;
-  padding-bottom: var(--spacing-2);
+  letter-spacing: -0.01em;
 }
 
-.home-section-title::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-primary) 0%, transparent 100%);
+/* LIVE badge khi Flash Sale đang diễn ra */
+.home-section-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 2px var(--spacing-2);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
   border-radius: var(--radius-full);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+.home-section-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-inverse);
+  animation: dot-blink 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(238, 77, 45, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(238, 77, 45, 0); }
+}
+
+@keyframes dot-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.home-section-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-disabled);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Stagger fade-in animation cho product cards */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-title {
@@ -109,7 +186,7 @@
   gap: var(--spacing-4);
 }
 
-/* Product Card - Modern với hover effects */
+/* Product Card - Modern với hover effects + stagger enter animation */
 .home-card {
   display: block;
   background: var(--color-bg-primary);
@@ -121,6 +198,14 @@
   color: inherit;
   transition: all var(--transition-base);
   position: relative;
+  /* Stagger enter animation */
+  animation: cardEnter 0.45s var(--ease-out) both;
+}
+
+/* Flash Sale active card - border glow đỏ */
+.home-card--flash-active {
+  border-color: rgba(238, 77, 45, 0.35);
+  box-shadow: var(--shadow-sm), 0 0 0 1px rgba(238, 77, 45, 0.15);
 }
 
 .home-card::before {
@@ -206,6 +291,48 @@
   bottom: var(--spacing-2);
 }
 
+/* Flash Sale badge - đỏ nổi bật với shimmer */
+.home-card-badge--flash {
+  background: linear-gradient(135deg, #ff4500 0%, var(--color-primary) 50%, #ff4500 100%);
+  background-size: 200% auto;
+  animation: badge-shimmer 2.5s linear infinite, pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes badge-shimmer {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+/* Upcoming badge - màu secondary */
+.home-card-badge--upcoming {
+  background: linear-gradient(135deg, var(--color-warning) 0%, #d97706 100%);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* Flash shimmer overlay khi card đang trong sale */
+.home-card-flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 300% 300%;
+  animation: flash-sweep 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes flash-sweep {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
 /* Card Body */
 .home-card-body {
   padding: var(--spacing-4);
@@ -237,6 +364,43 @@
   background-clip: text;
 }
 
+/* Flash Sale đang diễn ra tag */
+.home-card-sale-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: var(--spacing-2);
+  padding: 3px var(--spacing-2);
+  background: var(--color-primary-bg-light);
+  color: var(--color-primary-dark);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(238, 77, 45, 0.25);
+}
+
+.home-card-sale-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+  animation: dot-blink 1.2s ease-in-out infinite;
+}
+
+/* Sắp mở bán tag */
+.home-card-upcoming-tag {
+  display: inline-block;
+  margin-top: var(--spacing-2);
+  padding: 3px var(--spacing-2);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(180, 83, 9, 0.2);
+}
+
 /* Responsive - Mobile Large */
 @media (min-width: 480px) {
   .home-grid {
@@ -249,7 +413,10 @@
 @media (min-width: 768px) {
   .home-section-title {
     font-size: var(--font-size-2xl);
-    margin-bottom: var(--spacing-5);
+  }
+
+  .home-section-title-icon {
+    font-size: var(--font-size-2xl);
   }
 
   .home-grid {
