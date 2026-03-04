@@ -1,55 +1,36 @@
+version: '3.8'
+
 services:
-  # 1. APP BACKEND (Của team bạn)
-  backend:
-    build: .
-    container_name: flashsale_backend
+  # 1. Database MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: flashsale_mongo
     restart: always
     ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      # 👇 SỬA LẠI CHO KHỚP VỚI TÊN SERVICE BÊN DƯỚI
-      - MONGO_URI=${MONGO_URI}
-      - REDIS_URI=${REDIS_URI}
-      #sua URI->URL(lam sửa)
-      - RABBITMQ_URL=${RABBITMQ_URI}
-    depends_on:
-      - redis
-      - rabbitmq
+      - "27017:27017"
     volumes:
-      - .:/app
-      - /app/node_modules
-    networks:
-      - flashsale-network
+      - mongo_data:/data/db
 
-  # 2. Redis
-  redis: # Tên service là redis
+  # 2. Redis (Cache & Inventory)
+  redis:
     image: redis:alpine
     container_name: flashsale_redis
     restart: always
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
-    networks:
-      - flashsale-network
 
-  # 3. RabbitMQ
-  rabbitmq: # Tên service là rabbitmq
+  # 3. RabbitMQ (Message Queue)
+  rabbitmq:
     image: rabbitmq:3-management
     container_name: flashsale_rabbitmq
     restart: always
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"   # Port để code connect
+      - "15672:15672" # Port để vào web quản lý (User/Pass mặc định: guest/guest)
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - flashsale-network
 
 volumes:
   mongo_data:
   rabbitmq_data:
-
-networks:
-  flashsale-network:
-    driver: bridge
