@@ -16,6 +16,21 @@ const create = {
     }),
 };
 
+const getMyOrders = {
+    query: Joi.object({
+        page: Joi.number().integer().min(1).optional(),
+        limit: Joi.number().integer().min(1).max(100).optional(),
+    }),
+};
+
+const getMyOrderById = {
+    params: Joi.object({
+        id: Joi.string().required(),
+    }),
+};
+
 module.exports = {
     create,
+    getMyOrders,
+    getMyOrderById,
 };

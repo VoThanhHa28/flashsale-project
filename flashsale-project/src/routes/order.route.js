@@ -24,4 +24,8 @@ router.post("/test", OrderController.placeOrder);
 //   OrderController.getHistory
 // );
 
+// Lịch sử đơn hàng của user (auth) – GET /me, GET /me/:id
+router.get("/me", auth.verifyToken, validate(orderValidation.getMyOrders), OrderController.getMyOrders);
+router.get("/me/:id", auth.verifyToken, validate(orderValidation.getMyOrderById), OrderController.getMyOrderById);
+
 module.exports = router;
