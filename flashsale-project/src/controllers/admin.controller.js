@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
-const { SuccessResponse } = require("../core/success.response");
+const { SuccessResponse, OK } = require("../core/success.response");
+const CONST = require("../constants");
 
 class AdminController {
     /**
@@ -29,6 +30,30 @@ class AdminController {
         new SuccessResponse({
             message: "Flash Sale đã được kích hoạt nóng thành công",
             metadata: result,
+        }).send(res);
+    });
+
+    getUsers = asyncHandler(async (req, res) => {
+        const result = await AdminService.getUsers(req.query);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_USERS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    banUser = asyncHandler(async (req, res) => {
+        const result = await AdminService.banUser(req.params.id);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.BAN_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    health = asyncHandler(async (req, res) => {
+        const result = await AdminService.healthCheck();
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.HEALTH_SUCCESS,
+            data: result,
         }).send(res);
     });
 }

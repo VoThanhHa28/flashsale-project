@@ -1,4 +1,5 @@
 module.exports = {
+    ADMIN: require("./admin.constants"),
     AUTH: require("./auth.constants"),
     USER: require("./user.constants"),
     ORDER: require("./order.constants"),
