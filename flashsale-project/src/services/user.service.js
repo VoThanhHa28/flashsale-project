@@ -12,9 +12,10 @@ const getMe = async (userId) => {
 };
 
 const updateMe = async (userId, payload) => {
-  const allowed = { name: payload.name, address: payload.address };
+  const allowed = { name: payload.name, address: payload.address, avatar: payload.avatar };
   if (allowed.name === undefined) delete allowed.name;
   if (allowed.address === undefined) delete allowed.address;
+  if (allowed.avatar === undefined) delete allowed.avatar;
   const user = await UserRepo.updateById(userId, allowed);
   if (!user) {
     throw new NotFoundError(CONST.USER.MESSAGE.USER_NOT_FOUND);

@@ -4,6 +4,7 @@ const updateMe = {
   body: Joi.object({
     name: Joi.string().min(1).max(100).trim().optional().allow(''),
     address: Joi.string().max(500).trim().optional().allow(''),
+    avatar: Joi.string().uri().optional().allow(''),
   }).min(1),
 };
 
