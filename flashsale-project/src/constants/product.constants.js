@@ -28,6 +28,7 @@ module.exports = {
     INVALID_TIME: 'Thời gian mở bán không hợp lệ (Ngày bắt đầu phải nhỏ hơn ngày kết thúc).',
     GET_STATS_SUCCESS: 'Lấy thống kê sản phẩm thành công',
     FORCE_START_SUCCESS: 'Kích hoạt Flash Sale thành công!',
+    SEARCH_SUCCESS: 'Tìm kiếm sản phẩm thành công',
   },
 
   // 4. CẤU HÌNH CACHE (Redis)

@@ -3,10 +3,16 @@ const { BadRequestError, NotFoundError } = require('../core/error.response');
 const CONST = require('../constants');
 const InventoryService = require('./order.service'); // Import InventoryService
 const redisClient = require('../config/redis');
+const ProductRepo = require('../repositories/product.repo');
 
 // Constants nội bộ cho logic phân trang
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const SORT_MAP = {
+  price_asc: { productPrice: 1 },
+  price_desc: { productPrice: -1 },
+  newest: { createdAt: -1 },
+};
 
 class ProductService {
   /**
@@ -204,6 +210,46 @@ class ProductService {
         pageSize: limitNum,
         total,
         totalPages,
+      },
+    };
+  }
+
+  static async searchProducts({ keyword = '', price_min = 0, price_max = 0, sort = 'newest', page = 1, pageSize = DEFAULT_PAGE_SIZE }) {
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(Math.max(1, parseInt(pageSize)), MAX_PAGE_SIZE);
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter = {};
+
+    if (keyword && keyword.trim()) {
+      filter.productName = { $regex: keyword.trim(), $options: 'i' };
+    }
+
+    // price_min/price_max chỉ được áp dụng khi > 0 (0 = không lọc giá)
+    if (price_min > 0 && price_max > 0 && Number(price_min) > Number(price_max)) {
+      throw new BadRequestError('Giá tối thiểu không được lớn hơn giá tối đa');
+    }
+
+    if (price_min > 0 || price_max > 0) {
+      filter.productPrice = {};
+      if (price_min > 0) filter.productPrice.$gte = Number(price_min);
+      if (price_max > 0) filter.productPrice.$lte = Number(price_max);
+    }
+
+    const sortOption = SORT_MAP[sort] || SORT_MAP.newest;
+
+    const [products, total] = await Promise.all([
+      ProductRepo.searchProducts({ filter, sort: sortOption, skip, limit: limitNum }),
+      ProductRepo.countSearchProducts(filter),
+    ]);
+
+    return {
+      products,
+      pagination: {
+        page: pageNum,
+        pageSize: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
