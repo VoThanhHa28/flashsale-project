@@ -5,6 +5,7 @@ import ProductDetail from '../pages/ProductDetail';
 import Cart from '../pages/Cart';
 import Account from '../pages/Account';
 import OrderHistory from '../pages/OrderHistory';
+import OrderDetail from '../pages/OrderDetail';
 
 // Export các components để import trong App.js
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory };
+export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail };
