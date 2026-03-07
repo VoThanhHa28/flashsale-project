@@ -1,6 +1,7 @@
 module.exports = {
     STATUS: {
         PENDING: "pending",
+        CONFIRMED: "confirmed",
         COMPLETED: "completed",
         SUCCESS: "success",
         FAILED: "failed",
