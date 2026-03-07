@@ -214,49 +214,34 @@ class ProductService {
     };
   }
 
-  /**
-   * Tìm kiếm & lọc sản phẩm
-   * @param {string}  keyword   - Từ khoá tìm theo tên SP (Regex, không phân biệt hoa/thường)
-   * @param {number}  price_min - Giá tối thiểu (0 = bỏ qua)
-   * @param {number}  price_max - Giá tối đa (0 = bỏ qua)
-   * @param {string}  sort      - price_asc | price_desc | newest
-   * @param {number}  page      - Trang hiện tại
-   * @param {number}  pageSize  - Số bản ghi mỗi trang
-   */
   static async searchProducts({ keyword = '', price_min = 0, price_max = 0, sort = 'newest', page = 1, pageSize = DEFAULT_PAGE_SIZE }) {
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(Math.max(1, parseInt(pageSize)), MAX_PAGE_SIZE);
     const skip = (pageNum - 1) * limitNum;
 
-    // Xây filter động
     const filter = {};
 
-    // Tìm theo tên sản phẩm (Regex không phân biệt hoa/thường)
     if (keyword && keyword.trim()) {
       filter.productName = { $regex: keyword.trim(), $options: 'i' };
     }
 
-    // Lọc theo khoảng giá (chỉ apply khi > 0)
+    // price_min/price_max chỉ được áp dụng khi > 0 (0 = không lọc giá)
+    if (price_min > 0 && price_max > 0 && Number(price_min) > Number(price_max)) {
+      throw new BadRequestError('Giá tối thiểu không được lớn hơn giá tối đa');
+    }
+
     if (price_min > 0 || price_max > 0) {
       filter.productPrice = {};
       if (price_min > 0) filter.productPrice.$gte = Number(price_min);
       if (price_max > 0) filter.productPrice.$lte = Number(price_max);
     }
 
-    // Validate price range
-    if (price_min > 0 && price_max > 0 && price_min > price_max) {
-      throw new BadRequestError('Giá tối thiểu không được lớn hơn giá tối đa');
-    }
-
     const sortOption = SORT_MAP[sort] || SORT_MAP.newest;
 
-    // Gọi Repository (không gọi Model trực tiếp)
     const [products, total] = await Promise.all([
       ProductRepo.searchProducts({ filter, sort: sortOption, skip, limit: limitNum }),
       ProductRepo.countSearchProducts(filter),
     ]);
-
-    const totalPages = Math.ceil(total / limitNum);
 
     return {
       products,
@@ -264,7 +249,7 @@ class ProductService {
         page: pageNum,
         pageSize: limitNum,
         total,
-        totalPages,
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
