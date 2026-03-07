@@ -42,5 +42,6 @@ router.use("/v1/api/seed", seedRouter);
 
 // Hồng sửa – mount route internal để Worker gọi emit system-error (Case 3, Redis down)
 router.use("/internal", internalRouter);
-
+//Ton them route user
+router.use("/v1/api/users", userRouter);
 module.exports = router;
