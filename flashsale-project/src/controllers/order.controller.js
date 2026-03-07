@@ -53,6 +53,22 @@ class OrderController {
             },
         }).send(res);
     });
+
+    static getMyOrders = asyncHandler(async (req, res) => {
+        const result = await InventoryService.getMyOrders(req.user._id, req.query);
+        return new OK({
+            message: CONST.ORDER.MESSAGE.GET_MY_ORDERS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    static getMyOrderById = asyncHandler(async (req, res) => {
+        const result = await InventoryService.getMyOrderById(req.user._id, req.params.id);
+        return new OK({
+            message: CONST.ORDER.MESSAGE.GET_MY_ORDER_SUCCESS,
+            data: result,
+        }).send(res);
+    });
 }
 
 module.exports = OrderController;
