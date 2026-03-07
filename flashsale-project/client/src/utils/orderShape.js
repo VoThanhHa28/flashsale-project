@@ -7,7 +7,9 @@
  * - camelCase: { orderId, orderStatus, orderDate, totalAmount, ... }
  * - snake_case: { order_id, order_status, order_date, total_amount, ... }
  *
- * Component cần: { id, code, shop, createdAt, status, totalAmount, items[], holdExpiresAt }
+ * Component cần:
+ *   { id, code, shop, createdAt, status, totalAmount, items[],
+ *     holdExpiresAt, shippingAddress, timeline[] }
  */
 
 /**
@@ -56,6 +58,31 @@ function normalizeShop(raw) {
 }
 
 /**
+ * Chuẩn hóa địa chỉ giao hàng
+ * BE có thể trả về camelCase hoặc snake_case
+ */
+function normalizeShippingAddress(raw) {
+  if (!raw) return null;
+  return {
+    fullName: raw.fullName || raw.full_name || raw.name || '',
+    phone: raw.phone || raw.phoneNumber || raw.phone_number || '',
+    address: raw.address || raw.fullAddress || raw.full_address || '',
+  };
+}
+
+/**
+ * Chuẩn hóa 1 timeline event
+ */
+function normalizeTimelineEvent(raw) {
+  if (!raw) return null;
+  return {
+    status: mapStatusToUI(raw.status || ''),
+    timestamp: raw.timestamp || raw.time || raw.createdAt || '',
+    note: raw.note || raw.message || raw.description || '',
+  };
+}
+
+/**
  * Chuẩn hóa 1 order từ API
  */
 export function normalizeOrder(raw) {
@@ -69,6 +96,12 @@ export function normalizeOrder(raw) {
     status: mapStatusToUI(raw.status || raw.orderStatus || raw.order_status || 'pending'),
     totalAmount: raw.totalAmount || raw.total_amount || raw.totalPrice || raw.total_price || 0,
     holdExpiresAt: raw.holdExpiresAt || raw.hold_expires_at || null,
+    shippingAddress: normalizeShippingAddress(
+      raw.shippingAddress || raw.shipping_address || raw.deliveryAddress || null
+    ),
+    timeline: Array.isArray(raw.timeline)
+      ? raw.timeline.map(normalizeTimelineEvent).filter(Boolean)
+      : [],
     items: Array.isArray(raw.items)
       ? raw.items.map(normalizeOrderItem).filter(Boolean)
       : [],
