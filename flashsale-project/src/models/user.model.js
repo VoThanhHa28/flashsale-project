@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema(
       enum: ['USER', 'SHOP_ADMIN'],
       default: 'USER',
     },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
   },
   {
     timestamps: true,

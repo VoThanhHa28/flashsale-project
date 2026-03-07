@@ -1,8 +1,12 @@
+const mongoose = require("mongoose");
 const Product = require("../models/product.model");
+const redisClient = require("../config/redis");
+const UserRepo = require("../repositories/user.repo");
 const { BadRequestError, NotFoundError } = require("../core/error.response");
 const { getIO } = require("../config/socket");
 const { SOCKET_EVENT, SOCKET_ROOM } = require("../constants/socket.constant");
 const OrderService = require("./order.service");
+const CONST = require("../constants");
 
 class AdminService {
     /**
@@ -118,6 +122,47 @@ class AdminService {
             duration: `${duration} seconds`,
             socketEmitted: true,
         };
+    }
+
+    /**
+     * Danh sách user phân trang (admin).
+     */
+    static async getUsers(query = {}) {
+        return UserRepo.findAllPaginated({
+            page: query.page,
+            limit: query.limit,
+        });
+    }
+
+    /**
+     * Khóa user (set status inactive).
+     */
+    static async banUser(id) {
+        const user = await UserRepo.updateStatusById(id, 'inactive');
+        if (!user) {
+            throw new NotFoundError(CONST.ADMIN.MESSAGE.USER_NOT_FOUND);
+        }
+        return { user };
+    }
+
+    /**
+     * Health check: Mongo + Redis.
+     */
+    static async healthCheck() {
+        let mongo = 'fail';
+        if (mongoose.connection.readyState === 1) {
+            mongo = 'ok';
+        }
+
+        let redis = 'fail';
+        try {
+            await redisClient.ping();
+            redis = 'ok';
+        } catch (_) {
+            // keep redis = 'fail'
+        }
+
+        return { mongo, redis };
     }
 }
 
