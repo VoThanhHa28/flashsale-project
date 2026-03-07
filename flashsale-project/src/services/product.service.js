@@ -3,10 +3,16 @@ const { BadRequestError, NotFoundError } = require('../core/error.response');
 const CONST = require('../constants');
 const InventoryService = require('./order.service'); // Import InventoryService
 const redisClient = require('../config/redis');
+const ProductRepo = require('../repositories/product.repo');
 
 // Constants nội bộ cho logic phân trang
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const SORT_MAP = {
+  price_asc: { productPrice: 1 },
+  price_desc: { productPrice: -1 },
+  newest: { createdAt: -1 },
+};
 
 class ProductService {
   /**
@@ -195,6 +201,61 @@ class ProductService {
     }
 
     // 5. Tính toán Pagination metadata
+    const totalPages = Math.ceil(total / limitNum);
+
+    return {
+      products,
+      pagination: {
+        page: pageNum,
+        pageSize: limitNum,
+        total,
+        totalPages,
+      },
+    };
+  }
+
+  /**
+   * Tìm kiếm & lọc sản phẩm
+   * @param {string}  keyword   - Từ khoá tìm theo tên SP (Regex, không phân biệt hoa/thường)
+   * @param {number}  price_min - Giá tối thiểu (0 = bỏ qua)
+   * @param {number}  price_max - Giá tối đa (0 = bỏ qua)
+   * @param {string}  sort      - price_asc | price_desc | newest
+   * @param {number}  page      - Trang hiện tại
+   * @param {number}  pageSize  - Số bản ghi mỗi trang
+   */
+  static async searchProducts({ keyword = '', price_min = 0, price_max = 0, sort = 'newest', page = 1, pageSize = DEFAULT_PAGE_SIZE }) {
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(Math.max(1, parseInt(pageSize)), MAX_PAGE_SIZE);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Xây filter động
+    const filter = {};
+
+    // Tìm theo tên sản phẩm (Regex không phân biệt hoa/thường)
+    if (keyword && keyword.trim()) {
+      filter.productName = { $regex: keyword.trim(), $options: 'i' };
+    }
+
+    // Lọc theo khoảng giá (chỉ apply khi > 0)
+    if (price_min > 0 || price_max > 0) {
+      filter.productPrice = {};
+      if (price_min > 0) filter.productPrice.$gte = Number(price_min);
+      if (price_max > 0) filter.productPrice.$lte = Number(price_max);
+    }
+
+    // Validate price range
+    if (price_min > 0 && price_max > 0 && price_min > price_max) {
+      throw new BadRequestError('Giá tối thiểu không được lớn hơn giá tối đa');
+    }
+
+    const sortOption = SORT_MAP[sort] || SORT_MAP.newest;
+
+    // Gọi Repository (không gọi Model trực tiếp)
+    const [products, total] = await Promise.all([
+      ProductRepo.searchProducts({ filter, sort: sortOption, skip, limit: limitNum }),
+      ProductRepo.countSearchProducts(filter),
+    ]);
+
     const totalPages = Math.ceil(total / limitNum);
 
     return {

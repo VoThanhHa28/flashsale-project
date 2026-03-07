@@ -5,6 +5,15 @@ const CONST = require('../constants');
 
 class ProductController {
 
+  // GET /v1/api/products/search
+  static searchProducts = asyncHandler(async (req, res) => {
+    const result = await ProductService.searchProducts(req.query);
+    new OK({
+      message: CONST.PRODUCT.MESSAGE.SEARCH_SUCCESS,
+      data: result,
+    }).send(res);
+  });
+
   // GET /v1/api/products
   static getProducts = asyncHandler(async (req, res) => {
     const result = await ProductService.getAllProducts(req.query);

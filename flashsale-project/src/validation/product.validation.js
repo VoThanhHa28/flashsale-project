@@ -81,6 +81,22 @@ const updateProduct = {
   }),
 };
 
+const searchProducts = {
+  query: Joi.object({
+    keyword: Joi.string().trim().max(200).allow('').default(''),
+    price_min: Joi.number().min(0).default(0),
+    price_max: Joi.number().min(0).default(0)
+      .messages({
+        'number.min': 'Giá tối đa phải lớn hơn hoặc bằng 0',
+      }),
+    sort: Joi.string()
+      .valid('price_asc', 'price_desc', 'newest')
+      .default('newest'),
+    page: Joi.number().integer().min(1).default(1),
+    pageSize: Joi.number().integer().min(1).max(100).default(20),
+  }),
+};
+
 const getProductStats = {};
 
 const forceStartProduct = {
@@ -93,6 +109,7 @@ module.exports = {
   getProducts,
   createProduct,
   updateProduct,
+  searchProducts,
   getProductStats,
   forceStartProduct,
 };
