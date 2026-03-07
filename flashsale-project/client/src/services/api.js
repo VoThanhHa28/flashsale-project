@@ -377,6 +377,53 @@ export async function cancelOrder(orderId) {
 }
 
 /**
+ * PATCH /v1/api/user/profile – Cập nhật thông tin hồ sơ cá nhân
+ *
+ * Payload: { name, phone, dob, gender, avatar? }
+ * Trả về: { success: boolean, message: string, user?: User }
+ *
+ * ⚠️ TEMPORARY: Mock – lưu vào localStorage để test UI
+ * TODO: Khi có BE, thay bằng real PATCH request
+ */
+export async function updateProfile(fields) {
+  // ============================================
+  // ⚠️ TEMPORARY: Mock – cập nhật localStorage ngay lập tức
+  // TODO: Khi có BE, bỏ comment phần real API và xóa mock này
+  // ============================================
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const current = getUser() || {};
+    const updated = { ...current, ...fields };
+    setUser(updated);
+    return { success: true, message: 'Cập nhật hồ sơ thành công', user: updated };
+  } catch (err) {
+    console.error('Lỗi cập nhật hồ sơ:', err);
+    return { success: false, message: 'Không thể cập nhật hồ sơ' };
+  }
+
+  // ============================================
+  // TODO: Khi có BE, bỏ comment phần này và xóa phần mock ở trên
+  // BE trả về: { statusCode, message, data: { user: { ... } } }
+  // ============================================
+  /*
+  if (!isApiConfigured()) return { success: false, message: 'Chưa cấu hình API' };
+  try {
+    const res = await request('/v1/api/user/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(fields),
+    });
+    const data = getPayload(res);
+    const user = data?.user ?? data;
+    setUser(user);
+    return { success: true, message: res.message || 'Cập nhật hồ sơ thành công', user };
+  } catch (err) {
+    console.error('Lỗi PATCH /v1/api/user/profile:', err);
+    return { success: false, message: err.message || 'Không thể cập nhật hồ sơ' };
+  }
+  */
+}
+
+/**
  * GET /v1/api/order/me/:id - Lấy chi tiết 1 đơn hàng cụ thể
  * 
  * ⚠️ TEMPORARY: Đang dùng mock data để test UI
