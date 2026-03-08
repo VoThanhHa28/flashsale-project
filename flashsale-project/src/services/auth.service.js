@@ -16,7 +16,7 @@ class AuthService {
   static async register({ email, password, name }) {
     console.log('REGISTER DB:', User.db.name);
 
-    const holderUser = await User.findOne({ email }).lean();
+    const holderUser = await User.findOne({ email, is_deleted: false }).lean();
 
     if (holderUser) {
       throw new ConflictRequestError(CONST.AUTH.MESSAGE.EMAIL_EXISTS);
@@ -46,7 +46,7 @@ class AuthService {
   // ================= LOGIN =================
   static async login({ email, password }) {
     console.log('LOGIN DB:', User.db.name);
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email, is_deleted: false }).select('+password');
 
     if (!user) {
       throw new AuthFailureError(CONST.AUTH.MESSAGE.INVALID_CREDENTIALS);
@@ -83,7 +83,7 @@ class AuthService {
   // ================= GET ME =================
   static async getMe(userId) {
 
-    const user = await User.findById(userId).select('-password').lean();
+    const user = await User.findOne({ _id: userId, is_deleted: false }).select('-password').lean();
 
     if (!user) {
       throw new BadRequestError(CONST.AUTH.MESSAGE.USER_NOT_FOUND);
