@@ -3,7 +3,8 @@
 const Product = require('../models/product.model');
 
 const searchProducts = async ({ filter, sort, skip, limit }) => {
-    return await Product.find(filter)
+    const activeFilter = { ...(filter || {}), is_deleted: false };
+    return await Product.find(activeFilter)
         .select('-__v')
         .sort(sort)
         .skip(skip)
@@ -12,7 +13,8 @@ const searchProducts = async ({ filter, sort, skip, limit }) => {
 };
 
 const countSearchProducts = async (filter) => {
-    return await Product.countDocuments(filter);
+    const activeFilter = { ...(filter || {}), is_deleted: false };
+    return await Product.countDocuments(activeFilter);
 };
 
 module.exports = {

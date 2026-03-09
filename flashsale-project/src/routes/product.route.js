@@ -50,4 +50,11 @@ router.put('/:id/force-start', verifyToken, requireShopAdmin, validate(productVa
  */
 router.put('/:id', verifyToken, requireShopAdmin, validate(productValidation.updateProduct), productController.updateProduct);
 
+/**
+ * @route   DELETE /v1/api/products/:id
+ * @desc    Xóa mềm sản phẩm
+ * @access  Private (Admin)
+ */
+router.delete('/:id', verifyToken, requireShopAdmin, validate(productValidation.deleteProduct), productController.deleteProduct);
+
 module.exports = router;

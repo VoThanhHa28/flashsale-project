@@ -74,7 +74,7 @@ class ProductService {
     } = payload;
 
     // Tìm product hiện tại
-    const existingProduct = await Product.findById(productId);
+    const existingProduct = await Product.findOne({ _id: productId, is_deleted: false });
     if (!existingProduct) {
       throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
     }
@@ -113,8 +113,8 @@ class ProductService {
     if (isPublished !== undefined) updateData.isPublished = Boolean(isPublished);
 
     // Update product
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: productId, is_deleted: false },
       updateData,
       { new: true, runValidators: true }
     );
@@ -131,20 +131,41 @@ class ProductService {
   }
 
   /**
+   * Soft-delete sản phẩm
+   * Không xóa cứng dữ liệu để giữ lịch sử đối soát
+   */
+  static async deleteProduct(productId) {
+    const deletedProduct = await Product.findOneAndUpdate(
+      { _id: productId, is_deleted: false },
+      { is_deleted: true, isPublished: false },
+      { new: true }
+    );
+
+    if (!deletedProduct) {
+      throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
+    }
+
+    // Khi soft-delete, set stock Redis về 0 để chặn mua tiếp
+    await InventoryService.updateStock(deletedProduct._id.toString(), 0);
+
+    return deletedProduct;
+  }
+
+  /**
    * Force Start Flash Sale (Kích hoạt ngay)
    * Update productStartTime = hiện tại và đồng bộ Redis
    */
   static async forceStartProduct(productId) {
     // Tìm product hiện tại
-    const existingProduct = await Product.findById(productId);
+    const existingProduct = await Product.findOne({ _id: productId, is_deleted: false });
     if (!existingProduct) {
       throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
     }
 
     // Update productStartTime = hiện tại
     const now = new Date();
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: productId, is_deleted: false },
       { productStartTime: now },
       { new: true, runValidators: true }
     );
@@ -173,7 +194,7 @@ class ProductService {
     sort[sortField] = sortOrder === 'asc' ? 1 : -1;
 
     // 3. Query DB song song (Promise.all)
-    const query = {}; // Có thể thêm filter active/inactive sau này
+    const query = { is_deleted: false }; // Ẩn dữ liệu đã soft-delete
     const [products, total] = await Promise.all([
       Product.find(query)
         .select('-__v') // Bỏ field version của mongoose
@@ -270,27 +291,30 @@ class ProductService {
       endedFlashSaleProducts,
     ] = await Promise.all([
       // Tổng số sản phẩm
-      Product.countDocuments({}),
+      Product.countDocuments({ is_deleted: false }),
       
       // Số sản phẩm đang bán (isPublished: true)
-      Product.countDocuments({ isPublished: true }),
+      Product.countDocuments({ is_deleted: false, isPublished: true }),
       
       // Số sản phẩm đã hết hàng (productQuantity: 0)
-      Product.countDocuments({ productQuantity: 0 }),
+      Product.countDocuments({ is_deleted: false, productQuantity: 0 }),
       
       // Số sản phẩm đang trong Flash Sale (productStartTime <= now <= productEndTime)
       Product.countDocuments({
+        is_deleted: false,
         productStartTime: { $lte: now },
         productEndTime: { $gte: now },
       }),
       
       // Số sản phẩm sắp bắt đầu Flash Sale (productStartTime > now)
       Product.countDocuments({
+        is_deleted: false,
         productStartTime: { $gt: now },
       }),
       
       // Số sản phẩm đã kết thúc Flash Sale (productEndTime < now)
       Product.countDocuments({
+        is_deleted: false,
         productEndTime: { $lt: now },
       }),
     ]);

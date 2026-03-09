@@ -85,6 +85,11 @@ const productSchema = new mongoose.Schema(
       required: true, 
       default: () => new Date(+new Date() + 7*24*60*60*1000) // Mặc định 7 ngày sau hết hạn
     },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
   },
   {
     timestamps: true,

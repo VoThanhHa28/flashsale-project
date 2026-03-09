@@ -105,6 +105,12 @@ const forceStartProduct = {
   }),
 };
 
+const deleteProduct = {
+  params: Joi.object({
+    id: Joi.string().required(),
+  }),
+};
+
 module.exports = {
   getProducts,
   createProduct,
@@ -112,4 +118,5 @@ module.exports = {
   searchProducts,
   getProductStats,
   forceStartProduct,
+  deleteProduct,
 };
