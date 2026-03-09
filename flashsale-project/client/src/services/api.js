@@ -195,6 +195,22 @@ export async function login(email, password) {
   return { token, user, response: res };
 }
 
+/**
+ * GET /v1/api/auth/me - lấy thông tin user đầy đủ sau login (bao gồm role nếu BE trả về)
+ */
+export async function getCurrentUser() {
+  if (!isApiConfigured()) return null;
+  try {
+    const res = await request('/v1/api/auth/me');
+    const data = getPayload(res);
+    // BE có thể trả data.user hoặc trả thẳng object user
+    return data?.user ?? data ?? null;
+  } catch (err) {
+    console.error('Lỗi gọi API /v1/api/auth/me:', err);
+    return null;
+  }
+}
+
 /** POST register. */
 export async function register(email, password, name) {
   const res = await request('/v1/api/auth/register', {
@@ -462,4 +478,167 @@ export async function getOrderById(orderId) {
     return null;
   }
   */
+}
+
+// In-memory cache cho trang quản lý đơn của Shop Owner (chỉ dùng mock UI).
+let shopOrdersCache = null;
+
+function toShopStatus(orderStatus) {
+  const map = {
+    pending_payment: 'pending',
+    pending_confirm: 'pending',
+    processing: 'processing',
+    shipping: 'shipping',
+    completed: 'completed',
+    cancelled: 'cancelled',
+    refunded: 'refunded',
+  };
+  return map[orderStatus] || 'pending';
+}
+
+function fromShopStatus(shopStatus, currentStatus) {
+  if (shopStatus === 'cancelled') return 'cancelled';
+  if (shopStatus === 'confirmed') return 'processing';
+  if (shopStatus === 'pending') return currentStatus || 'pending_confirm';
+  return currentStatus || shopStatus;
+}
+
+function canApprove(rawStatus) {
+  return rawStatus === 'pending_payment' || rawStatus === 'pending_confirm';
+}
+
+async function ensureShopOrdersCache() {
+  if (Array.isArray(shopOrdersCache)) return shopOrdersCache;
+  const mockData = await import('../data/mockOrders.json');
+  shopOrdersCache = Array.isArray(mockData.default?.data?.orders)
+    ? [...mockData.default.data.orders]
+    : [];
+  return shopOrdersCache;
+}
+
+/**
+ * GET /v1/api/shop/orders
+ *
+ * Params:
+ *   page, limit, status(all|pending|processing|shipping|completed|cancelled|refunded),
+ *   search (mã đơn / tên khách / tên sản phẩm)
+ *
+ * Trả về:
+ * {
+ *   orders: [{ id, code, customerName, customerPhone, itemsCount, totalAmount, status, createdAt, canApprove, canCancel }],
+ *   pagination
+ * }
+ */
+export async function getShopOrders({
+  page = 1,
+  limit = 10,
+  status = 'all',
+  search = '',
+  sort = 'newest',
+} = {}) {
+  try {
+    const rawOrders = await ensureShopOrdersCache();
+
+    let orders = rawOrders.map((raw) => {
+      const items = Array.isArray(raw.items) ? raw.items : [];
+      const customerName =
+        raw.shippingAddress?.fullName ||
+        raw.shipping_address?.full_name ||
+        'Khách hàng';
+      const customerPhone =
+        raw.shippingAddress?.phone ||
+        raw.shipping_address?.phone ||
+        '';
+      const currentStatus = raw.status || 'pending_confirm';
+      const shopStatus = toShopStatus(currentStatus);
+      return {
+        id: raw.id || raw._id || '',
+        code: raw.code || '',
+        customerName,
+        customerPhone,
+        itemsCount: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
+        totalAmount: raw.totalAmount || raw.pricing?.finalTotal || 0,
+        status: shopStatus,
+        createdAt: raw.createdAt || raw.orderTime || new Date().toISOString(),
+        canApprove: canApprove(currentStatus),
+        canCancel: canApprove(currentStatus),
+      };
+    });
+
+    if (status && status !== 'all') {
+      orders = orders.filter((order) => order.status === status);
+    }
+
+    if (search) {
+      const q = search.toLowerCase();
+      orders = orders.filter(
+        (order) =>
+          order.code.toLowerCase().includes(q) ||
+          order.customerName.toLowerCase().includes(q)
+      );
+    }
+
+    switch (sort) {
+      case 'oldest':
+        orders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        break;
+      case 'amount_high':
+        orders.sort((a, b) => b.totalAmount - a.totalAmount);
+        break;
+      case 'amount_low':
+        orders.sort((a, b) => a.totalAmount - b.totalAmount);
+        break;
+      default:
+        orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    const totalOrders = orders.length;
+    const totalPages = Math.max(1, Math.ceil(totalOrders / limit));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * limit;
+    const sliced = orders.slice(start, start + limit);
+
+    return {
+      orders: sliced,
+      pagination: normalizePagination({ page: safePage, limit, totalOrders, totalPages }),
+    };
+  } catch (err) {
+    console.error('Lỗi load mock shop orders:', err);
+    return {
+      orders: [],
+      pagination: normalizePagination({ page: 1, limit, totalOrders: 0, totalPages: 1 }),
+    };
+  }
+}
+
+/**
+ * PATCH /v1/api/shop/orders/:id/status
+ * Mock: cập nhật cache local để test bảng quản lý đơn.
+ */
+export async function updateShopOrderStatus(orderId, nextStatus) {
+  try {
+    const list = await ensureShopOrdersCache();
+    const idx = list.findIndex((o) => String(o.id || o._id) === String(orderId));
+    if (idx < 0) return { success: false, message: 'Không tìm thấy đơn hàng' };
+
+    const current = list[idx];
+    const currentStatus = current.status || 'pending_confirm';
+    if (!canApprove(currentStatus)) {
+      return { success: false, message: 'Đơn hàng này không thể duyệt/hủy' };
+    }
+
+    const updatedStatus = fromShopStatus(nextStatus, currentStatus);
+    list[idx] = {
+      ...current,
+      status: updatedStatus,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    const actionLabel = nextStatus === 'cancelled' ? 'hủy' : 'duyệt';
+    return { success: true, message: `Đã ${actionLabel} đơn hàng thành công` };
+  } catch (err) {
+    console.error('Lỗi cập nhật trạng thái đơn shop:', err);
+    return { success: false, message: 'Không thể cập nhật trạng thái đơn hàng' };
+  }
 }
