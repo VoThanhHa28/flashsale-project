@@ -2,6 +2,7 @@
   "statusCode": 200,
   "message": "Lấy danh sách đơn hàng thành công",
   "data": {
+    "schemaVersion": "v2-hybrid-user-shop",
     "orders": [
       {
         "id": "ord-001",
@@ -10,6 +11,17 @@
         "createdAt": "2026-02-16T10:30:00.000Z",
         "status": "pending_payment",
         "totalAmount": 15000000,
+        "pricing": {
+          "subtotal": 15000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 15000000
+        },
+        "actions": {
+          "canCancel": true,
+          "canTrack": false,
+          "canReview": false
+        },
         "holdExpiresAt": "2026-02-16T11:00:00.000Z",
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
@@ -36,6 +48,17 @@
         "createdAt": "2026-02-16T09:15:00.000Z",
         "status": "pending_payment",
         "totalAmount": 25000000,
+        "pricing": {
+          "subtotal": 25000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 25000000
+        },
+        "actions": {
+          "canCancel": true,
+          "canTrack": false,
+          "canReview": false
+        },
         "holdExpiresAt": "2026-02-16T09:45:00.000Z",
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
@@ -62,6 +85,17 @@
         "createdAt": "2026-02-15T14:20:00.000Z",
         "status": "pending_confirm",
         "totalAmount": 13000000,
+        "pricing": {
+          "subtotal": 13000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 13000000
+        },
+        "actions": {
+          "canCancel": true,
+          "canTrack": false,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -95,6 +129,17 @@
         "createdAt": "2026-02-15T11:00:00.000Z",
         "status": "processing",
         "totalAmount": 12000000,
+        "pricing": {
+          "subtotal": 12000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 12000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": false,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -122,6 +167,17 @@
         "createdAt": "2026-02-14T16:45:00.000Z",
         "status": "shipping",
         "totalAmount": 3000000,
+        "pricing": {
+          "subtotal": 3000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 3000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": true,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -150,6 +206,17 @@
         "createdAt": "2026-02-14T10:30:00.000Z",
         "status": "shipping",
         "totalAmount": 18000000,
+        "pricing": {
+          "subtotal": 18000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 18000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": true,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -178,6 +245,17 @@
         "createdAt": "2026-02-13T15:20:00.000Z",
         "status": "completed",
         "totalAmount": 7000000,
+        "pricing": {
+          "subtotal": 7000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 7000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": true,
+          "canReview": true
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -207,6 +285,17 @@
         "createdAt": "2026-02-13T09:00:00.000Z",
         "status": "completed",
         "totalAmount": 22000000,
+        "pricing": {
+          "subtotal": 22000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 22000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": true,
+          "canReview": true
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -236,6 +325,17 @@
         "createdAt": "2026-02-12T14:10:00.000Z",
         "status": "cancelled",
         "totalAmount": 4500000,
+        "pricing": {
+          "subtotal": 4500000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 4500000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": false,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -262,6 +362,17 @@
         "createdAt": "2026-02-11T11:30:00.000Z",
         "status": "refunded",
         "totalAmount": 9500000,
+        "pricing": {
+          "subtotal": 9500000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 9500000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": false,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -290,6 +401,17 @@
         "createdAt": "2026-02-10T13:45:00.000Z",
         "status": "completed",
         "totalAmount": 16000000,
+        "pricing": {
+          "subtotal": 16000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 16000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": true,
+          "canReview": true
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -319,6 +441,17 @@
         "createdAt": "2026-02-09T08:20:00.000Z",
         "status": "processing",
         "totalAmount": 11000000,
+        "pricing": {
+          "subtotal": 11000000,
+          "shippingFee": 0,
+          "discount": 0,
+          "finalTotal": 11000000
+        },
+        "actions": {
+          "canCancel": false,
+          "canTrack": false,
+          "canReview": false
+        },
         "shippingAddress": {
           "fullName": "Cao Nguyễn Hồng",
           "phone": "0901234567",
@@ -343,6 +476,8 @@
     "pagination": {
       "page": 1,
       "limit": 10,
+      "pageSize": 10,
+      "total": 12,
       "totalOrders": 12,
       "totalPages": 2
     }

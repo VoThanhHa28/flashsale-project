@@ -71,7 +71,10 @@ function Login() {
       if (api.isApiConfigured()) {
         const { token, user } = await api.login(trimmedEmail.toLowerCase(), trimmedPassword);
         if (token) api.setToken(token);
-        if (user) api.setUser(user);
+        // Luôn cố lấy profile đầy đủ sau login để có role/permissions chính xác.
+        const me = token ? await api.getCurrentUser() : null;
+        if (me) api.setUser(me);
+        else if (user) api.setUser(user);
         const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
         navigate(safeRedirect, { replace: true });
         return;
