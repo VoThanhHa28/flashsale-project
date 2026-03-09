@@ -2,7 +2,9 @@ const redisClient = require("../config/redis");
 const ProductModel = require("../models/product.model");
 const OrderModel = require("../models/order.model");
 const { getIO } = require("../config/socket");
+const OrderRepo = require("../repositories/order.repo");
 const { NotFoundError, BadRequestError } = require("../core/error.response");
+const { ForbiddenError } = require("../core/error.response");
 const CONST = require("../constants");
 
 class OrderService {
@@ -194,6 +196,23 @@ class OrderService {
             console.error(`[OrderService] ❌ Lỗi saveFailedOrder:`, error.message);
             throw error;
         }
+    }
+
+    // 7. ORDER HISTORY (không đụng Inventory)
+    static async getMyOrders(userId, query = {}) {
+        const result = await OrderRepo.findByUserId(userId.toString(), {
+            page: query.page,
+            limit: query.limit,
+        });
+        return result;
+    }
+
+    static async getMyOrderById(userId, orderId) {
+        const order = await OrderRepo.findByIdAndUserId(orderId, userId);
+        if (!order) {
+            throw new ForbiddenError(CONST.ORDER.MESSAGE.ORDER_NOT_OWNED);
+        }
+        return { order };
     }
 }
 

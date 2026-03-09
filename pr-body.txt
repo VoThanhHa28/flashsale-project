@@ -1,0 +1,44 @@
+## Mo ta
+
+Them API tim kiem va loc san pham cho M5 (Frontend Search page).
+
+## Cac thay doi
+
+- Tao moi `src/repositories/product.repo.js` - Repository layer theo chuan Leader
+- Cap nhat `src/services/product.service.js` - Them searchProducts(), dung ProductRepo
+- Cap nhat `src/controllers/product.controller.js` - Them handler searchProducts
+- Cap nhat `src/validation/product.validation.js` - Them schema Joi cho search
+- Cap nhat `src/routes/product.route.js` - Them GET /search (dat truoc /stats va /:id)
+- Cap nhat `src/constants/product.constants.js` - Them SEARCH_SUCCESS
+
+## API
+
+GET /v1/api/products/search
+
+Query params:
+- keyword (string) - tim theo ten SP, khong phan biet hoa/thuong
+- price_min (number >= 0) - gia toi thieu, 0 = bo qua
+- price_max (number >= 0) - gia toi da, 0 = bo qua
+- sort (price_asc | price_desc | newest) - mac dinh: newest
+- page (integer >= 1) - mac dinh: 1
+- pageSize (1-100) - mac dinh: 20
+
+Response format:
+{
+  "statusCode": 200,
+  "message": "Tim kiem san pham thanh cong",
+  "data": {
+    "products": [...],
+    "pagination": { "page", "pageSize", "total", "totalPages" }
+  }
+}
+
+## Checklist
+
+- [x] Dung chuan 4-step Leader (Constants > Validation > Service > Controller > Route)
+- [x] Dung Repository Pattern (product.repo.js)
+- [x] Khong try-catch trong Controller
+- [x] Khong hardcode string (dung CONST)
+- [x] Validation Joi day du (400 khi sai params)
+- [x] Comment sach
+- [x] Khong xung dot voi cac route cu

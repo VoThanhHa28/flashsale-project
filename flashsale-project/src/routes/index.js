@@ -8,6 +8,7 @@ const productRouter = require("./product.route");
 const adminRouter = require("./admin.route");
 const seedRouter = require("./seed.route");
 const userRouter = require("./user.route");
+const shopRouter = require("./shop.route");
 // Hồng sửa – route nội bộ để Worker gọi Main App emit system-error khi Redis chết (Case 3)
 const internalRouter = require("./internal.route");
 
@@ -42,5 +43,9 @@ router.use("/v1/api/seed", seedRouter);
 
 // Hồng sửa – mount route internal để Worker gọi emit system-error (Case 3, Redis down)
 router.use("/internal", internalRouter);
+router.use("/v1/api/users", userRouter);
+
+// Shop routes (M3)
+router.use("/v1/api/shop", shopRouter);
 
 module.exports = router;

@@ -23,10 +23,25 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    avatar: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     usr_role: {
       type: String,
       enum: ['USER', 'SHOP_ADMIN'],
       default: 'USER',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
   },
   {
