@@ -41,6 +41,16 @@ class ProductController {
     }).send(res);
   });
 
+  // DELETE /v1/api/products/:id
+  static deleteProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await ProductService.deleteProduct(id);
+    new OK({
+      message: CONST.PRODUCT.MESSAGE.DELETE_SUCCESS,
+      data: result,
+    }).send(res);
+  });
+
   // GET /v1/api/products/stats
   static getProductStats = asyncHandler(async (req, res) => {
     const result = await ProductService.getProductStats();
