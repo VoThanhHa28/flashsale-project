@@ -14,6 +14,8 @@ export function normalizeProduct(raw) {
       product_description: raw.productDescription ?? raw.product_description,
       product_start_time: raw.product_start_time ?? raw.productStartTime,
       product_end_time: raw.product_end_time ?? raw.productEndTime,
+      product_category: raw.product_category ?? raw.productCategory ?? null,
+      product_brand: raw.product_brand ?? raw.productBrand ?? null,
     };
   }
   

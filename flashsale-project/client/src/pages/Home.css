@@ -495,3 +495,38 @@
     padding: 0 var(--spacing-10);
   }
 }
+
+/* ============================================
+   Search Page Overrides (Search results grid)
+   - Card nhỏ gọn hơn, tối đa 4 card / hàng
+   ============================================ */
+.search-page .home-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+  .search-page .home-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .search-page .home-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* 4 sản phẩm / hàng */
+    gap: var(--spacing-5);
+  }
+}
+
+.search-page .home-card-body {
+  padding: var(--spacing-4);
+}
+
+.search-page .home-card-name {
+  font-size: var(--font-size-sm);
+}
+
+.search-page .home-card-price {
+  font-size: var(--font-size-base);
+}
