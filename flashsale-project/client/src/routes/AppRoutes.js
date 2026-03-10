@@ -7,6 +7,8 @@ import Account from '../pages/Account';
 import OrderHistory from '../pages/OrderHistory';
 import OrderDetail from '../pages/OrderDetail';
 import ShopOrders from '../pages/ShopOrders';
+import Profile from '../pages/Profile';
+import ChangePassword from '../pages/ChangePassword';
 
 // Export các components để import trong App.js
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders };
+export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword };

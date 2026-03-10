@@ -395,7 +395,7 @@ export async function cancelOrder(orderId) {
 /**
  * PATCH /v1/api/user/profile – Cập nhật thông tin hồ sơ cá nhân
  *
- * Payload: { name, phone, dob, gender, avatar? }
+ * Payload: { name, phone, dob, gender, address?, avatar? }
  * Trả về: { success: boolean, message: string, user?: User }
  *
  * ⚠️ TEMPORARY: Mock – lưu vào localStorage để test UI
@@ -435,6 +435,39 @@ export async function updateProfile(fields) {
   } catch (err) {
     console.error('Lỗi PATCH /v1/api/user/profile:', err);
     return { success: false, message: err.message || 'Không thể cập nhật hồ sơ' };
+  }
+  */
+}
+
+/**
+ * POST /v1/api/users/change-password – Đổi mật khẩu
+ *
+ * Body: { oldPassword, newPassword }
+ * Trả về: { success: boolean, message: string }
+ *
+ * ⚠️ TEMPORARY: Mock – giả lập thành công
+ * TODO: Khi có BE, gọi POST /v1/api/users/change-password
+ */
+export async function changePassword(oldPassword, newPassword) {
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return { success: true, message: 'Đổi mật khẩu thành công' };
+  } catch (err) {
+    console.error('Lỗi đổi mật khẩu:', err);
+    return { success: false, message: 'Không thể đổi mật khẩu' };
+  }
+
+  /*
+  if (!isApiConfigured()) return { success: false, message: 'Chưa cấu hình API' };
+  try {
+    await request('/v1/api/users/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword }),
+    });
+    return { success: true, message: 'Đổi mật khẩu thành công' };
+  } catch (err) {
+    console.error('Lỗi đổi mật khẩu:', err);
+    return { success: false, message: err?.message || 'Không thể đổi mật khẩu' };
   }
   */
 }

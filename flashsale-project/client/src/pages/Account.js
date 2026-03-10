@@ -99,10 +99,10 @@ function Account() {
       desc: 'Quản lý cài đặt thông báo',
     },
     {
-      to: '/security',
+      to: '/change-password',
       icon: <FiShield size={20} />,
       title: 'Bảo mật',
-      desc: 'Mật khẩu & xác thực 2 lớp',
+      desc: 'Đổi mật khẩu',
     },
     {
       to: '/settings',

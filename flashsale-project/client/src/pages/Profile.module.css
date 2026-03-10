@@ -135,6 +135,21 @@
   line-height: 1;
 }
 
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-full);
+}
+
+.avatarInputHidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .avatarUpload {
   position: absolute;
   bottom: 0;
@@ -378,7 +393,8 @@
 
 /* Email & gender span full width */
 .fields .fieldGroup:nth-child(2),
-.fields .fieldGroup:last-child {
+.fields .fieldGroup:last-child,
+.fields .fieldGroupFull {
   grid-column: 1 / -1;
 }
 
@@ -469,6 +485,20 @@
 }
 
 .inputDate { cursor: pointer; }
+
+.textarea {
+  min-height: 80px;
+  padding: var(--spacing-3) var(--spacing-4);
+  resize: vertical;
+}
+
+.charCount {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-1);
+  text-align: right;
+}
 
 /* Error message */
 .error {

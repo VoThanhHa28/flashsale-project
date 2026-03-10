@@ -13,6 +13,7 @@ import {
   FiCheck,
   FiCamera,
   FiAlertCircle,
+  FiMapPin,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import styles from './Profile.module.css';
@@ -32,11 +33,13 @@ const GENDER_OPTIONS = [
  */
 function extractFields(user) {
   return {
-    name:   user.name   || user.usr_name   || '',
-    email:  user.email  || user.usr_email  || '',
-    phone:  user.phone  || user.usr_phone  || '',
-    dob:    user.dob    || user.usr_dob    || '',
-    gender: user.gender || user.usr_gender || '',
+    name:    user.name    || user.usr_name    || '',
+    email:   user.email   || user.usr_email   || '',
+    phone:   user.phone   || user.usr_phone   || '',
+    address: user.address || user.usr_address || '',
+    avatar:  user.avatar  || user.usr_avatar  || '',
+    dob:     user.dob     || user.usr_dob     || '',
+    gender:  user.gender  || user.usr_gender  || '',
   };
 }
 
@@ -63,6 +66,9 @@ function validate(fields) {
       errors.dob = 'Ngày sinh không thể trong tương lai';
     }
   }
+  if (fields.address && fields.address.length > 500) {
+    errors.address = 'Địa chỉ tối đa 500 ký tự';
+  }
   return errors;
 }
 
@@ -88,6 +94,7 @@ function Profile() {
   const [errors, setErrors]       = useState({});
   const [toast, setToast]         = useState(null);
   const firstInputRef             = useRef(null);
+  const fileInputRef              = useRef(null);
 
   // Redirect nếu chưa đăng nhập
   useEffect(() => {
@@ -121,8 +128,19 @@ function Profile() {
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setDraft((prev) => ({ ...prev, [name]: value }));
-    // Xoá error của field đang nhập
     setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }, []);
+
+  /** Chọn ảnh từ máy → preview data URL và lưu vào draft.avatar (mock; BE sẽ nhận URL sau upload) */
+  const handleAvatarChange = useCallback((e) => {
+    const file = e.target?.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setDraft((prev) => ({ ...prev, avatar: reader.result }));
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   }, []);
 
   const handleSave = async () => {
@@ -150,6 +168,10 @@ function Profile() {
   const userInitial = displayName.trim().charAt(0).toUpperCase();
   const isAdmin = user.role === 'SHOP_ADMIN' || user.usr_role === 'SHOP_ADMIN';
   const genderLabel = GENDER_OPTIONS.find((g) => g.value === fields.gender)?.label || '—';
+  /** Khi đang sửa: hiển thị draft để preview avatar/tên */
+  const displayAvatar = editing ? draft.avatar : fields.avatar;
+  const displayNameSidebar = editing ? (draft.name || user.email || 'Người dùng') : displayName;
+  const sidebarInitial = displayNameSidebar.trim().charAt(0).toUpperCase();
 
   return (
     <div className={styles.page}>
@@ -176,20 +198,33 @@ function Profile() {
               {/* Avatar */}
               <div className={styles.avatarWrap}>
                 <div className={styles.avatar}>
-                  <span className={styles.avatarInitial}>{userInitial}</span>
+                  {displayAvatar ? (
+                    <img src={displayAvatar} alt="" className={styles.avatarImg} />
+                  ) : (
+                    <span className={styles.avatarInitial}>{sidebarInitial}</span>
+                  )}
                 </div>
-                {/* Placeholder upload ảnh */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className={styles.avatarInputHidden}
+                  onChange={handleAvatarChange}
+                />
                 <button
                   type="button"
                   className={styles.avatarUpload}
                   aria-label="Thay đổi ảnh đại diện"
-                  title="Thay đổi ảnh (chức năng sắp ra mắt)"
+                  title="Chọn ảnh từ máy"
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <FiCamera size={14} />
                 </button>
               </div>
 
-              <h2 className={styles.avatarName}>{displayName}</h2>
+              <h2 className={styles.avatarName}>{displayNameSidebar}</h2>
               {user.email && <p className={styles.avatarEmail}>{user.email}</p>}
 
               <span className={`${styles.roleBadge} ${isAdmin ? styles.roleBadgeAdmin : ''}`}>
@@ -345,6 +380,34 @@ function Profile() {
                   {errors.phone && (
                     <span className={styles.error}>
                       <FiAlertCircle size={12} /> {errors.phone}
+                    </span>
+                  )}
+                </div>
+
+                {/* Địa chỉ */}
+                <div className={`${styles.fieldGroup} ${styles.fieldGroupFull} ${errors.address ? styles.fieldGroupError : ''}`}>
+                  <label className={styles.label} htmlFor="prof-address">
+                    <FiMapPin size={13} />
+                    Địa chỉ
+                  </label>
+                  {editing ? (
+                    <textarea
+                      id="prof-address"
+                      name="address"
+                      value={draft.address}
+                      onChange={handleChange}
+                      className={`${styles.input} ${styles.textarea}`}
+                      placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
+                      rows={3}
+                      maxLength={500}
+                    />
+                  ) : (
+                    <div className={styles.value}>{fields.address ? fields.address : <span className={styles.empty}>Chưa cập nhật</span>}</div>
+                  )}
+                  {editing && <span className={styles.charCount}>{draft.address.length}/500</span>}
+                  {errors.address && (
+                    <span className={styles.error}>
+                      <FiAlertCircle size={12} /> {errors.address}
                     </span>
                   )}
                 </div>
