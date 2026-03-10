@@ -151,16 +151,35 @@ export async function getProducts() {
     if (Array.isArray(products)) return normalizeProducts(products);
     return [];
   } catch (err) {
-    console.error('Lỗi gọi API /v1/api/products:', err);
+    // Không log khi lỗi mạng (backend chưa chạy) — app sẽ dùng fallback JSON
+    if (!err.isNetworkError) {
+      console.error('Lỗi gọi API /v1/api/products:', err);
+    }
     return null;
   }
 }
 
-/** Danh sách sản phẩm: API trước, fallback JSON; luôn trả mảng đã chuẩn hóa. */
-export async function getProductsList() {
+/** Cache in-memory cho danh sách sản phẩm đầy đủ — giảm gọi backend liên tục (304). TTL 60 giây. */
+const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
+let productsCache = { data: null, ts: 0 };
+
+/**
+ * Lấy danh sách sản phẩm đầy đủ (không filter). Nội bộ dùng cho getProductsList(params).
+ * Dùng cache TTL để tránh gọi GET /v1/api/products nhiều lần khi chuyển trang / mount lại.
+ */
+async function fetchAllProducts() {
+  const now = Date.now();
+  if (productsCache.data != null && now - productsCache.ts < PRODUCTS_CACHE_TTL_MS) {
+    return productsCache.data;
+  }
+
+  let list = null;
   try {
-    const list = await getProducts();
-    if (Array.isArray(list)) return list;
+    list = await getProducts();
+    if (Array.isArray(list)) {
+      productsCache = { data: list, ts: Date.now() };
+      return list;
+    }
   } catch (err) {}
 
   const res = await fetch('/data/products.json');
@@ -168,7 +187,60 @@ export async function getProductsList() {
   const data = await res.json();
   const payload = data.metadata ?? data.data ?? data;
   const arr = Array.isArray(payload) ? payload : [];
-  return normalizeProducts(arr);
+  list = normalizeProducts(arr);
+  productsCache = { data: list, ts: Date.now() };
+  return list;
+}
+
+/**
+ * Danh sách sản phẩm: API trước, fallback JSON; luôn trả mảng đã chuẩn hóa.
+ * @param {object} [params] - Optional: { keyword, priceMin, priceMax, categories, brands }
+ *   - keyword: tìm trong product_name, product_description
+ *   - priceMin, priceMax: số (VNĐ)
+ *   - categories: mảng string (product_category phải nằm trong mảng)
+ *   - brands: mảng string (product_brand phải nằm trong mảng)
+ */
+export async function getProductsList(params) {
+  const list = await fetchAllProducts();
+  const hasFilter =
+    params &&
+    (params.keyword ||
+      params.priceMin != null ||
+      params.priceMax != null ||
+      (Array.isArray(params.categories) && params.categories.length > 0) ||
+      (Array.isArray(params.brands) && params.brands.length > 0));
+  if (!hasFilter) return list;
+
+  let result = list;
+  const keyword = typeof params.keyword === 'string' ? params.keyword.trim().toLowerCase() : '';
+  const priceMin = params.priceMin != null ? Number(params.priceMin) : null;
+  const priceMax = params.priceMax != null ? Number(params.priceMax) : null;
+  const categories = Array.isArray(params.categories) ? params.categories : [];
+  const brands = Array.isArray(params.brands) ? params.brands : [];
+
+  if (keyword) {
+    result = result.filter((p) => {
+      const name = (p.product_name || '').toLowerCase();
+      const desc = (p.product_description || '').toLowerCase();
+      return name.includes(keyword) || desc.includes(keyword);
+    });
+  }
+  if (categories.length > 0) {
+    const set = new Set(categories.map((c) => String(c).trim()).filter(Boolean));
+    result = result.filter((p) => set.has(String(p.product_category || '').trim()));
+  }
+  if (brands.length > 0) {
+    const set = new Set(brands.map((b) => String(b).trim()).filter(Boolean));
+    result = result.filter((p) => set.has(String(p.product_brand || '').trim()));
+  }
+  if (priceMin != null && !Number.isNaN(priceMin)) {
+    result = result.filter((p) => (p.product_price ?? 0) >= priceMin);
+  }
+  if (priceMax != null && !Number.isNaN(priceMax)) {
+    result = result.filter((p) => (p.product_price ?? 0) <= priceMax);
+  }
+
+  return result;
 }
 
 /** Chi tiết 1 sản phẩm theo ID (lấy từ list, chuẩn hóa). */

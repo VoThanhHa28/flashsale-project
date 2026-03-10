@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
-import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword } from './routes/AppRoutes';
+import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search } from './routes/AppRoutes';
 
 function App() {
   return (
@@ -20,6 +20,7 @@ function App() {
           <Route path="orders" element={<OrderHistory />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="shop/orders" element={<ShopOrders />} />
+          <Route path="search" element={<Search />} />
         </Route>
       </Routes>
     </BrowserRouter>

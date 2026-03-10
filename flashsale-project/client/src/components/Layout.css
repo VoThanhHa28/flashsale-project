@@ -108,6 +108,68 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* Dropdown gợi ý sản phẩm dưới thanh search */
+.layout-search-dropdown {
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  left: 0;
+  right: 0;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-2) 0;
+  z-index: 50;
+}
+
+.layout-search-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.layout-search-dropdown-item:hover {
+  background: var(--color-gray-50);
+}
+
+.layout-search-dropdown-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layout-search-dropdown-price {
+  flex-shrink: 0;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.layout-search-dropdown-more {
+  display: block;
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: none;
+  border-top: 1px solid var(--color-gray-100);
+  background: var(--color-bg-primary);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  cursor: pointer;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.layout-search-dropdown-more:hover {
+  background: var(--color-primary-bg);
+}
+
 /* Logo - Gradient text + lightning bolt */
 .layout-logo {
   font-size: var(--font-size-xl);
