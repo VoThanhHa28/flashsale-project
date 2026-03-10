@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
-import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders } from './routes/AppRoutes';
+import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword } from './routes/AppRoutes';
 
 function App() {
   return (
@@ -15,6 +15,8 @@ function App() {
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
           <Route path="account" element={<Account />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="change-password" element={<ChangePassword />} />
           <Route path="orders" element={<OrderHistory />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="shop/orders" element={<ShopOrders />} />
