@@ -15,6 +15,18 @@ export function isApiConfigured() {
   return Boolean(BASE_URL.trim());
 }
 
+/**
+ * Mock mode: khi BE chưa sẵn sàng, dùng mock data tĩnh.
+ * Chuyển sang real API: set REACT_APP_USE_MOCK=false trong .env
+ * Mặc định: nếu không có BE URL → mock; nếu có URL → real.
+ */
+export function isMockMode() {
+  const flag = process.env.REACT_APP_USE_MOCK;
+  if (flag === 'true') return true;
+  if (flag === 'false') return false;
+  return !isApiConfigured();
+}
+
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
@@ -747,3 +759,106 @@ export async function updateShopOrderStatus(orderId, nextStatus) {
     return { success: false, message: 'Không thể cập nhật trạng thái đơn hàng' };
   }
 }
+
+/**
+ * GET /v1/api/shop/revenue?days=7
+ *
+ * Params:
+ *   days: số ngày gần nhất (vd: 7, 14, 30)
+ *
+ * Trả về:
+ * {
+ *   points: [{ date: 'YYYY-MM-DD', label: 'dd/MM', totalAmount, orderCount }],
+ *   summary: { totalRevenue, orderCount, avgPerDay, maxDay }
+ * }
+ *
+ * ⚠️ TEMPORARY: Đang tính từ mock orders
+ * TODO: Khi có BE, bỏ comment phần real API bên dưới và xóa phần mock
+ */
+export async function getRevenueReport({ days = 7 } = {}) {
+  // ============================================
+  // ⚠️ TEMPORARY: Tính toán doanh thu từ mock orders
+  // TODO: Khi có BE, bỏ comment phần real API bên dưới và xóa phần mock này
+  // ============================================
+  try {
+    const rawOrders = await ensureShopOrdersCache();
+    const now = new Date();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - (days - 1));
+
+    const buckets = [];
+    const indexByDate = new Map();
+    for (let i = 0; i < days; i += 1) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      const label = d.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+      });
+      indexByDate.set(key, i);
+      buckets.push({ date: key, label, totalAmount: 0, orderCount: 0 });
+    }
+
+    for (const raw of rawOrders) {
+      const createdAt = raw.createdAt || raw.orderTime;
+      if (!createdAt) continue;
+      const d = new Date(createdAt);
+      if (Number.isNaN(d.getTime())) continue;
+      if (d < start || d > now) continue;
+
+      const status = raw.status || 'pending_confirm';
+      if (status === 'cancelled' || status === 'refunded') continue;
+
+      const key = d.toISOString().slice(0, 10);
+      const idx = indexByDate.get(key);
+      if (idx == null) continue;
+
+      const amount = raw.totalAmount || raw.pricing?.finalTotal || 0;
+      buckets[idx].totalAmount += amount;
+      buckets[idx].orderCount += 1;
+    }
+
+    const totalRevenue = buckets.reduce((sum, b) => sum + b.totalAmount, 0);
+    const orderCount = buckets.reduce((sum, b) => sum + b.orderCount, 0);
+    const avgPerDay = days > 0 ? Math.round(totalRevenue / days) : 0;
+    const maxPoint =
+      buckets.reduce(
+        (max, b) => (b.totalAmount > max.totalAmount ? b : max),
+        { totalAmount: 0, date: null, label: '' },
+      ) || null;
+
+    return {
+      points: buckets,
+      summary: { totalRevenue, orderCount, avgPerDay, maxDay: maxPoint },
+    };
+  } catch (err) {
+    console.error('Lỗi tính báo cáo doanh thu:', err);
+    return EMPTY_REVENUE;
+  }
+
+  // ============================================
+  // TODO: Khi có BE, bỏ comment phần dưới và xóa phần mock ở trên
+  // BE trả về: { statusCode, message, data: { points: [...], summary: {...} } }
+  // ============================================
+  /*
+  if (!isApiConfigured()) return EMPTY_REVENUE;
+  try {
+    const res = await request(`/v1/api/shop/revenue?days=${days}`);
+    const data = getPayload(res);
+    return {
+      points: Array.isArray(data?.points) ? data.points : [],
+      summary: data?.summary ?? EMPTY_REVENUE.summary,
+    };
+  } catch (err) {
+    console.error('Lỗi gọi API /v1/api/shop/revenue:', err);
+    return EMPTY_REVENUE;
+  }
+  */
+}
+
+const EMPTY_REVENUE = {
+  points: [],
+  summary: { totalRevenue: 0, orderCount: 0, avgPerDay: 0, maxDay: null },
+};

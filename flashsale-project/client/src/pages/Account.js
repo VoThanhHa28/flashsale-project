@@ -11,6 +11,7 @@ import {
   FiShield,
   FiHeart,
   FiBell,
+  FiBarChart2,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import './Account.css';
@@ -56,7 +57,11 @@ function Account() {
 
   const displayName = user.name || user.email || 'Người dùng';
   const userInitial = displayName.trim().charAt(0).toUpperCase();
-  const isAdmin = user.role === 'SHOP_ADMIN' || user.usr_role === 'SHOP_ADMIN';
+  const userRole = user.role || user.usr_role || '';
+  const isAdmin =
+    userRole === 'SHOP_ADMIN' ||
+    userRole === 'OWNER' ||
+    userRole === 'ADMIN';
 
   /** Nhóm menu: Quick Actions */
   const quickItems = [
@@ -88,6 +93,17 @@ function Account() {
       desc: 'Sản phẩm đã lưu',
       color: 'pink',
     },
+    ...(isAdmin
+      ? [
+          {
+            to: '/shop/report',
+            icon: <FiBarChart2 size={24} />,
+            title: 'Báo cáo',
+            desc: 'Biểu đồ doanh thu',
+            color: 'purple',
+          },
+        ]
+      : []),
   ];
 
   /** Nhóm menu: Settings */
