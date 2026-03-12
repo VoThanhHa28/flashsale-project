@@ -14,5 +14,6 @@ import Search from '../pages/Search';
 import ShopProducts from '../pages/ShopProducts';
 import ProductForm from '../pages/ProductForm';
 import AdminUsers from '../pages/AdminUsers';
+import SystemHealth from '../pages/SystemHealth';
 
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, AdminUsers };
+export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, AdminUsers, SystemHealth };
