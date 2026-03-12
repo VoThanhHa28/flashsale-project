@@ -11,6 +11,7 @@ import Report from '../pages/Report';
 import Profile from '../pages/Profile';
 import ChangePassword from '../pages/ChangePassword';
 import Search from '../pages/Search';
+import ShopProducts from '../pages/ShopProducts';
+import ProductForm from '../pages/ProductForm';
 
-// Export các components để import trong App.js
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report };
+export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm };

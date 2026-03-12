@@ -171,13 +171,14 @@ export async function getProducts() {
   }
 }
 
-/** Cache in-memory cho danh sách sản phẩm đầy đủ — giảm gọi backend liên tục (304). TTL 60 giây. */
-const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
+/** Cache in-memory cho danh sách sản phẩm đầy đủ — giảm gọi backend liên tục (304). TTL 10 giây. */
+const PRODUCTS_CACHE_TTL_MS = 10 * 1000;
 let productsCache = { data: null, ts: 0 };
 
 /**
  * Lấy danh sách sản phẩm đầy đủ (không filter). Nội bộ dùng cho getProductsList(params).
  * Dùng cache TTL để tránh gọi GET /v1/api/products nhiều lần khi chuyển trang / mount lại.
+ * Ưu tiên real API (MongoDB + Redis stock), fallback sang products.json nếu chưa có backend.
  */
 async function fetchAllProducts() {
   const now = Date.now();
@@ -862,3 +863,176 @@ const EMPTY_REVENUE = {
   points: [],
   summary: { totalRevenue: 0, orderCount: 0, avgPerDay: 0, maxDay: null },
 };
+
+// =====================================================================
+// ============ SHOP PRODUCT MANAGEMENT (CRUD cho SHOP_ADMIN) ==========
+// =====================================================================
+
+function invalidateAllCaches() {
+  productsCache = { data: null, ts: 0 };
+}
+
+function computeSaleStatus(product) {
+  const now = new Date();
+  const start = product.product_start_time ? new Date(product.product_start_time) : null;
+  const end = product.product_end_time ? new Date(product.product_end_time) : null;
+  if (!start || !end) return 'no_sale';
+  if (now < start) return 'scheduled';
+  if (now >= start && now <= end) return 'active';
+  return 'ended';
+}
+
+/**
+ * GET /v1/api/products (admin view) – danh sách tất cả sản phẩm kèm trạng thái flash sale.
+ * Gọi real API, normalize, rồi gắn saleStatus.
+ */
+export async function getShopProducts() {
+  try {
+    const list = await fetchAllProducts();
+    return list.map((p) => ({ ...p, saleStatus: computeSaleStatus(p) }));
+  } catch (err) {
+    console.error('Lỗi getShopProducts:', err);
+    return [];
+  }
+}
+
+/**
+ * POST /v1/api/products – Tạo sản phẩm mới.
+ * Body gửi lên BE (camelCase): productName, productThumb, productDescription,
+ * productPrice, productQuantity, startTime, endTime, isPublished
+ */
+export async function createProduct(fields) {
+  try {
+    const res = await request('/v1/api/products', {
+      method: 'POST',
+      body: JSON.stringify(fields),
+    });
+    const data = getPayload(res);
+    invalidateAllCaches();
+    const product = data ? normalizeProduct(data) : null;
+    return { success: true, message: res.message || 'Tạo sản phẩm thành công', product };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể tạo sản phẩm' };
+  }
+}
+
+/**
+ * PUT /v1/api/products/:id – Cập nhật sản phẩm.
+ * Backend tự validate, cập nhật MongoDB, đồng bộ Redis stock + info cache.
+ */
+export async function updateProduct(productId, fields) {
+  try {
+    const res = await request(`/v1/api/products/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(fields),
+    });
+    const data = getPayload(res);
+    invalidateAllCaches();
+    const product = data ? normalizeProduct(data) : null;
+    return { success: true, message: res.message || 'Cập nhật thành công', product };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể cập nhật' };
+  }
+}
+
+/**
+ * PUT /v1/api/products/:id/force-start – Kích hoạt Flash Sale ngay lập tức.
+ * BE chỉ set productStartTime = now (không sửa endTime).
+ * Nếu endTime đã hết hạn, FE gọi updateProduct set endTime = now + 24h trước,
+ * rồi mới gọi force-start.
+ */
+export async function forceStartProduct(productId) {
+  try {
+    const now = new Date();
+    const newEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const list = await fetchAllProducts();
+    const existing = list.find((p) => String(p.product_id) === String(productId));
+    const currentEnd = existing?.product_end_time ? new Date(existing.product_end_time) : null;
+
+    if (!currentEnd || currentEnd <= now) {
+      await request(`/v1/api/products/${productId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ endTime: newEnd.toISOString() }),
+      });
+    }
+
+    const res = await request(`/v1/api/products/${productId}/force-start`, { method: 'PUT' });
+    const data = getPayload(res);
+    invalidateAllCaches();
+    const product = data ? normalizeProduct(data) : null;
+    return { success: true, message: res.message || 'Đã kích hoạt Flash Sale!', product };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể kích hoạt' };
+  }
+}
+
+/**
+ * POST /v1/api/admin/flash-sale/hot-activate – Hot Activate: kích hoạt ngay + phát Socket event.
+ * Backend set startTime = now, endTime = now + duration, broadcast flash-sale-start qua Socket.IO.
+ * Lưu ý: BE trả data rỗng (do dùng SuccessResponse metadata), nên FE tự build product từ params.
+ */
+export async function hotActivateFlashSale(productId, durationSeconds = 3600) {
+  try {
+    const now = new Date();
+    const endTime = new Date(now.getTime() + durationSeconds * 1000);
+
+    await request('/v1/api/admin/flash-sale/hot-activate', {
+      method: 'POST',
+      body: JSON.stringify({ productId, duration: durationSeconds }),
+    });
+    invalidateAllCaches();
+    return {
+      success: true,
+      message: 'Flash Sale đã kích hoạt!',
+      product: {
+        product_id: productId,
+        product_start_time: now.toISOString(),
+        product_end_time: endTime.toISOString(),
+      },
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể kích hoạt' };
+  }
+}
+
+/**
+ * POST /v1/api/admin/flash-sale/activate – Lên lịch Flash Sale (set start/end time + sync Redis).
+ * Backend cập nhật productStartTime/productEndTime trong MongoDB
+ * và gọi OrderService.initInventory() để đồng bộ stock vào Redis.
+ * Lưu ý: BE trả data rỗng, nên FE dùng lại params đã gửi.
+ */
+export async function scheduleFlashSale(productId, startTime, endTime) {
+  try {
+    await request('/v1/api/admin/flash-sale/activate', {
+      method: 'POST',
+      body: JSON.stringify({ productId, startTime, endTime }),
+    });
+    invalidateAllCaches();
+    return {
+      success: true,
+      message: 'Đã lên lịch Flash Sale!',
+      product: {
+        product_id: productId,
+        product_start_time: startTime,
+        product_end_time: endTime,
+      },
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể lên lịch' };
+  }
+}
+
+/**
+ * DELETE /v1/api/products/:id – Xóa mềm sản phẩm.
+ * Backend set is_deleted = true, stock Redis về 0.
+ */
+export async function deleteProduct(productId) {
+  try {
+    await request(`/v1/api/products/${productId}`, { method: 'DELETE' });
+    invalidateAllCaches();
+    return { success: true, message: 'Đã xóa sản phẩm' };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể xóa' };
+  }
+}

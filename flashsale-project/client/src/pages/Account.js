@@ -96,6 +96,13 @@ function Account() {
     ...(isAdmin
       ? [
           {
+            to: '/shop/products',
+            icon: <FiPackage size={24} />,
+            title: 'Sản phẩm',
+            desc: 'Quản lý & Flash Sale',
+            color: 'purple',
+          },
+          {
             to: '/shop/report',
             icon: <FiBarChart2 size={24} />,
             title: 'Báo cáo',
