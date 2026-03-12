@@ -13,5 +13,6 @@ import ChangePassword from '../pages/ChangePassword';
 import Search from '../pages/Search';
 import ShopProducts from '../pages/ShopProducts';
 import ProductForm from '../pages/ProductForm';
+import AdminUsers from '../pages/AdminUsers';
 
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm };
+export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, AdminUsers };
