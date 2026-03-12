@@ -29,7 +29,7 @@ const STATUS_MAP = {
 function ShopProducts() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const userRole = user?.role || user?.usr_role || '';
+  const userRole = user?.usr_role || user?.role || '';
   const isAdmin = userRole === 'SHOP_ADMIN' || userRole === 'OWNER' || userRole === 'ADMIN';
 
   const [products, setProducts] = useState([]);

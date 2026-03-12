@@ -19,7 +19,7 @@ function formatPrice(value) {
 function Report() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const userRole = user?.role || user?.usr_role || '';
+  const userRole = user?.usr_role || user?.role || '';
   // Chủ shop / admin mới xem được trang báo cáo
   const isAdmin =
     userRole === 'SHOP_ADMIN' ||

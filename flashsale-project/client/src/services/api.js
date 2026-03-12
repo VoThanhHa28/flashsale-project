@@ -1036,3 +1036,47 @@ export async function deleteProduct(productId) {
     return { success: false, message: err.message || 'Không thể xóa' };
   }
 }
+
+// =====================================================================
+// ============ ADMIN USER MANAGEMENT (SHOP_ADMIN only) ================
+// =====================================================================
+
+/**
+ * GET /v1/api/admin/users?page=1&limit=10 – Danh sách user phân trang.
+ * BE trả về: { statusCode, message, data: { users: [...], total, page, limit } }
+ */
+export async function getAdminUsers({ page = 1, limit = 10 } = {}) {
+  try {
+    const params = new URLSearchParams();
+    params.set('page', page);
+    params.set('limit', limit);
+    const res = await request(`/v1/api/admin/users?${params.toString()}`);
+    const data = getPayload(res);
+    return {
+      success: true,
+      users: Array.isArray(data?.users) ? data.users : [],
+      total: data?.total ?? 0,
+      page: data?.page ?? page,
+      limit: data?.limit ?? limit,
+    };
+  } catch (err) {
+    return { success: false, users: [], total: 0, page, limit, message: err.message };
+  }
+}
+
+/**
+ * PATCH /v1/api/admin/users/:id/ban – Khóa tài khoản user (set status = inactive).
+ * Body: { status: 'inactive' } (BE validation chỉ cho phép 'inactive').
+ */
+export async function banUser(userId) {
+  try {
+    const res = await request(`/v1/api/admin/users/${userId}/ban`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'inactive' }),
+    });
+    const data = getPayload(res);
+    return { success: true, message: res.message || 'Khóa tài khoản thành công', user: data?.user ?? null };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể khóa tài khoản' };
+  }
+}

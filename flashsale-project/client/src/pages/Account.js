@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   FiPackage,
   FiUser,
+  FiUsers,
   FiChevronRight,
   FiLogIn,
   FiLogOut,
@@ -57,11 +58,12 @@ function Account() {
 
   const displayName = user.name || user.email || 'Người dùng';
   const userInitial = displayName.trim().charAt(0).toUpperCase();
-  const userRole = user.role || user.usr_role || '';
+  const userRole = user.usr_role || user.role || '';
   const isAdmin =
     userRole === 'SHOP_ADMIN' ||
     userRole === 'OWNER' ||
     userRole === 'ADMIN';
+  const isSuperAdmin = !!user.is_super_admin;
 
   /** Nhóm menu: Quick Actions */
   const quickItems = [
@@ -107,6 +109,17 @@ function Account() {
             icon: <FiBarChart2 size={24} />,
             title: 'Báo cáo',
             desc: 'Biểu đồ doanh thu',
+            color: 'purple',
+          },
+        ]
+      : []),
+    ...(isSuperAdmin
+      ? [
+          {
+            to: '/shop/users',
+            icon: <FiUsers size={24} />,
+            title: 'Người dùng',
+            desc: 'Quản lý & khóa tài khoản',
             color: 'purple',
           },
         ]
