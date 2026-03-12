@@ -1080,3 +1080,30 @@ export async function banUser(userId) {
     return { success: false, message: err.message || 'Không thể khóa tài khoản' };
   }
 }
+
+// =====================================================================
+// ============ SYSTEM HEALTH (SUPER ADMIN only) =======================
+// =====================================================================
+
+/**
+ * GET /v1/api/admin/health – Kiểm tra trạng thái MongoDB + Redis.
+ * BE trả về: { statusCode, message, data: { mongo: 'ok'|'fail', redis: 'ok'|'fail' } }
+ */
+export async function getSystemHealth() {
+  const t0 = performance.now();
+  try {
+    const res = await request('/v1/api/admin/health');
+    const responseTime = Math.round(performance.now() - t0);
+    const data = getPayload(res);
+    return {
+      success: true,
+      mongo: data?.mongo ?? 'unknown',
+      redis: data?.redis ?? 'unknown',
+      responseTime,
+      checkedAt: new Date().toISOString(),
+    };
+  } catch (err) {
+    const responseTime = Math.round(performance.now() - t0);
+    return { success: false, mongo: 'fail', redis: 'fail', responseTime, message: err.message, checkedAt: new Date().toISOString() };
+  }
+}

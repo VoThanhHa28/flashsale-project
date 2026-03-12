@@ -13,6 +13,7 @@ import {
   FiHeart,
   FiBell,
   FiBarChart2,
+  FiActivity,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import './Account.css';
@@ -120,6 +121,13 @@ function Account() {
             icon: <FiUsers size={24} />,
             title: 'Người dùng',
             desc: 'Quản lý & khóa tài khoản',
+            color: 'purple',
+          },
+          {
+            to: '/shop/health',
+            icon: <FiActivity size={24} />,
+            title: 'Hệ thống',
+            desc: 'Trạng thái Redis & Mongo',
             color: 'purple',
           },
         ]
