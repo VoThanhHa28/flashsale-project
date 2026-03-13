@@ -15,5 +15,7 @@ module.exports = {
         GET_MY_ORDERS_SUCCESS: "Lấy danh sách đơn hàng thành công",
         GET_MY_ORDER_SUCCESS: "Lấy chi tiết đơn hàng thành công",
         ORDER_NOT_OWNED: "Bạn không có quyền xem đơn hàng này",
+        CANCEL_ORDER_SUCCESS: "Hủy đơn hàng thành công",
+        CANCEL_ORDER_NOT_ALLOWED: "Chỉ có thể hủy đơn hàng đang chờ xử lý",
     },
 };

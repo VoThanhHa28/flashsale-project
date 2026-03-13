@@ -69,6 +69,14 @@ class OrderController {
             data: result,
         }).send(res);
     });
+
+    static cancelOrder = asyncHandler(async (req, res) => {
+        const result = await InventoryService.cancelOrder(req.user._id, req.params.id);
+        return new OK({
+            message: CONST.ORDER.MESSAGE.CANCEL_ORDER_SUCCESS,
+            data: result,
+        }).send(res);
+    });
 }
 
 module.exports = OrderController;
