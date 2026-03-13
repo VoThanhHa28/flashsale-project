@@ -154,6 +154,7 @@ class ProductService {
   /**
    * Force Start Flash Sale (Kích hoạt ngay)
    * Update productStartTime = hiện tại và đồng bộ Redis
+   * Nếu endTime đã qua → auto-extend thêm 24h
    */
   static async forceStartProduct(productId) {
     // Tìm product hiện tại
@@ -162,11 +163,20 @@ class ProductService {
       throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
     }
 
-    // Update productStartTime = hiện tại
     const now = new Date();
+    const DEFAULT_DURATION = 24 * 60 * 60 * 1000; // 24 giờ
+
+    // Build update data
+    const updateData = { productStartTime: now };
+
+    // Auto-extend endTime nếu đã quá khứ
+    if (existingProduct.productEndTime < now) {
+      updateData.productEndTime = new Date(now.getTime() + DEFAULT_DURATION);
+    }
+
     const updatedProduct = await Product.findOneAndUpdate(
       { _id: productId, is_deleted: false },
-      { productStartTime: now },
+      updateData,
       { new: true, runValidators: true }
     );
 
