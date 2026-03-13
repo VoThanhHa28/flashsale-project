@@ -28,4 +28,7 @@ router.post("/test", OrderController.placeOrder);
 router.get("/me", auth.verifyToken, validate(orderValidation.getMyOrders), OrderController.getMyOrders);
 router.get("/me/:id", auth.verifyToken, validate(orderValidation.getMyOrderById), OrderController.getMyOrderById);
 
+// Hủy đơn hàng (chỉ được hủy khi status = pending)
+router.patch("/me/:id/cancel", auth.verifyToken, OrderController.cancelOrder);
+
 module.exports = router;

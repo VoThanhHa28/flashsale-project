@@ -214,6 +214,37 @@ class OrderService {
         }
         return { order };
     }
+
+    // 8. CANCEL ORDER (User hủy đơn hàng)
+    static async cancelOrder(userId, orderId) {
+        // Tìm đơn hàng của user
+        const order = await OrderModel.findOne({
+            _id: orderId,
+            userId: userId.toString(),
+        });
+
+        if (!order) {
+            throw new NotFoundError(CONST.ORDER.MESSAGE.ORDER_NOT_FOUND);
+        }
+
+        // Chỉ được hủy đơn đang chờ xử lý (PENDING)
+        if (order.status !== CONST.ORDER.STATUS.PENDING) {
+            throw new BadRequestError(CONST.ORDER.MESSAGE.CANCEL_ORDER_NOT_ALLOWED);
+        }
+
+        // Hoàn kho Redis
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
+        await redisClient.incrBy(keyStock, order.quantity);
+
+        // Cập nhật status
+        order.status = CONST.ORDER.STATUS.CANCELLED;
+        order.processedAt = new Date();
+        await order.save();
+
+        console.log(`[OrderService] ❌ Đã hủy đơn hàng: ${order._id}, hoàn ${order.quantity} sản phẩm vào kho`);
+
+        return { order };
+    }
 }
 
 module.exports = OrderService;
