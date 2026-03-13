@@ -343,74 +343,6 @@ export async function getMyOrders({
   dateFrom = '',
   dateTo = '',
 } = {}) {
-  // ============================================
-  // ⚠️ TEMPORARY: Dùng mock data, tự mô phỏng server-side filter/sort/pagination
-  // TODO: Khi có BE, bỏ comment phần real API bên dưới và xóa phần mock này
-  // ============================================
-  try {
-    const mockData = await import('../data/mockOrders.json');
-    // Format: { statusCode, message, data: { orders: [], pagination: {} } }
-    let orders = normalizeOrders(mockData.default?.data?.orders ?? []);
-
-    // --- Filter ---
-    if (status && status !== 'all') {
-      orders = orders.filter((o) => o.status === status);
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      orders = orders.filter(
-        (o) =>
-          o.code.toLowerCase().includes(q) ||
-          o.items.some((item) => item.name.toLowerCase().includes(q))
-      );
-    }
-    if (dateFrom) {
-      const from = new Date(dateFrom);
-      orders = orders.filter((o) => new Date(o.createdAt) >= from);
-    }
-    if (dateTo) {
-      const to = new Date(dateTo);
-      to.setHours(23, 59, 59, 999);
-      orders = orders.filter((o) => new Date(o.createdAt) <= to);
-    }
-
-    // --- Sort ---
-    switch (sort) {
-      case 'oldest':
-        orders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        break;
-      case 'amount_high':
-        orders.sort((a, b) => b.totalAmount - a.totalAmount);
-        break;
-      case 'amount_low':
-        orders.sort((a, b) => a.totalAmount - b.totalAmount);
-        break;
-      default: // newest
-        orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }
-
-    // --- Pagination ---
-    const totalOrders = orders.length;
-    const totalPages = Math.max(1, Math.ceil(totalOrders / limit));
-    const safePage = Math.min(Math.max(1, page), totalPages);
-    const start = (safePage - 1) * limit;
-    const sliced = orders.slice(start, start + limit);
-
-    return {
-      orders: sliced,
-      pagination: normalizePagination({ page: safePage, limit, totalOrders, totalPages }),
-    };
-  } catch (err) {
-    console.error('Lỗi load mock data:', err);
-    return { orders: [], pagination: normalizePagination({ page: 1, limit, totalOrders: 0, totalPages: 1 }) };
-  }
-
-  // ============================================
-  // TODO: Khi có BE, bỏ comment phần dưới và xóa phần mock ở trên
-  // BE nhận: GET /v1/api/order/me?page=1&limit=6&status=all&search=...&sort=newest
-  // BE trả về: { statusCode, message, data: { orders: [], pagination: {} } }
-  // ============================================
-  /*
   if (!isApiConfigured()) return { orders: [], pagination: null };
 
   try {
@@ -424,7 +356,7 @@ export async function getMyOrders({
     if (dateTo) params.set('dateTo', dateTo);
 
     const res = await request(`/v1/api/order/me?${params.toString()}`);
-    const data = getPayload(res); // trả về res.data = { orders: [], pagination: {} }
+    const data = getPayload(res);
     const orders = normalizeOrders(Array.isArray(data?.orders) ? data.orders : []);
     const pagination = normalizePagination(data?.pagination ?? null);
     return { orders, pagination };
@@ -432,7 +364,6 @@ export async function getMyOrders({
     console.error('Lỗi gọi API /v1/api/order/me:', err);
     return { orders: [], pagination: null };
   }
-  */
 }
 
 /**
@@ -478,39 +409,17 @@ export async function cancelOrder(orderId) {
 }
 
 /**
- * PATCH /v1/api/user/profile – Cập nhật thông tin hồ sơ cá nhân
+ * PUT /v1/api/users/me – Cập nhật thông tin hồ sơ cá nhân
  *
- * Payload: { name, phone, dob, gender, address?, avatar? }
+ * Payload: { name, address, avatar }
  * Trả về: { success: boolean, message: string, user?: User }
- *
- * ⚠️ TEMPORARY: Mock – lưu vào localStorage để test UI
- * TODO: Khi có BE, thay bằng real PATCH request
  */
 export async function updateProfile(fields) {
-  // ============================================
-  // ⚠️ TEMPORARY: Mock – cập nhật localStorage ngay lập tức
-  // TODO: Khi có BE, bỏ comment phần real API và xóa mock này
-  // ============================================
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const current = getUser() || {};
-    const updated = { ...current, ...fields };
-    setUser(updated);
-    return { success: true, message: 'Cập nhật hồ sơ thành công', user: updated };
-  } catch (err) {
-    console.error('Lỗi cập nhật hồ sơ:', err);
-    return { success: false, message: 'Không thể cập nhật hồ sơ' };
-  }
-
-  // ============================================
-  // TODO: Khi có BE, bỏ comment phần này và xóa phần mock ở trên
-  // BE trả về: { statusCode, message, data: { user: { ... } } }
-  // ============================================
-  /*
   if (!isApiConfigured()) return { success: false, message: 'Chưa cấu hình API' };
+
   try {
-    const res = await request('/v1/api/user/profile', {
-      method: 'PATCH',
+    const res = await request('/v1/api/users/me', {
+      method: 'PUT',
       body: JSON.stringify(fields),
     });
     const data = getPayload(res);
@@ -518,10 +427,9 @@ export async function updateProfile(fields) {
     setUser(user);
     return { success: true, message: res.message || 'Cập nhật hồ sơ thành công', user };
   } catch (err) {
-    console.error('Lỗi PATCH /v1/api/user/profile:', err);
+    console.error('Lỗi PUT /v1/api/users/me:', err);
     return { success: false, message: err.message || 'Không thể cập nhật hồ sơ' };
   }
-  */
 }
 
 /**
@@ -529,334 +437,169 @@ export async function updateProfile(fields) {
  *
  * Body: { oldPassword, newPassword }
  * Trả về: { success: boolean, message: string }
- *
- * ⚠️ TEMPORARY: Mock – giả lập thành công
- * TODO: Khi có BE, gọi POST /v1/api/users/change-password
  */
 export async function changePassword(oldPassword, newPassword) {
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    return { success: true, message: 'Đổi mật khẩu thành công' };
-  } catch (err) {
-    console.error('Lỗi đổi mật khẩu:', err);
-    return { success: false, message: 'Không thể đổi mật khẩu' };
-  }
-
-  /*
   if (!isApiConfigured()) return { success: false, message: 'Chưa cấu hình API' };
+
   try {
-    await request('/v1/api/users/change-password', {
+    const res = await request('/v1/api/users/change-password', {
       method: 'POST',
       body: JSON.stringify({ oldPassword, newPassword }),
     });
-    return { success: true, message: 'Đổi mật khẩu thành công' };
+    return { success: true, message: res.message || 'Đổi mật khẩu thành công' };
   } catch (err) {
     console.error('Lỗi đổi mật khẩu:', err);
     return { success: false, message: err?.message || 'Không thể đổi mật khẩu' };
   }
-  */
 }
 
 /**
  * GET /v1/api/order/me/:id - Lấy chi tiết 1 đơn hàng cụ thể
- * 
- * ⚠️ TEMPORARY: Đang dùng mock data để test UI
- * TODO: Khi có BE, bỏ comment phần gọi API và xóa phần mock data
  */
 export async function getOrderById(orderId) {
-  // ============================================
-  // ⚠️ TEMPORARY: Dùng mock data để test UI
-  // TODO: Khi có BE, bỏ comment phần dưới và xóa phần mock data này
-  // ============================================
-  try {
-    const mockData = await import('../data/mockOrders.json');
-    // Format: { statusCode, message, data: { orders: [] } }
-    const orders = mockData.default?.data?.orders ?? [];
-    const order = orders.find(o => o.id === orderId || o.code === orderId);
-    return order ? normalizeOrder(order) : null;
-  } catch (err) {
-    console.error('Lỗi load mock data:', err);
-    return null;
-  }
-
-  // ============================================
-  // TODO: Khi có BE, bỏ comment phần này và xóa phần mock data ở trên
-  // ============================================
-  /*
   if (!isApiConfigured()) return null;
 
   try {
-    // BE trả về format: { statusCode, message, data: { order: {} } }
     const res = await request(`/v1/api/order/me/${orderId}`);
-    const data = getPayload(res); // getPayload trả về res.data = { order: {} }
+    const data = getPayload(res);
     const order = data?.order ?? data;
     return normalizeOrder(order);
   } catch (err) {
     console.error(`Lỗi gọi API /v1/api/order/me/${orderId}:`, err);
     return null;
   }
-  */
-}
-
-// In-memory cache cho trang quản lý đơn của Shop Owner (chỉ dùng mock UI).
-let shopOrdersCache = null;
-
-function toShopStatus(orderStatus) {
-  const map = {
-    pending_payment: 'pending',
-    pending_confirm: 'pending',
-    processing: 'processing',
-    shipping: 'shipping',
-    completed: 'completed',
-    cancelled: 'cancelled',
-    refunded: 'refunded',
-  };
-  return map[orderStatus] || 'pending';
-}
-
-function fromShopStatus(shopStatus, currentStatus) {
-  if (shopStatus === 'cancelled') return 'cancelled';
-  if (shopStatus === 'confirmed') return 'processing';
-  if (shopStatus === 'pending') return currentStatus || 'pending_confirm';
-  return currentStatus || shopStatus;
-}
-
-function canApprove(rawStatus) {
-  return rawStatus === 'pending_payment' || rawStatus === 'pending_confirm';
-}
-
-async function ensureShopOrdersCache() {
-  if (Array.isArray(shopOrdersCache)) return shopOrdersCache;
-  const mockData = await import('../data/mockOrders.json');
-  shopOrdersCache = Array.isArray(mockData.default?.data?.orders)
-    ? [...mockData.default.data.orders]
-    : [];
-  return shopOrdersCache;
 }
 
 /**
  * GET /v1/api/shop/orders
  *
  * Params:
- *   page, limit, status(all|pending|processing|shipping|completed|cancelled|refunded),
- *   search (mã đơn / tên khách / tên sản phẩm)
+ *   page, pageSize, status (pending|confirmed|completed|success|failed|cancelled)
  *
  * Trả về:
  * {
- *   orders: [{ id, code, customerName, customerPhone, itemsCount, totalAmount, status, createdAt, canApprove, canCancel }],
- *   pagination
+ *   orders: [{ _id, userId, productId, quantity, price, totalPrice, status, orderTime, processedAt }],
+ *   pagination: { page, pageSize, total, totalPages }
  * }
  */
 export async function getShopOrders({
   page = 1,
   limit = 10,
   status = 'all',
-  search = '',
-  sort = 'newest',
 } = {}) {
-  try {
-    const rawOrders = await ensureShopOrdersCache();
+  if (!isApiConfigured()) {
+    return { orders: [], pagination: null };
+  }
 
-    let orders = rawOrders.map((raw) => {
-      const items = Array.isArray(raw.items) ? raw.items : [];
-      const customerName =
-        raw.shippingAddress?.fullName ||
-        raw.shipping_address?.full_name ||
-        'Khách hàng';
-      const customerPhone =
-        raw.shippingAddress?.phone ||
-        raw.shipping_address?.phone ||
-        '';
-      const currentStatus = raw.status || 'pending_confirm';
-      const shopStatus = toShopStatus(currentStatus);
+  try {
+    const params = new URLSearchParams();
+    params.set('page', page);
+    params.set('pageSize', limit);
+    if (status && status !== 'all') params.set('status', status);
+
+    const res = await request(`/v1/api/shop/orders?${params.toString()}`);
+    const data = getPayload(res);
+
+    const rawOrders = Array.isArray(data?.orders) ? data.orders : [];
+    const orders = rawOrders.map((raw) => {
+      const currentStatus = raw.status || 'pending';
       return {
-        id: raw.id || raw._id || '',
-        code: raw.code || '',
-        customerName,
-        customerPhone,
-        itemsCount: items.reduce((sum, item) => sum + (item.quantity || 1), 0),
-        totalAmount: raw.totalAmount || raw.pricing?.finalTotal || 0,
-        status: shopStatus,
-        createdAt: raw.createdAt || raw.orderTime || new Date().toISOString(),
-        canApprove: canApprove(currentStatus),
-        canCancel: canApprove(currentStatus),
+        id: raw._id || raw.id || '',
+        code: raw._id?.slice(-8)?.toUpperCase() || '',
+        customerName: raw.userId?.name || raw.customerName || 'Khách hàng',
+        customerPhone: raw.userId?.phone || raw.customerPhone || '',
+        productName: raw.productId?.productName || '',
+        itemsCount: raw.quantity || 1,
+        totalAmount: raw.totalPrice || raw.price * raw.quantity || 0,
+        status: currentStatus,
+        createdAt: raw.orderTime || raw.createdAt || new Date().toISOString(),
+        canApprove: currentStatus === 'pending' || currentStatus === 'pending_confirm',
+        canCancel: currentStatus === 'pending' || currentStatus === 'pending_confirm',
       };
     });
 
-    if (status && status !== 'all') {
-      orders = orders.filter((order) => order.status === status);
-    }
+    const pagination = data?.pagination
+      ? normalizePagination({
+          page: data.pagination.page,
+          limit: data.pagination.pageSize,
+          totalOrders: data.pagination.total,
+          totalPages: data.pagination.totalPages,
+        })
+      : null;
 
-    if (search) {
-      const q = search.toLowerCase();
-      orders = orders.filter(
-        (order) =>
-          order.code.toLowerCase().includes(q) ||
-          order.customerName.toLowerCase().includes(q)
-      );
-    }
-
-    switch (sort) {
-      case 'oldest':
-        orders.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        break;
-      case 'amount_high':
-        orders.sort((a, b) => b.totalAmount - a.totalAmount);
-        break;
-      case 'amount_low':
-        orders.sort((a, b) => a.totalAmount - b.totalAmount);
-        break;
-      default:
-        orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }
-
-    const totalOrders = orders.length;
-    const totalPages = Math.max(1, Math.ceil(totalOrders / limit));
-    const safePage = Math.min(Math.max(1, page), totalPages);
-    const start = (safePage - 1) * limit;
-    const sliced = orders.slice(start, start + limit);
-
-    return {
-      orders: sliced,
-      pagination: normalizePagination({ page: safePage, limit, totalOrders, totalPages }),
-    };
+    return { orders, pagination };
   } catch (err) {
-    console.error('Lỗi load mock shop orders:', err);
-    return {
-      orders: [],
-      pagination: normalizePagination({ page: 1, limit, totalOrders: 0, totalPages: 1 }),
-    };
+    console.error('Lỗi gọi API /v1/api/shop/orders:', err);
+    return { orders: [], pagination: null };
   }
 }
 
 /**
  * PATCH /v1/api/shop/orders/:id/status
- * Mock: cập nhật cache local để test bảng quản lý đơn.
+ * Body: { status: 'confirmed' | 'cancelled' }
  */
 export async function updateShopOrderStatus(orderId, nextStatus) {
+  if (!isApiConfigured()) {
+    return { success: false, message: 'Chưa cấu hình API' };
+  }
+
   try {
-    const list = await ensureShopOrdersCache();
-    const idx = list.findIndex((o) => String(o.id || o._id) === String(orderId));
-    if (idx < 0) return { success: false, message: 'Không tìm thấy đơn hàng' };
-
-    const current = list[idx];
-    const currentStatus = current.status || 'pending_confirm';
-    if (!canApprove(currentStatus)) {
-      return { success: false, message: 'Đơn hàng này không thể duyệt/hủy' };
-    }
-
-    const updatedStatus = fromShopStatus(nextStatus, currentStatus);
-    list[idx] = {
-      ...current,
-      status: updatedStatus,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await new Promise((resolve) => setTimeout(resolve, 450));
+    const res = await request(`/v1/api/shop/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: nextStatus }),
+    });
     const actionLabel = nextStatus === 'cancelled' ? 'hủy' : 'duyệt';
-    return { success: true, message: `Đã ${actionLabel} đơn hàng thành công` };
+    return { success: true, message: res.message || `Đã ${actionLabel} đơn hàng thành công` };
   } catch (err) {
     console.error('Lỗi cập nhật trạng thái đơn shop:', err);
-    return { success: false, message: 'Không thể cập nhật trạng thái đơn hàng' };
+    return { success: false, message: err.message || 'Không thể cập nhật trạng thái đơn hàng' };
   }
 }
 
 /**
- * GET /v1/api/shop/revenue?days=7
+ * GET /v1/api/shop/stats/revenue
  *
- * Params:
- *   days: số ngày gần nhất (vd: 7, 14, 30)
- *
- * Trả về:
- * {
- *   points: [{ date: 'YYYY-MM-DD', label: 'dd/MM', totalAmount, orderCount }],
- *   summary: { totalRevenue, orderCount, avgPerDay, maxDay }
- * }
- *
- * ⚠️ TEMPORARY: Đang tính từ mock orders
- * TODO: Khi có BE, bỏ comment phần real API bên dưới và xóa phần mock
+ * BE trả về: { period, totalRevenue, totalOrders, daily: [{ date, totalRevenue, totalOrders }] }
+ * FE transform sang: { points: [{ date, label, totalAmount, orderCount }], summary: {...} }
  */
 export async function getRevenueReport({ days = 7 } = {}) {
-  // ============================================
-  // ⚠️ TEMPORARY: Tính toán doanh thu từ mock orders
-  // TODO: Khi có BE, bỏ comment phần real API bên dưới và xóa phần mock này
-  // ============================================
-  try {
-    const rawOrders = await ensureShopOrdersCache();
-    const now = new Date();
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - (days - 1));
+  if (!isApiConfigured()) return EMPTY_REVENUE;
 
-    const buckets = [];
-    const indexByDate = new Map();
-    for (let i = 0; i < days; i += 1) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString('vi-VN', {
+  try {
+    const res = await request('/v1/api/shop/stats/revenue');
+    const data = getPayload(res);
+
+    const dailyData = Array.isArray(data?.daily) ? data.daily : [];
+    const points = dailyData.map((d) => {
+      const dateObj = new Date(d.date || d._id);
+      const label = dateObj.toLocaleDateString('vi-VN', {
         day: '2-digit',
         month: '2-digit',
       });
-      indexByDate.set(key, i);
-      buckets.push({ date: key, label, totalAmount: 0, orderCount: 0 });
-    }
+      return {
+        date: d.date || d._id,
+        label,
+        totalAmount: d.totalRevenue || 0,
+        orderCount: d.totalOrders || 0,
+      };
+    });
 
-    for (const raw of rawOrders) {
-      const createdAt = raw.createdAt || raw.orderTime;
-      if (!createdAt) continue;
-      const d = new Date(createdAt);
-      if (Number.isNaN(d.getTime())) continue;
-      if (d < start || d > now) continue;
-
-      const status = raw.status || 'pending_confirm';
-      if (status === 'cancelled' || status === 'refunded') continue;
-
-      const key = d.toISOString().slice(0, 10);
-      const idx = indexByDate.get(key);
-      if (idx == null) continue;
-
-      const amount = raw.totalAmount || raw.pricing?.finalTotal || 0;
-      buckets[idx].totalAmount += amount;
-      buckets[idx].orderCount += 1;
-    }
-
-    const totalRevenue = buckets.reduce((sum, b) => sum + b.totalAmount, 0);
-    const orderCount = buckets.reduce((sum, b) => sum + b.orderCount, 0);
-    const avgPerDay = days > 0 ? Math.round(totalRevenue / days) : 0;
-    const maxPoint =
-      buckets.reduce(
-        (max, b) => (b.totalAmount > max.totalAmount ? b : max),
-        { totalAmount: 0, date: null, label: '' },
-      ) || null;
+    const totalRevenue = data?.totalRevenue ?? points.reduce((sum, p) => sum + p.totalAmount, 0);
+    const orderCount = data?.totalOrders ?? points.reduce((sum, p) => sum + p.orderCount, 0);
+    const avgPerDay = points.length > 0 ? Math.round(totalRevenue / points.length) : 0;
+    const maxPoint = points.reduce(
+      (max, p) => (p.totalAmount > max.totalAmount ? p : max),
+      { totalAmount: 0, date: null, label: '' }
+    );
 
     return {
-      points: buckets,
+      points,
       summary: { totalRevenue, orderCount, avgPerDay, maxDay: maxPoint },
     };
   } catch (err) {
-    console.error('Lỗi tính báo cáo doanh thu:', err);
+    console.error('Lỗi gọi API /v1/api/shop/stats/revenue:', err);
     return EMPTY_REVENUE;
   }
-
-  // ============================================
-  // TODO: Khi có BE, bỏ comment phần dưới và xóa phần mock ở trên
-  // BE trả về: { statusCode, message, data: { points: [...], summary: {...} } }
-  // ============================================
-  /*
-  if (!isApiConfigured()) return EMPTY_REVENUE;
-  try {
-    const res = await request(`/v1/api/shop/revenue?days=${days}`);
-    const data = getPayload(res);
-    return {
-      points: Array.isArray(data?.points) ? data.points : [],
-      summary: data?.summary ?? EMPTY_REVENUE.summary,
-    };
-  } catch (err) {
-    console.error('Lỗi gọi API /v1/api/shop/revenue:', err);
-    return EMPTY_REVENUE;
-  }
-  */
 }
 
 const EMPTY_REVENUE = {
