@@ -14,7 +14,7 @@ class AdminController {
 
         new SuccessResponse({
             message: "Flash Sale đã được kích hoạt thành công",
-            metadata: result,
+            data: result,
         }).send(res);
     });
 
@@ -29,7 +29,7 @@ class AdminController {
 
         new SuccessResponse({
             message: "Flash Sale đã được kích hoạt nóng thành công",
-            metadata: result,
+            data: result,
         }).send(res);
     });
 
