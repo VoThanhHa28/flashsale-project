@@ -2,7 +2,7 @@
 /**
  * Kiểm tra backend trước khi hoàn thành feature.
  * Gọi GET {REACT_APP_API_URL}/v1/api/products và in OK hoặc lỗi.
- * Cần file .env có REACT_APP_API_URL (vd. http://localhost:3001).
+ * Cần file .env có REACT_APP_API_URL (vd. http://localhost:3000).
  */
 const fs = require('fs');
 const path = require('path');
