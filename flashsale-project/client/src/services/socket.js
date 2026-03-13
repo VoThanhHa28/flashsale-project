@@ -22,7 +22,7 @@ class SocketService {
 
   /**
    * Kết nối tới Socket server
-   * @param {string} url - Socket server URL (default: http://localhost:3001)
+   * @param {string} url - Socket server URL (default: http://localhost:3000)
    */
   connect(url = null) {
     if (this.socket?.connected) {
@@ -30,7 +30,7 @@ class SocketService {
       return;
     }
 
-    const socketUrl = url || process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
+    const socketUrl = url || process.env.REACT_APP_SOCKET_URL || 'http://localhost:3000';
     console.log('🔌 Đang kết nối Socket:', socketUrl);
 
     this.socket = io(socketUrl, {
