@@ -14,6 +14,7 @@ import {
   FiBell,
   FiBarChart2,
   FiActivity,
+  FiClipboard,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import './Account.css';
@@ -98,6 +99,13 @@ function Account() {
     },
     ...(isAdmin
       ? [
+          {
+            to: '/shop/orders',
+            icon: <FiClipboard size={24} />,
+            title: 'Đơn hàng Shop',
+            desc: 'Quản lý & duyệt đơn',
+            color: 'purple',
+          },
           {
             to: '/shop/products',
             icon: <FiPackage size={24} />,
