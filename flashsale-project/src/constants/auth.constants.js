@@ -7,6 +7,7 @@ module.exports = {
   USR_ROLE: {
     USER: 'USER',
     SHOP_ADMIN: 'SHOP_ADMIN',
+    ADMIN: 'ADMIN',
   },
 
   JWT: {

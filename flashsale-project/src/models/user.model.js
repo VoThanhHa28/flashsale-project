@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     },
     usr_role: {
       type: String,
-      enum: ['USER', 'SHOP_ADMIN'],
+      enum: ['USER', 'SHOP_ADMIN', 'ADMIN'],
       default: 'USER',
     },
     status: {

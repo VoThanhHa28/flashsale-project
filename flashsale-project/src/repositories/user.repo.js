@@ -57,10 +57,58 @@ const updateStatusById = async (id, status) => {
   return user;
 };
 
+/**
+ * Cập nhật role của user.
+ */
+const updateRoleById = async (id, role) => {
+  const user = await User.findOneAndUpdate(
+    { _id: id, is_deleted: false },
+    { $set: { usr_role: role } },
+    { new: true, runValidators: true }
+  )
+    .select('-password')
+    .lean();
+  return user;
+};
+
+/**
+ * Soft delete user (đặt is_deleted = true).
+ */
+const softDeleteById = async (id) => {
+  const user = await User.findOneAndUpdate(
+    { _id: id, is_deleted: false },
+    { $set: { is_deleted: true } },
+    { new: true }
+  )
+    .select('-password')
+    .lean();
+  return user;
+};
+
+/**
+ * Tìm user theo email.
+ */
+const findByEmail = async (email) => {
+  return User.findOne({ email, is_deleted: false }).select('-password').lean();
+};
+
+/**
+ * Tạo user mới.
+ */
+const create = async (userData) => {
+  const user = await User.create(userData);
+  const { password, ...userWithoutPassword } = user.toObject();
+  return userWithoutPassword;
+};
+
 module.exports = {
   findById,
   updateById,
   updatePasswordById,
   findAllPaginated,
   updateStatusById,
+  updateRoleById,
+  softDeleteById,
+  findByEmail,
+  create,
 };

@@ -56,6 +56,58 @@ class AdminController {
             data: result,
         }).send(res);
     });
+
+    // ============================================================
+    // ADMIN Only Controllers
+    // ============================================================
+
+    /**
+     * Danh sách SHOP_ADMIN
+     * GET /admin/shop-admins
+     */
+    getShopAdmins = asyncHandler(async (req, res) => {
+        const result = await AdminService.getShopAdmins(req.query);
+        return new OK({
+            message: 'Lấy danh sách SHOP_ADMIN thành công',
+            data: result,
+        }).send(res);
+    });
+
+    /**
+     * Tạo SHOP_ADMIN mới
+     * POST /admin/shop-admins
+     */
+    createShopAdmin = asyncHandler(async (req, res) => {
+        const result = await AdminService.createShopAdmin(req.body);
+        return new SuccessResponse({
+            message: 'Tạo SHOP_ADMIN thành công',
+            data: result,
+        }).send(res);
+    });
+
+    /**
+     * Xóa SHOP_ADMIN
+     * DELETE /admin/shop-admins/:id
+     */
+    deleteShopAdmin = asyncHandler(async (req, res) => {
+        const result = await AdminService.deleteShopAdmin(req.params.id);
+        return new OK({
+            message: 'Xóa SHOP_ADMIN thành công',
+            data: result,
+        }).send(res);
+    });
+
+    /**
+     * Thay đổi role của user
+     * PATCH /admin/users/:id/role
+     */
+    changeUserRole = asyncHandler(async (req, res) => {
+        const result = await AdminService.changeUserRole(req.params.id, req.body.role);
+        return new OK({
+            message: 'Thay đổi role thành công',
+            data: result,
+        }).send(res);
+    });
 }
 
 module.exports = new AdminController();
