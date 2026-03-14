@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiCheckCircle, FiClock, FiSearch, FiTruck, FiXCircle } from 'react-icons/fi';
 import * as api from '../services/api';
@@ -60,40 +60,84 @@ function ShopOrders() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
 
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    sort: 'newest',
-  });
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterSort, setFilterSort] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const loadOrders = useCallback(async (isInitial = false) => {
-    if (isInitial) setLoading(true);
-    else setFetching(true);
-    setError('');
-    try {
-      const result = await api.getShopOrders({
-        page: currentPage,
-        limit: PAGE_SIZE,
-        ...filters,
-      });
-      setOrders(result.orders || []);
-      setPagination(result.pagination || null);
-    } catch (err) {
-      setError(err.message || 'Không thể tải danh sách đơn hàng.');
-    } finally {
-      setLoading(false);
-      setFetching(false);
-    }
-  }, [currentPage, filters]);
+  const hasFetchedRef = useRef(false);
+  const prevPageRef = useRef(currentPage);
+  const prevStatusRef = useRef(filterStatus);
 
   useEffect(() => {
     if (!user) {
       navigate('/login?redirect=/shop/orders');
       return;
     }
-    loadOrders(true);
-  }, [user, navigate, loadOrders]);
+
+    let cancelled = false;
+
+    const fetchOrders = async (isInitial) => {
+      if (isInitial) setLoading(true);
+      else setFetching(true);
+      setError('');
+
+      try {
+        const result = await api.getShopOrders({
+          page: currentPage,
+          limit: PAGE_SIZE,
+          status: filterStatus,
+        });
+        if (!cancelled) {
+          setOrders(result.orders || []);
+          setPagination(result.pagination || null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Không thể tải danh sách đơn hàng.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setFetching(false);
+        }
+      }
+    };
+
+    const pageChanged = prevPageRef.current !== currentPage;
+    const statusChanged = prevStatusRef.current !== filterStatus;
+    prevPageRef.current = currentPage;
+    prevStatusRef.current = filterStatus;
+
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchOrders(true);
+    } else if (pageChanged || statusChanged) {
+      fetchOrders(false);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, navigate, currentPage, filterStatus]);
+
+  const loadOrders = async () => {
+    setFetching(true);
+    setError('');
+    try {
+      const result = await api.getShopOrders({
+        page: currentPage,
+        limit: PAGE_SIZE,
+        status: filterStatus,
+      });
+      setOrders(result.orders || []);
+      setPagination(result.pagination || null);
+    } catch (err) {
+      setError(err.message || 'Không thể tải danh sách đơn hàng.');
+    } finally {
+      setFetching(false);
+    }
+  };
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -108,7 +152,11 @@ function ShopOrders() {
       return;
     }
     setToast(result.message);
-    await loadOrders(false);
+    await loadOrders();
+  };
+
+  const handleRefresh = () => {
+    loadOrders();
   };
 
   const totalOrders = pagination?.totalOrders || 0;
@@ -162,20 +210,19 @@ function ShopOrders() {
             <input
               type="text"
               className={styles.searchInput}
-              value={filters.search}
+              value={filterSearch}
               placeholder="Tìm theo mã đơn hoặc tên khách..."
               onChange={(e) => {
-                setFilters((prev) => ({ ...prev, search: e.target.value }));
-                setCurrentPage(1);
+                setFilterSearch(e.target.value);
               }}
             />
           </div>
 
           <select
             className={styles.select}
-            value={filters.status}
+            value={filterStatus}
             onChange={(e) => {
-              setFilters((prev) => ({ ...prev, status: e.target.value }));
+              setFilterStatus(e.target.value);
               setCurrentPage(1);
             }}
           >
@@ -186,10 +233,9 @@ function ShopOrders() {
 
           <select
             className={styles.select}
-            value={filters.sort}
+            value={filterSort}
             onChange={(e) => {
-              setFilters((prev) => ({ ...prev, sort: e.target.value }));
-              setCurrentPage(1);
+              setFilterSort(e.target.value);
             }}
           >
             <option value="newest">Mới nhất</option>
@@ -198,7 +244,7 @@ function ShopOrders() {
             <option value="amount_low">Giá trị thấp nhất</option>
           </select>
 
-          <button type="button" className={styles.refreshBtn} onClick={() => loadOrders(false)} disabled={fetching}>
+          <button type="button" className={styles.refreshBtn} onClick={handleRefresh} disabled={fetching}>
             Làm mới
           </button>
         </div>
