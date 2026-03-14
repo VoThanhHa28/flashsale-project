@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const Product = require("../models/product.model");
 const redisClient = require("../config/redis");
 const UserRepo = require("../repositories/user.repo");
-const { BadRequestError, NotFoundError } = require("../core/error.response");
+const { BadRequestError, NotFoundError, ConflictRequestError } = require("../core/error.response");
 const { getIO } = require("../config/socket");
 const { SOCKET_EVENT, SOCKET_ROOM } = require("../constants/socket.constant");
 const OrderService = require("./order.service");
@@ -163,6 +164,85 @@ class AdminService {
         }
 
         return { mongo, redis };
+    }
+
+    // ============================================================
+    // ADMIN Only Methods
+    // ============================================================
+
+    /**
+     * Danh sách SHOP_ADMIN (chỉ ADMIN mới xem được).
+     */
+    static async getShopAdmins(query = {}) {
+        return UserRepo.findAllPaginated({
+            page: query.page,
+            limit: query.limit,
+            filter: { usr_role: CONST.AUTH.USR_ROLE.SHOP_ADMIN },
+        });
+    }
+
+    /**
+     * Tạo SHOP_ADMIN mới (chỉ ADMIN mới tạo được).
+     */
+    static async createShopAdmin({ email, password, name }) {
+        const existingUser = await UserRepo.findByEmail(email);
+        if (existingUser) {
+            throw new ConflictRequestError(CONST.AUTH.MESSAGE.EMAIL_EXISTS);
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const shopAdmin = await UserRepo.create({
+            email,
+            password: hashedPassword,
+            name,
+            usr_role: CONST.AUTH.USR_ROLE.SHOP_ADMIN,
+            status: 'active',
+        });
+
+        return { user: shopAdmin };
+    }
+
+    /**
+     * Xóa SHOP_ADMIN (soft delete, chỉ ADMIN mới xóa được).
+     */
+    static async deleteShopAdmin(id) {
+        const user = await UserRepo.findById(id);
+        if (!user) {
+            throw new NotFoundError(CONST.ADMIN.MESSAGE.USER_NOT_FOUND);
+        }
+
+        if (user.usr_role !== CONST.AUTH.USR_ROLE.SHOP_ADMIN) {
+            throw new BadRequestError('Chỉ có thể xóa tài khoản SHOP_ADMIN');
+        }
+
+        const deletedUser = await UserRepo.softDeleteById(id);
+        return { user: deletedUser };
+    }
+
+    /**
+     * Thay đổi role của user (chỉ ADMIN mới đổi được).
+     * Không thể đổi role của ADMIN khác.
+     */
+    static async changeUserRole(id, newRole) {
+        const user = await UserRepo.findById(id);
+        if (!user) {
+            throw new NotFoundError(CONST.ADMIN.MESSAGE.USER_NOT_FOUND);
+        }
+
+        if (user.usr_role === CONST.AUTH.USR_ROLE.ADMIN) {
+            throw new BadRequestError('Không thể thay đổi role của ADMIN');
+        }
+
+        const validRoles = [
+            CONST.AUTH.USR_ROLE.USER,
+            CONST.AUTH.USR_ROLE.SHOP_ADMIN,
+        ];
+        if (!validRoles.includes(newRole)) {
+            throw new BadRequestError('Role không hợp lệ');
+        }
+
+        const updatedUser = await UserRepo.updateRoleById(id, newRole);
+        return { user: updatedUser };
     }
 }
 
