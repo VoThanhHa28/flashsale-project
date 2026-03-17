@@ -7,18 +7,18 @@ const { requireShopAdmin, requireAdmin } = require("../middlewares/rbac");
 const adminValidation = require("../validation/admin.validation");
 
 /**
- * Admin Routes - Quản lý Flash Sale & Hệ thống
+ * Admin Routes
  * Prefix: /admin
- * 
+ *
  * Phân quyền:
- * - ADMIN: Quyền cao nhất, truy cập được tất cả routes
- * - SHOP_ADMIN: Quản lý shop, flash sale, users
+ * - ADMIN: Quyền cao nhất, nhưng chỉ quản lý user/role và hệ thống (health, system config,...)
+ * - SHOP_ADMIN: Quản lý vận hành shop: flash sale, sản phẩm, đơn hàng shop, một phần user
  */
 
 router.use(verifyToken);
 
 // ============================================================
-// SHOP_ADMIN Routes (ADMIN cũng có thể truy cập)
+// SHOP_ADMIN Routes (ADMIN KHÔNG truy cập)
 // ============================================================
 
 /**
@@ -35,20 +35,27 @@ router.post("/flash-sale/activate", requireShopAdmin, adminController.activateFl
  */
 router.post("/flash-sale/hot-activate", requireShopAdmin, adminController.hotActivateFlashSale);
 
-/**
- * GET /admin/users - Danh sách user phân trang
- */
-router.get("/users", requireShopAdmin, validate(adminValidation.getUsers), adminController.getUsers);
+// ============================================================
+// ADMIN + SHOP_ADMIN chung (QUẢN LÝ USER & SYSTEM)
+// Theo yêu cầu: ADMIN không quản lý product/flash-sale,
+// nhưng vẫn được quản lý user và health system.
+// => Dùng requireAdmin ở các route này.
+// ============================================================
 
 /**
- * PATCH /admin/users/:id/ban - Khóa user (status inactive)
+ * GET /admin/users - Danh sách user phân trang (ADMIN)
  */
-router.patch("/users/:id/ban", requireShopAdmin, validate(adminValidation.banUser), adminController.banUser);
+router.get("/users", requireAdmin, validate(adminValidation.getUsers), adminController.getUsers);
 
 /**
- * GET /admin/health - Health check Mongo + Redis
+ * PATCH /admin/users/:id/ban - Khóa user (status inactive) (ADMIN)
  */
-router.get("/health", requireShopAdmin, adminController.health);
+router.patch("/users/:id/ban", requireAdmin, validate(adminValidation.banUser), adminController.banUser);
+
+/**
+ * GET /admin/health - Health check Mongo + Redis (ADMIN)
+ */
+router.get("/health", requireAdmin, adminController.health);
 
 // ============================================================
 // ADMIN Only Routes (Chỉ ADMIN mới có quyền truy cập)
