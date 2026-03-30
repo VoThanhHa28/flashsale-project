@@ -147,76 +147,73 @@ else return 0 end
 
 ## 🧠 System Architecture
 
-<div align="center">
+### Infrastructure Overview
 
-![Architecture Diagram](./docs/architecture.png)
+```mermaid
+graph TB
+    Client(["🌐 Client\n(React + Socket.IO)"])
 
-</div>
+    subgraph APP["⚙️ Express.js Application"]
+        Auth["🔐 Auth/User\nRoutes"]
+        Product["📦 Product\nRoutes"]
+        Order["🛒 Order\nRoutes"]
+        Admin["🛡 Admin\nRoutes"]
+    end
 
-### Request Lifecycle
+    subgraph INFRA["🏗 Infrastructure"]
+        Redis[("🔴 Redis\nInventory Cache")]
+        Mongo[("🟢 MongoDB\nData Store")]
+        MQ["🟠 RabbitMQ\nMessage Queue"]
+    end
 
-```
-Incoming HTTP Request
-        │
-        ├── 🛣  Route             → URL mapping, middleware chain
-        ├── 🔑  Auth Middleware   → JWT verify, RBAC role check
-        ├── ✅  Joi Validation    → body / params / query schema
-        ├── 🎛  Controller        → orchestrate, no business logic
-        ├── ⚙️  Service           → business rules, domain decisions
-        ├── 🗄  Repository        → DB queries, is_deleted filters
-        └── 📦  Response/Error   → consistent JSend shape
+    Worker["⚙️ Order Worker\n(Background Process)"]
+
+    Client -->|"HTTP / WebSocket"| APP
+    APP --> Redis
+    APP --> Mongo
+    APP -->|"push order"| MQ
+    MQ -->|"consume"| Worker
+    Worker --> Mongo
+    Worker -->|"Socket.IO broadcast"| Client
 ```
 
 ### Flash Sale Order Flow
 
-```
-POST /v1/api/order  (User places order)
-        │
-        ├── ① verifyToken + validate request
-        │
-        ├── ② Redis: atomic Lua script
-        │       stock >= quantity?
-        │       ├── YES → decrement & continue
-        │       └── NO  → 400 Out of Stock
-        │
-        ├── ③ Push payload → RabbitMQ queue
-        │
-        └── ④ HTTP 200 OK (instant response)
-                        │
-                        ▼
-            ┌─── Order Worker (background) ───┐
-            │  ① Consume from queue           │
-            │  ② Save Order to MongoDB        │
-            │  ③ Socket.IO broadcast          │
-            └─────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant C as 🌐 Client
+    participant API as ⚙️ Express API
+    participant R as 🔴 Redis
+    participant MQ as 🟠 RabbitMQ
+    participant W as ⚙️ Worker
+    participant DB as 🟢 MongoDB
+
+    C->>API: POST /order (JWT token)
+    API->>API: ① Verify JWT + Joi validate
+    API->>R: ② Lua script: check & deduct stock
+    R-->>API: stock OK ✅ / out of stock ❌
+    API->>MQ: ③ Push order payload
+    API-->>C: ④ 200 OK (instant response)
+
+    Note over MQ,W: Async background processing
+    MQ->>W: Consume order payload
+    W->>DB: Save Order document
+    W->>C: Socket.IO → stock update broadcast
 ```
 
-### Infrastructure Overview
+### Clean Architecture — Request Lifecycle
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Client / Browser                   │
-│              (FE React + Socket.IO client)           │
-└──────────────────────┬──────────────────────────────┘
-                       │ HTTP / WebSocket
-┌──────────────────────▼──────────────────────────────┐
-│              Express.js Application                  │
-│  ┌─────────────┐ ┌──────────────┐ ┌──────────────┐ │
-│  │  Auth/User  │ │   Product    │ │    Order     │ │
-│  │   Routes    │ │   Routes     │ │   Routes     │ │
-│  └──────┬──────┘ └──────┬───────┘ └──────┬───────┘ │
-│         └───────────────┼────────────────┘          │
-│                         ▼                            │
-│  ┌──────────┐  ┌────────────────┐  ┌─────────────┐ │
-│  │  Redis   │  │    MongoDB     │  │  RabbitMQ   │ │
-│  │ (stock)  │  │  (data store)  │  │  (queue)    │ │
-│  └──────────┘  └────────────────┘  └──────┬──────┘ │
-└─────────────────────────────────────────── │ ───────┘
-                                             │
-                              ┌──────────────▼──────┐
-                              │    Order Worker      │
-                              │  (background proc)   │
-                              └──────────────────────┘
+```mermaid
+flowchart LR
+    REQ(["📨 Request"]) --> R["🛣 Route\nURL mapping"]
+    R --> M["🔑 Middleware\nJWT · RBAC · Joi"]
+    M --> C["🎛 Controller\norchestrate only"]
+    C --> S["⚙️ Service\nbusiness logic"]
+    S --> REPO["🗄 Repository\nDB queries"]
+    REPO --> DB[("🟢 MongoDB")]
+    S --> REDIS[("🔴 Redis")]
+    C --> RES["📦 Response\nJSend shape"]
+    RES --> RESP(["📩 Response"])
 ```
 
 ---
