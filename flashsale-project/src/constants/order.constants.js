@@ -8,6 +8,22 @@ module.exports = {
         CANCELLED: "cancelled",
     },
 
+    /** Thanh toán — không có API riêng; tạo cùng lúc Order (worker). */
+    PAYMENT: {
+        STATUS: {
+            PENDING: "pending",
+            PAID: "paid",
+            FAILED: "failed",
+            REFUNDED: "refunded",
+        },
+        METHOD: {
+            COD: "cod",
+        },
+        CURRENCY: {
+            VND: "VND",
+        },
+    },
+
     MESSAGE: {
         PLACE_ORDER_SUCCESS: "Đặt hàng thành công!",
         OUT_OF_STOCK: "Rất tiếc! Sản phẩm đã hết hàng.",

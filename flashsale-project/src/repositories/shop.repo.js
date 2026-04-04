@@ -2,6 +2,7 @@
 
 const OrderModel = require('../models/order.model');
 const OrderDetailRepo = require('./orderDetail.repo');
+const PaymentRepo = require('./payment.repo');
 
 const findAllOrders = async ({ filter, skip, limit }) => {
     const orders = await OrderModel.find(filter)
@@ -11,7 +12,8 @@ const findAllOrders = async ({ filter, skip, limit }) => {
         .limit(limit)
         .populate('productId', 'productName productThumb productPrice')
         .lean();
-    return OrderDetailRepo.enrichOrdersWithDetails(orders);
+    const withDetails = await OrderDetailRepo.enrichOrdersWithDetails(orders);
+    return PaymentRepo.enrichOrdersWithPayment(withDetails);
 };
 
 const countOrders = async (filter) => {
@@ -22,7 +24,8 @@ const findOrderById = async (orderId) => {
     const order = await OrderModel.findById(orderId)
         .populate('productId', 'productName productThumb productPrice')
         .lean();
-    return OrderDetailRepo.enrichOrderWithDetails(order);
+    const withDetails = await OrderDetailRepo.enrichOrderWithDetails(order);
+    return PaymentRepo.enrichOrderWithPayment(withDetails);
 };
 
 const updateOrderStatus = async (orderId, status) => {

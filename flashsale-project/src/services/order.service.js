@@ -4,12 +4,24 @@ const OrderModel = require("../models/order.model");
 const { getIO } = require("../config/socket");
 const OrderRepo = require("../repositories/order.repo");
 const OrderDetailRepo = require("../repositories/orderDetail.repo");
+const PaymentRepo = require("../repositories/payment.repo");
 const InventoryRepo = require("../repositories/inventory.repo");
+const OrderDetailModel = require("../models/orderDetail.model");
+const PaymentModel = require("../models/payment.model");
 const { NotFoundError, BadRequestError } = require("../core/error.response");
 const { ForbiddenError } = require("../core/error.response");
 const CONST = require("../constants");
 
 class OrderService {
+    /** Hoàn tác order + order_details + payments nếu lưu chi tiết/payment thất bại. */
+    static async _rollbackOrderPersist(orderId) {
+        await Promise.all([
+            OrderDetailModel.deleteMany({ orderId }),
+            PaymentModel.deleteMany({ orderId }),
+            OrderModel.deleteOne({ _id: orderId }),
+        ]);
+    }
+
     /** Đồng bộ MongoDB inventories.quantityOnHand từ Redis (sau đặt/hủy đơn). */
     static async _syncInventoryFromRedis(productId) {
         try {
@@ -171,11 +183,15 @@ class OrderService {
                     lineTotal: quantity * price,
                 },
             ]);
-        } catch (detailErr) {
-            await OrderModel.deleteOne({ _id: order._id });
-            throw detailErr;
+            await PaymentRepo.insertForOrder(order._id, {
+                amount: order.totalPrice,
+                status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+            });
+        } catch (persistErr) {
+            await OrderService._rollbackOrderPersist(order._id);
+            throw persistErr;
         }
-        console.log(`[OrderService] ✅ Đã lưu đơn hàng + order_details: ${order._id}`);
+        console.log(`[OrderService] ✅ Đã lưu đơn + order_details + payment: ${order._id}`);
 
         await OrderService._syncInventoryFromRedis(productId);
 
@@ -258,11 +274,15 @@ class OrderService {
                         lineTotal: quantity * price,
                     },
                 ]);
-            } catch (detailErr) {
-                await OrderModel.deleteOne({ _id: order._id });
-                throw detailErr;
+                await PaymentRepo.insertForOrder(order._id, {
+                    amount: order.totalPrice,
+                    status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+                });
+            } catch (persistErr) {
+                await OrderService._rollbackOrderPersist(order._id);
+                throw persistErr;
             }
-            console.log(`[OrderService] 💾 Đã lưu đơn hàng lỗi + order_details: ${order._id}`);
+            console.log(`[OrderService] 💾 Đã lưu đơn lỗi + order_details + payment: ${order._id}`);
 
             return order;
         } catch (error) {
@@ -320,7 +340,8 @@ class OrderService {
 
         const orderLean = await OrderModel.findById(order._id).lean();
         const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
-        return { order: orderWithDetails };
+        const orderWithPayment = await PaymentRepo.enrichOrderWithPayment(orderWithDetails);
+        return { order: orderWithPayment };
     }
 }
 
