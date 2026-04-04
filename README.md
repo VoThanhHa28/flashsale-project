@@ -1,192 +1,469 @@
-# Flash Sale System
+<div align="center">
 
-High-concurrency backend platform for flash sale events with atomic stock reservation, asynchronous order processing, and role-based access control.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=200&section=header&text=⚡%20Flash%20Sale%20System&fontSize=48&fontColor=ffffff&animation=fadeIn&fontAlignY=38&desc=High-concurrency%20backend%20for%20time-limited%20sale%20events&descAlignY=60&descSize=18" width="100%" />
 
-![Node.js](https://img.shields.io/badge/Node.js-22+-green?style=flat)
-![Express](https://img.shields.io/badge/Express-4.x-blue?style=flat)
-![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-4ea94b?style=flat)
-![Redis](https://img.shields.io/badge/Redis-Cache-orange?style=flat)
-![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Queue-red?style=flat)
+<br/>
 
-## Project Overview
-- This project is designed for flash-sale traffic spikes where many users compete for limited inventory at the same time.
-- Core goals are inventory consistency, non-blocking order flow, and predictable API behavior for frontend/load testing.
-- Target users: shoppers, admins, and engineering team members running load tests and operations checks.
+[![Node.js](https://img.shields.io/badge/Node.js-22+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Express](https://img.shields.io/badge/Express.js-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongoosejs.com)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io)
 
-## Problem & Motivation
-- Flash sale systems fail easily under burst traffic if inventory is updated non-atomically.
-- Synchronous order creation can increase latency and error rates during peak windows.
-- Teams need visibility and safe admin controls (RBAC, user moderation, health checks) to operate reliably.
+<br/>
 
-## Features
-- Atomic stock reservation with Redis (Lua script based decrement).
-- Async order pipeline with RabbitMQ to decouple request handling from order persistence.
-- JWT authentication + RBAC (`USER`, `SHOP_ADMIN`) for protected/admin endpoints.
-- User module: register/login, profile APIs, password change, avatar update.
-- Order history APIs for logged-in users with pagination and ownership checks.
-- Admin APIs: list users, ban user, health check (MongoDB/Redis).
-- Soft delete for user (`is_deleted`) with query-level filtering across auth/repository flows.
+> ⚡ A backend system that handles **thousands of concurrent requests** during flash sale events — **without overselling**, **without data loss**, and with **real-time feedback**.
 
-## Demo
-> Keep visuals focused: 1-2 GIFs max, stored in `docs/`.
+<br/>
+
+[🚀 Quick Start](#️-installation--setup) &nbsp;·&nbsp; [📐 Architecture](#-system-architecture) &nbsp;·&nbsp; [✨ Features](#-features) &nbsp;·&nbsp; [📡 API Reference](#-api-reference) &nbsp;·&nbsp; [💻 Source Code](https://github.com/VoThanhHa28/flashsale-project.git)
+
+<br/>
+
+</div>
+
+---
+
+## 📖 Table of Contents
+
+- [What is This?](#-what-is-this)
+- [Core Challenges](#-core-challenges--how-we-solved-them)
+- [Features](#-features)
+- [Demo](#-demo)
+- [System Architecture](#-system-architecture)
+- [Project Structure](#-project-structure)
+- [Tech Stack](#-tech-stack)
+- [API Reference](#-api-reference)
+- [Installation & Setup](#️-installation--setup)
+- [Future Improvements](#-future-improvements)
+- [Team](#-team)
+
+---
+
+## 🎯 What is This?
+
+Flash sale events create **extreme traffic bursts** — thousands of users racing to buy the same product at the exact same second. Traditional CRUD systems break under this pressure.
+
+This system is engineered to handle it:
+
+<div align="center">
+
+| Challenge | How We Handle It |
+|:---|:---|
+| 🏎 Thousands of concurrent buy requests | **Redis** atomic Lua-script deducts stock in one operation |
+| 💸 Overselling risk | Stock reserved **before** any order is created |
+| 🐌 Slow order creation blocking response | **RabbitMQ** async pipeline — respond instantly, persist later |
+| 📡 Users need live feedback | **Socket.IO** broadcasts sale open/close and stock changes |
+| 🔐 Secure admin operations | **JWT + RBAC** separates shopper from admin capabilities |
+
+</div>
+
+---
+
+## 🔥 Core Challenges & How We Solved Them
+
+<details>
+<summary><b>⚡ Race Condition & Overselling</b></summary>
+
+**Problem:** Thousands of users decrement the same stock counter simultaneously → inconsistent state → overselling.
+
+**Solution:** Redis Lua script executes read + check + decrement atomically in a single operation. No two requests can interleave.
+
+```lua
+local stock = redis.call('get', KEYS[1])
+if tonumber(stock) >= tonumber(ARGV[1]) then
+    redis.call('decrby', KEYS[1], ARGV[1])
+    return 1
+else return 0 end
+```
+</details>
+
+<details>
+<summary><b>🐢 Non-blocking Order Processing</b></summary>
+
+**Problem:** Saving an order to MongoDB during peak traffic adds latency and failure risk to the main request cycle.
+
+**Solution:** RabbitMQ async queue. The HTTP request returns `200 OK` immediately after inventory is reserved. A worker process handles the actual database write.
+</details>
+
+<details>
+<summary><b>🔁 API Consistency Across Team</b></summary>
+
+**Problem:** Multiple contributors produce inconsistent response shapes, breaking frontend and test pipelines.
+
+**Solution:** Shared `SuccessResponse` / `AppError` response utilities + Joi validation middleware enforced on every route.
+</details>
+
+<details>
+<summary><b>🗂 Data Retention & User Lifecycle</b></summary>
+
+**Problem:** Hard-deleting users loses order/transaction history — violates audit and legal requirements.
+
+**Solution:** Soft delete strategy (`is_deleted: Boolean`) for User. Enforced at every query boundary (repository, auth service, middleware) — never only at the delete endpoint.
+</details>
+
+---
+
+## ✨ Features
+
+<div align="center">
+
+| Module | Features |
+|:---:|:---|
+| 🔐 **Auth** | Register · Login · JWT access tokens · Refresh · RBAC |
+| 👤 **User Profile** | View/Update profile · Change password · Avatar |
+| 📦 **Inventory** | Flash sale time-window · Atomic Redis reservation |
+| 🛒 **Orders** | Place order · Async RabbitMQ pipeline · Worker persistence |
+| 📜 **Order History** | Paginated list · Detail with ownership enforcement |
+| 📡 **Real-time** | Sale start/end socket events · Live stock updates |
+| 🛡 **Admin** | List users · Ban user · MongoDB/Redis health check |
+| 🗂 **Data Safety** | Soft delete · Query-level filtering · No hard deletes |
+| 🧪 **Load Testing** | Bulk seed API · K6 scripts for stress test |
+
+</div>
+
+---
+
+## 🎬 Demo
+
+<div align="center">
+
+**🔐 Auth Flow — Register → Login → Protected API**
 
 ![Login Flow Demo](./docs/demo-login.gif)
-![Order History + Admin Demo](./docs/demo-admin-order.gif)
 
-## Architecture / System Design
-![Architecture Diagram](./docs/architecture.png)
+<br/>
 
-- Layered backend architecture:
-  - `routes` -> request mapping
-  - `validation` -> Joi request contracts
-  - `controllers` -> transport orchestration
-  - `services` -> business logic
-  - `repositories` -> data access
-- Shared response/error utilities to keep API shape consistent.
+**📜 Order History + 🛡 Admin Management**
 
-## Tech Stack
-- Backend: Node.js, Express.js, MongoDB (Mongoose), Redis, RabbitMQ, Socket.IO
-- Security & Validation: JWT, bcrypt, Joi
-- DevOps & Tools: Docker, Postman, K6, Git
+![Admin & Order Demo](./docs/demo-admin-order.gif)
 
-## My Contributions (Member 4 - Auth & User)
-- Built Auth & User backend module with clean separation of transport, business, and data layers.
-- Implemented JWT + RBAC and secured admin routes for `SHOP_ADMIN`.
-- Delivered user profile APIs (`GET/PUT /users/me`, `POST /users/change-password`) with validation.
-- Implemented avatar support and consistent API response contract.
-- Built order-history APIs (`GET /order/me`, `GET /order/me/:id`) with pagination + ownership checks.
-- Built admin APIs (`GET /admin/users`, `PATCH /admin/users/:id/ban`, `GET /admin/health`).
-- Added user soft delete and updated auth/query paths to exclude logically deleted users.
+</div>
 
-## Challenges & Solutions
-- **Challenge:** Race conditions during stock updates under high load.  
-  **Solution:** Redis atomic reservation and async queue-based order flow.
-- **Challenge:** API inconsistency across multiple contributors.  
-  **Solution:** Shared response/error classes + Joi validation middleware.
-- **Challenge:** Data retention and account lifecycle control.  
-  **Solution:** Soft delete strategy for user data (`is_deleted`) and defensive filtering in auth/repo.
+---
 
-## Installation & Setup
-### 1) Clone repository
+## 🧠 System Architecture
+
+### Infrastructure Overview
+
+```mermaid
+graph TB
+    Client(["🌐 Client\n(React + Socket.IO)"])
+
+    subgraph APP["⚙️ Express.js Application"]
+        Auth["🔐 Auth/User\nRoutes"]
+        Product["📦 Product\nRoutes"]
+        Order["🛒 Order\nRoutes"]
+        Admin["🛡 Admin\nRoutes"]
+    end
+
+    subgraph INFRA["🏗 Infrastructure"]
+        Redis[("🔴 Redis\nInventory Cache")]
+        Mongo[("🟢 MongoDB\nData Store")]
+        MQ["🟠 RabbitMQ\nMessage Queue"]
+    end
+
+    Worker["⚙️ Order Worker\n(Background Process)"]
+
+    Client -->|"HTTP / WebSocket"| APP
+    APP --> Redis
+    APP --> Mongo
+    APP -->|"push order"| MQ
+    MQ -->|"consume"| Worker
+    Worker --> Mongo
+    Worker -->|"Socket.IO broadcast"| Client
+```
+
+### Flash Sale Order Flow
+
+```mermaid
+sequenceDiagram
+    participant C as 🌐 Client
+    participant API as ⚙️ Express API
+    participant R as 🔴 Redis
+    participant MQ as 🟠 RabbitMQ
+    participant W as ⚙️ Worker
+    participant DB as 🟢 MongoDB
+
+    C->>API: POST /order (JWT token)
+    API->>API: ① Verify JWT + Joi validate
+    API->>R: ② Lua script: check & deduct stock
+    R-->>API: stock OK ✅ / out of stock ❌
+    API->>MQ: ③ Push order payload
+    API-->>C: ④ 200 OK (instant response)
+
+    Note over MQ,W: Async background processing
+    MQ->>W: Consume order payload
+    W->>DB: Save Order document
+    W->>C: Socket.IO → stock update broadcast
+```
+
+### Clean Architecture — Request Lifecycle
+
+```mermaid
+flowchart LR
+    REQ(["📨 Request"]) --> R["🛣 Route\nURL mapping"]
+    R --> M["🔑 Middleware\nJWT · RBAC · Joi"]
+    M --> C["🎛 Controller\norchestrate only"]
+    C --> S["⚙️ Service\nbusiness logic"]
+    S --> REPO["🗄 Repository\nDB queries"]
+    REPO --> DB[("🟢 MongoDB")]
+    S --> REDIS[("🔴 Redis")]
+    C --> RES["📦 Response\nJSend shape"]
+    RES --> RESP(["📩 Response"])
+```
+
+---
+
+## 📁 Project Structure
+
+```
+flashsale-project/
+├── app.js                        # Express app setup, DB connect
+├── bin/www                       # HTTP server entry point
+├── docker-compose.yml            # MongoDB + Redis + RabbitMQ
+└── src/
+    ├── config/
+    │   ├── db.js                 # MongoDB connection
+    │   ├── redis.js              # Redis client
+    │   ├── rabbitmq.js           # RabbitMQ connection
+    │   └── socket.js             # Socket.IO setup
+    │
+    ├── constants/                # Centralized string constants
+    ├── core/
+    │   ├── success.response.js   # OK, CREATED response classes
+    │   └── error.response.js     # AppError, NotFoundError, etc.
+    │
+    ├── middlewares/
+    │   ├── auth.js               # JWT verify, attach req.user
+    │   ├── rbac.js               # Role-based access control
+    │   ├── validate.middleware.js # Joi request validation
+    │   └── error.middleware.js   # Global error handler
+    │
+    ├── models/
+    │   ├── user.model.js         # User schema (soft delete)
+    │   ├── product.model.js      # Product schema
+    │   └── order.model.js        # Order schema
+    │
+    ├── repositories/             # Data access layer
+    │   ├── user.repo.js
+    │   ├── product.repo.js
+    │   └── order.repo.js
+    │
+    ├── services/                 # Business logic
+    │   ├── auth.service.js
+    │   ├── user.service.js
+    │   ├── order.service.js      # Inventory + order processing
+    │   ├── admin.service.js
+    │   └── seed.service.js
+    │
+    ├── controllers/              # Request orchestration
+    ├── validation/               # Joi schemas
+    ├── routes/                   # Express routers
+    │   └── index.js              # Root router
+    │
+    ├── workers/
+    │   └── order.worker.js       # RabbitMQ consumer
+    │
+    └── tests/
+        └── k6/                   # Load test scripts
+```
+
+---
+
+## 🛠 Tech Stack
+
+<div align="center">
+
+| Layer | Technology | Purpose |
+|:---|:---|:---|
+| **Runtime** | Node.js 22+ | Server-side JavaScript |
+| **Framework** | Express.js 4.x | HTTP routing & middleware |
+| **Database** | MongoDB + Mongoose | Persistent data store |
+| **Cache/Inventory** | Redis | Atomic stock reservation, caching |
+| **Message Queue** | RabbitMQ | Async order processing |
+| **Real-time** | Socket.IO | Live sale & stock events |
+| **Auth** | JWT + bcrypt | Stateless auth, password hashing |
+| **Validation** | Joi | Request schema validation |
+| **Container** | Docker + Compose | Local infra orchestration |
+| **Load Testing** | K6 | Stress testing & benchmarking |
+
+</div>
+
+---
+
+## 📡 API Reference
+
+<details open>
+<summary><b>🔐 Auth — /v1/api/auth</b></summary>
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/auth/register` | Create new account | Public |
+| `POST` | `/auth/login` | Login, receive JWT | Public |
+| `GET` | `/auth/me` | Get current user info | JWT |
+
+</details>
+
+<details>
+<summary><b>👤 User — /v1/api/users</b></summary>
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/users/me` | View own profile | JWT |
+| `PUT` | `/users/me` | Update name / address / avatar | JWT |
+| `POST` | `/users/change-password` | Change password (requires old) | JWT |
+
+</details>
+
+<details>
+<summary><b>🛒 Orders — /v1/api/order</b></summary>
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/order` | Place order (flash sale) | JWT |
+| `GET` | `/order/me` | My order list (pagination) | JWT |
+| `GET` | `/order/me/:id` | My order detail | JWT |
+
+</details>
+
+<details>
+<summary><b>🛡 Admin — /v1/api/admin</b></summary>
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/admin/users` | List all users (paginated) | SHOP_ADMIN |
+| `PATCH` | `/admin/users/:id/ban` | Ban a user | SHOP_ADMIN |
+| `GET` | `/admin/health` | MongoDB + Redis status | SHOP_ADMIN |
+| `POST` | `/admin/flash-sale/activate` | Activate flash sale | SHOP_ADMIN |
+| `POST` | `/admin/flash-sale/hot-activate` | Instantly activate sale | SHOP_ADMIN |
+
+</details>
+
+<details>
+<summary><b>📦 Products — /v1/api/products</b></summary>
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/products` | Search & list products | Public |
+| `GET` | `/products/:id` | Get product detail | Public |
+| `POST` | `/products` | Create product | JWT |
+| `PUT` | `/products/:id` | Update product | JWT |
+| `DELETE` | `/products/:id` | Soft delete product | JWT |
+
+</details>
+
+<details>
+<summary><b>🧪 Seed — /v1/api/seed (dev only)</b></summary>
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/seed/users` | Generate bulk users for load testing |
+| `DELETE` | `/seed/users` | Clean up test users |
+
+</details>
+
+---
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+
+- Node.js v20+ LTS
+- Docker & Docker Desktop (running)
+
+### Step 1 — Clone
+
 ```bash
 git clone https://github.com/VoThanhHa28/flashsale-project.git
 cd flashsale-project/flashsale-project
 ```
 
-### 2) Install dependencies
+### Step 2 — Install dependencies
+
 ```bash
 npm install
 ```
 
-### 3) Configure environment
-Create/update `.env`:
+### Step 3 — Configure environment
+
+```bash
+cp .env.example .env   # or create .env manually
+```
+
 ```env
 PORT=3000
 MONGO_URI=mongodb://localhost:27017/flashsale_db
-JWT_SECRET=your-secret
+JWT_SECRET=your-super-secret-key
 REDIS_URI=redis://localhost:6379
 RABBITMQ_URI=amqp://localhost:5672
 ```
 
-### 4) Start infrastructure (if using Docker)
+### Step 4 — Start infrastructure
+
 ```bash
 docker compose up -d
 ```
 
-### 5) Run backend
+| Service | URL | Credentials |
+|---|---|---|
+| MongoDB | `localhost:27017` | — |
+| Redis | `localhost:6379` | — |
+| RabbitMQ Dashboard | [http://localhost:15672](http://localhost:15672) | `guest / guest` |
+
+### Step 5 — Run server
+
 ```bash
-npm run dev
-```
-
-## Lessons Learned
-- Reliability in flash sale systems depends on atomic operations and asynchronous processing.
-- Clean architecture improves maintainability when multiple team members deliver in parallel.
-- Soft delete must be enforced at query boundaries, not only at delete operation points.
-
-## Future Improvements
-- Extend soft delete policy to additional domain models where required by business.
-- Add structured observability (metrics, tracing, alerting for queue/stock anomalies).
-- Improve admin tooling with richer filters and audit logs.
-
-## Source Code
-- Repository: [VoThanhHa28/flashsale-project](https://github.com/VoThanhHa28/flashsale-project.git)
-# FLASHSALE PROJECT - HIGH CONCURRENCY SYSTEM
-
-Dự án môn học: Hệ thống bán hàng chịu tải cao (Flash Sale).
-
-## BAN ĐẦU CHƯA CÓ GÌ THÌ BỌN MÀY SẼ LÀM
-Clone: git clone ...
-
-Vào nhánh chung: git checkout develop
-
-Tạo nhánh riêng: git checkout -b feature/login (ví dụ vậy).
-
-Code & Push: Code xong -> git push origin feature/login.
-
-Tạo PR (MR): Lên Github tạo Pull Request từ feature/login vào develop.
-
-Tao: Review code -> Merge vào develop.
-
-## 1. Yêu cầu môi trường
-- Node.js: v20 LTS trở lên.
-- Docker & Docker Desktop: Phải cài đặt và đang chạy.
-- VS Code.
-
-## 2. Cài đặt & Chạy dự án (Onboarding)
-
-### Bước 1: Clone code
-git clone https://github.com/VoThanhHa28/flashsale-project
-cd flashsale-project
-
-### Bước 2: Cài thư viện
-npm install
-
-### Bước 3: Bật hạ tầng (DB, Redis, Queue)
-docker-compose up -d
-# Chờ 1 chút, sau đó kiểm tra:
-# - Vào http://localhost:15672 (User: guest / Pass: guest) -> Ra RabbitMQ là OK.
-
-### Bước 4: Chạy Server
-Code hằng ngày:
+# Development (auto-reload)
 npm run dev
 
-Demo / quay video / nộp:
+# Production
 npm start
 
-# Nếu hiện "Server running on port 3000" là thành công.
+# Run order worker (separate terminal)
+npm run worker
+```
 
-## 3. Quy tắc Git (NGHIÊM TÚC THỰC HIỆN)
-- Nhánh chính: `main` (Chỉ chứa code sạch để demo).
-- Nhánh phát triển: `develop` (Mọi người merge vào đây).
-- Nhánh cá nhân:
-    - `feature/auth` (Member 4)
-    - `feature/product` (Member 3)
-    - `feature/worker` (Member 2)
-    - `frontend/ui` (Member 5)
-### QUY TRÌNH 3 BƯỚC KHI CODE:
-# 1. Chuyển về nhánh develop và cập nhật code mới nhất từ trên mạng về (để tránh lệch code)
-git checkout develop
-git pull origin develop
+✅ Server running at `http://localhost:3000`
 
-# 2. Tạo nhánh mới để làm việc (Ví dụ Member 4 làm Login)
-git checkout -b feature/login
+---
 
-# ... (Ngồi code chán chê xong xuôi) ...
+## 🔮 Future Improvements
 
-# 3. Lưu code và đẩy lên Github
-git add .
-git commit -m "Done api login"
-git push origin feature/login
+- [ ] Extend soft delete policy to `Order` and `Product` models
+- [ ] Structured observability: distributed tracing, metrics dashboards, queue anomaly alerts
+- [ ] OAuth2 / social login (Google, GitHub)
+- [ ] Admin audit logs and role management
+- [ ] Rate limiting per user during flash sale window
+- [ ] Horizontal scaling support with Redis Pub/Sub + Socket.IO adapter
 
-- SAU ĐÓ Member làm xong thì vào trang Github của dự án, sẽ thấy nút màu xanh "Compare & pull request".
+---
 
-Bấm vào đó.
+## 🤝 Team
 
-Chọn Base: develop (Mũi tên hướng vào develop) <- Compare: feature/login.
+<div align="center">
 
-Bấm Create pull request.
+| Member | Role | Module |
+|:---:|:---|:---|
+| 👑 Leader / M1 | System Architect | Infrastructure, Docker, CI/CD orchestration |
+| ⚙️ M2 | Backend Engineer | Order worker, RabbitMQ consumer, K6 load testing |
+| 📦 M3 | Backend Engineer | Product module, flash sale activation |
+| 🔐 M4 | Backend Engineer | Auth, User profile, Admin APIs, soft delete |
+| 🎨 M5 | Frontend Engineer | React UI, user flows, Socket.IO client |
 
-- RỒi CUỐI CÙNG tao sẽ review và merge
+</div>
 
-## 4. API Documentation
-Xem file GG Docs chung trong nhóm Zalo.
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=120&section=footer&animation=fadeIn" width="100%" />
+
+**Source Code:** [github.com/VoThanhHa28/flashsale-project](https://github.com/VoThanhHa28/flashsale-project.git)
+
+*Built with ❤️ for high-concurrency systems*
+
+</div>
