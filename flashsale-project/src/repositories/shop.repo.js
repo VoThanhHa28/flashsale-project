@@ -1,15 +1,17 @@
 'use strict';
 
 const OrderModel = require('../models/order.model');
+const OrderDetailRepo = require('./orderDetail.repo');
 
 const findAllOrders = async ({ filter, skip, limit }) => {
-    return await OrderModel.find(filter)
+    const orders = await OrderModel.find(filter)
         .select('-__v')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('productId', 'productName productThumb productPrice')
         .lean();
+    return OrderDetailRepo.enrichOrdersWithDetails(orders);
 };
 
 const countOrders = async (filter) => {
@@ -17,9 +19,10 @@ const countOrders = async (filter) => {
 };
 
 const findOrderById = async (orderId) => {
-    return await OrderModel.findById(orderId)
+    const order = await OrderModel.findById(orderId)
         .populate('productId', 'productName productThumb productPrice')
         .lean();
+    return OrderDetailRepo.enrichOrderWithDetails(order);
 };
 
 const updateOrderStatus = async (orderId, status) => {

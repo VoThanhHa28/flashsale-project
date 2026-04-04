@@ -3,6 +3,7 @@ const ProductModel = require("../models/product.model");
 const OrderModel = require("../models/order.model");
 const { getIO } = require("../config/socket");
 const OrderRepo = require("../repositories/order.repo");
+const OrderDetailRepo = require("../repositories/orderDetail.repo");
 const { NotFoundError, BadRequestError } = require("../core/error.response");
 const { ForbiddenError } = require("../core/error.response");
 const CONST = require("../constants");
@@ -117,7 +118,20 @@ class OrderService {
         });
 
         await order.save();
-        console.log(`[OrderService] ✅ Đã lưu đơn hàng: ${order._id}`);
+        try {
+            await OrderDetailRepo.insertLines(order._id, [
+                {
+                    productId,
+                    quantity,
+                    unitPrice: price,
+                    lineTotal: quantity * price,
+                },
+            ]);
+        } catch (detailErr) {
+            await OrderModel.deleteOne({ _id: order._id });
+            throw detailErr;
+        }
+        console.log(`[OrderService] ✅ Đã lưu đơn hàng + order_details: ${order._id}`);
 
         return order;
     }
@@ -189,7 +203,20 @@ class OrderService {
             });
 
             await order.save();
-            console.log(`[OrderService] 💾 Đã lưu đơn hàng lỗi: ${order._id}`);
+            try {
+                await OrderDetailRepo.insertLines(order._id, [
+                    {
+                        productId,
+                        quantity,
+                        unitPrice: price,
+                        lineTotal: quantity * price,
+                    },
+                ]);
+            } catch (detailErr) {
+                await OrderModel.deleteOne({ _id: order._id });
+                throw detailErr;
+            }
+            console.log(`[OrderService] 💾 Đã lưu đơn hàng lỗi + order_details: ${order._id}`);
 
             return order;
         } catch (error) {
@@ -243,7 +270,9 @@ class OrderService {
 
         console.log(`[OrderService] ❌ Đã hủy đơn hàng: ${order._id}, hoàn ${order.quantity} sản phẩm vào kho`);
 
-        return { order };
+        const orderLean = await OrderModel.findById(order._id).lean();
+        const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
+        return { order: orderWithDetails };
     }
 }
 
