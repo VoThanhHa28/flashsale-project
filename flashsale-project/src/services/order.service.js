@@ -2,6 +2,7 @@ const redisClient = require("../config/redis");
 const ProductModel = require("../models/product.model");
 const OrderModel = require("../models/order.model");
 const ReservationLogModel = require("../models/reservationLog.model");
+const ReservationModel = require("../models/reservation.model");
 const { getIO } = require("../config/socket");
 const OrderRepo = require("../repositories/order.repo");
 const OrderDetailRepo = require("../repositories/orderDetail.repo");
@@ -142,6 +143,93 @@ class OrderService {
         return true;
     }
 
+    /**
+     * 2B. RESERVE PRODUCT SLOT (High-Concurrency)
+     * Kết hợp: Lua Script (trừ kho) + Reservation record
+     * 
+     * Input:
+     *   - userId: ID người dùng
+     *   - productId: ID sản phẩm
+     *   - quantity: số lượng muốn mua
+     *   - clientOrderId: idempotency key (UUID) từ client
+     * 
+     * Logic:
+     *   1. Check flash sale time (giờ G)
+     *   2. Call Lua script trừ kho Redis atomic
+     *   3. Tạo Reservation record (status: pending, TTL: 30 min)
+     *   4. Return reservation object
+     * 
+     * Mục đích:
+     *   - Atomic: Redis trừ kho 1 lần
+     *   - Idempotent: client_order_id unique → chỉ process 1 lần
+     *   - Track: MongoDB lưu vết pending state
+     */
+    static async reserveProductSlot({ userId, productId, quantity, clientOrderId }) {
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
+        const keyInfo = CONST.REDIS.PRODUCT_INFO(productId);
+
+        // A. LẤY THÔNG TIN GIỜ G
+        let productInfo = await redisClient.get(keyInfo);
+
+        // B. CACHE MISS -> GỌI DB
+        if (!productInfo) {
+            const product = await ProductModel.findById(productId)
+                .select("productStartTime productEndTime")
+                .lean();
+
+            if (!product) throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
+
+            productInfo = JSON.stringify({
+                start: new Date(product.productStartTime).getTime(),
+                end: new Date(product.productEndTime).getTime(),
+            });
+
+            await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
+        }
+
+        // C. CHECK GIỜ G
+        const { start, end } = JSON.parse(productInfo);
+        const now = Date.now();
+
+        if (now < start) throw new BadRequestError(CONST.PRODUCT.MESSAGE.NOT_STARTED);
+        if (now > end) throw new BadRequestError(CONST.PRODUCT.MESSAGE.ENDED);
+
+        // D. TRỪ KHO VIA LUA SCRIPT (Atomic)
+        const luaScript = `
+            local stock = redis.call('get', KEYS[1])
+            if stock == false then return 0 end
+            if tonumber(stock) >= tonumber(ARGV[1]) then
+                redis.call('decrby', KEYS[1], ARGV[1])
+                return 1
+            else return 0 end
+        `;
+
+        const result = await redisClient.eval(luaScript, {
+            keys: [keyStock],
+            arguments: [String(quantity)],
+        });
+
+        if (result === 0) throw new BadRequestError(CONST.PRODUCT.MESSAGE.OUT_OF_STOCK);
+
+        // E. TẠO RESERVATION RECORD (pending state)
+        const reservation = await ReservationModel.create({
+            user_id: userId,
+            product_id: productId,
+            client_order_id: clientOrderId,
+            quantity,
+            status: "pending",
+            expire_at: new Date(Date.now() + 30 * 60 * 1000), // 30 phút TTL
+            note: null,
+        });
+
+        console.log(`[OrderService] ✅ Reserved slot: ${reservation._id} (product: ${productId}, user: ${userId})`);
+
+        return {
+            success: true,
+            reservation,
+        };
+    }
+
     // 3. UPDATE STOCK (Cho Admin / ProductService) — Redis + bảng inventories
     static async updateStock(productId, stock) {
         const pid = String(productId);
@@ -160,10 +248,18 @@ class OrderService {
 
     // 4. PROCESS ORDER FROM QUEUE
     static async processOrderFromQueue(orderData) {
-        const { userId, productId, quantity, price } = orderData;
+        const { client_order_id, userId, productId, quantity, price } = orderData;
+
+        // CHECK IDEMPOTENCY: Order đã create chưa?
+        const existingOrder = await OrderModel.findOne({ client_order_id }).lean();
+        if (existingOrder) {
+            console.log(`[OrderService] ⚠️  Order đã tồn tại: ${existingOrder._id}, bỏ qua`);
+            return existingOrder;
+        }
 
         // Tạo order mới từ queue data
         const order = new OrderModel({
+            client_order_id, // ← THÊM idempotency key
             userId,
             productId,
             quantity,
@@ -192,7 +288,7 @@ class OrderService {
             await OrderService._rollbackOrderPersist(order._id);
             throw persistErr;
         }
-        console.log(`[OrderService] ✅ Đã lưu đơn + order_details + payment: ${order._id}`);
+        console.log(`[OrderService] ✅ Đã lưu đơn (${client_order_id}) + order_details + payment: ${order._id}`);
 
         await OrderService._syncInventoryFromRedis(productId);
 
