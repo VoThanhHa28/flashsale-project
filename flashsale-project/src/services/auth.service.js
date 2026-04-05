@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const Role = require('../models/role.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -23,11 +24,17 @@ class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const defaultRole = await Role.findOne({ roleCode: CONST.AUTH.USR_ROLE.USER, is_deleted: false }).lean();
+
+    if (!defaultRole) {
+      throw new BadRequestError('Chưa seed role USER. Hãy khởi tạo master data trước.');
+    }
 
     const newUser = await User.create({
       name,
       email,
-      password: passwordHash
+      password: passwordHash,
+      usr_role: defaultRole._id
     });
 
     if (!newUser) {
@@ -38,7 +45,8 @@ class AuthService {
       user: {
         _id: newUser._id,
         email: newUser.email,
-        name: newUser.name
+        name: newUser.name,
+        usr_role: defaultRole
       }
     };
   }
@@ -46,7 +54,7 @@ class AuthService {
   // ================= LOGIN =================
   static async login({ email, password }) {
     console.log('LOGIN DB:', User.db.name);
-    const user = await User.findOne({ email, is_deleted: false }).select('+password');
+    const user = await User.findOne({ email, is_deleted: false }).select('+password').populate('usr_role', 'roleCode roleName');
 
     if (!user) {
       throw new AuthFailureError(CONST.AUTH.MESSAGE.INVALID_CREDENTIALS);
@@ -74,7 +82,8 @@ class AuthService {
       user: {
         _id: user._id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        usr_role: user.usr_role
       },
       accessToken
     };
@@ -83,7 +92,7 @@ class AuthService {
   // ================= GET ME =================
   static async getMe(userId) {
 
-    const user = await User.findOne({ _id: userId, is_deleted: false }).select('-password').lean();
+    const user = await User.findOne({ _id: userId, is_deleted: false }).select('-password').populate('usr_role', 'roleCode roleName').lean();
 
     if (!user) {
       throw new BadRequestError(CONST.AUTH.MESSAGE.USER_NOT_FOUND);

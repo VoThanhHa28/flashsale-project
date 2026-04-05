@@ -11,4 +11,7 @@ module.exports = {
     REDIS: require("./redis.constants"),
     STATUS: require("./status.constants"),
     SOCKET: require("./socket.constant"),
+    ACTIVITY_LOG: require("./activityLog.constants"),
+    CART: require("./cart.constants"),
+    RESERVATION_LOG: require("./reservationLog.constants"),
 };

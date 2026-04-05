@@ -1,15 +1,19 @@
 'use strict';
 
 const OrderModel = require('../models/order.model');
+const OrderDetailRepo = require('./orderDetail.repo');
+const PaymentRepo = require('./payment.repo');
 
 const findAllOrders = async ({ filter, skip, limit }) => {
-    return await OrderModel.find(filter)
+    const orders = await OrderModel.find(filter)
         .select('-__v')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate('productId', 'productName productThumb productPrice')
         .lean();
+    const withDetails = await OrderDetailRepo.enrichOrdersWithDetails(orders);
+    return PaymentRepo.enrichOrdersWithPayment(withDetails);
 };
 
 const countOrders = async (filter) => {
@@ -17,9 +21,11 @@ const countOrders = async (filter) => {
 };
 
 const findOrderById = async (orderId) => {
-    return await OrderModel.findById(orderId)
+    const order = await OrderModel.findById(orderId)
         .populate('productId', 'productName productThumb productPrice')
         .lean();
+    const withDetails = await OrderDetailRepo.enrichOrderWithDetails(order);
+    return PaymentRepo.enrichOrderWithPayment(withDetails);
 };
 
 const updateOrderStatus = async (orderId, status) => {

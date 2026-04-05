@@ -29,9 +29,10 @@ const userSchema = new mongoose.Schema(
       default: '',
     },
     usr_role: {
-      type: String,
-      enum: ['USER', 'SHOP_ADMIN'],
-      default: 'USER',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: true,
+      index: true,
     },
     status: {
       type: String,

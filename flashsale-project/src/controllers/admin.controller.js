@@ -56,6 +56,22 @@ class AdminController {
             data: result,
         }).send(res);
     });
+
+    getRoles = asyncHandler(async (req, res) => {
+        const result = await AdminService.getRoles();
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_ROLES_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    assignRoleToUser = asyncHandler(async (req, res) => {
+        const result = await AdminService.assignRoleToUser(req.params.id, req.body.roleId);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.ASSIGN_ROLE_SUCCESS,
+            data: result,
+        }).send(res);
+    });
 }
 
 module.exports = new AdminController();

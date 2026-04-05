@@ -16,7 +16,17 @@ const banUser = {
     }),
 };
 
+const assignRoleToUser = {
+    params: Joi.object({
+        id: Joi.string().hex().length(24).required(),
+    }),
+    body: Joi.object({
+        roleId: Joi.string().hex().length(24).required(),
+    }),
+};
+
 module.exports = {
     getUsers,
     banUser,
+    assignRoleToUser,
 };

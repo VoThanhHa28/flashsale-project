@@ -1,4 +1,6 @@
 const OrderModel = require("../models/order.model");
+const OrderDetailRepo = require("./orderDetail.repo");
+const PaymentRepo = require("./payment.repo");
 const {
     escapeRegex,
     mapFeStatusToMongoMatch,
@@ -119,8 +121,11 @@ const findByUserId = async (userId, options = {}) => {
 
     const [agg] = await OrderModel.aggregate(pipeline).exec();
     const totalOrders = agg?.totalCount?.[0]?.total ?? 0;
-    const orders = agg?.data ?? [];
+    let orders = agg?.data ?? [];
     const totalPages = limit > 0 ? Math.ceil(totalOrders / limit) : 0;
+
+    orders = await OrderDetailRepo.enrichOrdersWithDetails(orders);
+    orders = await PaymentRepo.enrichOrdersWithPayment(orders);
 
     return {
         orders,
@@ -140,7 +145,8 @@ const findByIdAndUserId = async (orderId, userId) => {
     })
         .populate("productId", "productName productPrice productThumb")
         .lean();
-    return order;
+    const withDetails = await OrderDetailRepo.enrichOrderWithDetails(order);
+    return PaymentRepo.enrichOrderWithPayment(withDetails);
 };
 
 module.exports = {

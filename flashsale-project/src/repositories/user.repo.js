@@ -5,7 +5,7 @@ const findById = async (id, options = {}) => {
   if (options.includePassword) {
     query = query.select('+password');
   }
-  return query.lean();
+  return query.populate('usr_role', 'roleCode roleName').lean();
 };
 
 const updateById = async (id, update) => {
@@ -15,6 +15,7 @@ const updateById = async (id, update) => {
     { new: true, runValidators: true }
   )
     .select('-password')
+    .populate('usr_role', 'roleCode roleName')
     .lean();
   return user;
 };
@@ -37,7 +38,7 @@ const findAllPaginated = async (options = {}) => {
   const filter = { ...(options.filter || {}), is_deleted: false };
 
   const [users, total] = await Promise.all([
-    User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    User.find(filter).select('-password').populate('usr_role', 'roleCode roleName').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     User.countDocuments(filter),
   ]);
   return { users, total, page, limit };
@@ -53,6 +54,7 @@ const updateStatusById = async (id, status) => {
     { new: true, runValidators: true }
   )
     .select('-password')
+    .populate('usr_role', 'roleCode roleName')
     .lean();
   return user;
 };
