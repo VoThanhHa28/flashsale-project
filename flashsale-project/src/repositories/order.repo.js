@@ -1,4 +1,6 @@
 const OrderModel = require("../models/order.model");
+const OrderDetailRepo = require("./orderDetail.repo");
+const PaymentRepo = require("./payment.repo");
 
 /**
  * Danh sách đơn hàng của user (phân trang).
@@ -16,7 +18,10 @@ const findByUserId = async (userId, options = {}) => {
         OrderModel.countDocuments({ userId }),
     ]);
 
-    return { orders, total, page, limit };
+    const ordersWithDetails = await OrderDetailRepo.enrichOrdersWithDetails(orders);
+    const ordersWithPayment = await PaymentRepo.enrichOrdersWithPayment(ordersWithDetails);
+
+    return { orders: ordersWithPayment, total, page, limit };
 };
 
 /**
@@ -31,7 +36,8 @@ const findByIdAndUserId = async (orderId, userId) => {
     })
         .populate("productId", "name price imageUrl")
         .lean();
-    return order;
+    const withDetails = await OrderDetailRepo.enrichOrderWithDetails(order);
+    return PaymentRepo.enrichOrderWithPayment(withDetails);
 };
 
 module.exports = {
