@@ -1,6 +1,7 @@
 const redisClient = require("../config/redis");
 const ProductModel = require("../models/product.model");
 const OrderModel = require("../models/order.model");
+const ReservationLogModel = require("../models/reservationLog.model");
 const { getIO } = require("../config/socket");
 const OrderRepo = require("../repositories/order.repo");
 const OrderDetailRepo = require("../repositories/orderDetail.repo");
@@ -195,6 +196,20 @@ class OrderService {
 
         await OrderService._syncInventoryFromRedis(productId);
 
+        // Ghi reservation log: worker_commit – slot đã được cam kết vào DB
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
+        const remainingRaw = await redisClient.get(keyStock).catch(() => null);
+        ReservationLogModel.create({
+            userId: userId?.toString() ?? null,
+            productId: productId?.toString() ?? null,
+            quantity,
+            price,
+            remainingStockAfter: remainingRaw !== null ? parseInt(remainingRaw) : null,
+            orderId: order._id.toString(),
+            source: CONST.RESERVATION_LOG.SOURCE.WORKER_COMMIT,
+            note: CONST.RESERVATION_LOG.MESSAGE.SLOT_COMMITTED,
+        }).catch((err) => console.error(CONST.RESERVATION_LOG.MESSAGE.LOG_FAILED, err.message));
+
         return order;
     }
 
@@ -283,6 +298,18 @@ class OrderService {
                 throw persistErr;
             }
             console.log(`[OrderService] 💾 Đã lưu đơn lỗi + order_details + payment: ${order._id}`);
+
+            // Ghi reservation log: rollback – kho Redis đã được hoàn lại bởi worker
+            ReservationLogModel.create({
+                userId: userId?.toString() ?? null,
+                productId: productId?.toString() ?? null,
+                quantity,
+                price,
+                remainingStockAfter: null,
+                orderId: order._id.toString(),
+                source: CONST.RESERVATION_LOG.SOURCE.ROLLBACK,
+                note: `${CONST.RESERVATION_LOG.MESSAGE.SLOT_ROLLBACK}: ${errorMessage || "Unknown error"}`,
+            }).catch((err) => console.error(CONST.RESERVATION_LOG.MESSAGE.LOG_FAILED, err.message));
 
             return order;
         } catch (error) {
