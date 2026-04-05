@@ -211,7 +211,10 @@ class OrderService {
 
         if (result === 0) throw new BadRequestError(CONST.PRODUCT.MESSAGE.OUT_OF_STOCK);
 
-        // E. TẠO RESERVATION RECORD (pending state)
+        // E. CLEAR CACHE (Evict) — Product info cache for fresh data
+        await redisClient.del(keyInfo).catch(() => {});
+
+        // F. TẠO RESERVATION RECORD (pending state)
         const reservation = await ReservationModel.create({
             user_id: userId,
             product_id: productId,
