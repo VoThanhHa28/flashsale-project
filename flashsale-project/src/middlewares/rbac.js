@@ -7,7 +7,7 @@ const { ForbiddenError } = require('../core/error.response');
  * Dùng bảo vệ: reset stock, force start, admin stats, tạo/sửa product...
  */
 const requireShopAdmin = (req, res, next) => {
-  if (req.user.usr_role !== CONST.AUTH.USR_ROLE.SHOP_ADMIN) {
+  if (req.user?.usr_role?.roleCode !== CONST.AUTH.USR_ROLE.SHOP_ADMIN) {
     return next(new ForbiddenError(CONST.AUTH.MESSAGE.FORBIDDEN));
   }
   next();

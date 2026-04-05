@@ -31,6 +31,19 @@ class SeedController {
             metadata: result,
         }).send(res);
     });
+
+    /**
+     * Seed master data: roles, categories
+     * POST /seed/master-data
+     */
+    seedMasterData = asyncHandler(async (req, res) => {
+        const result = await SeedService.seedMasterData();
+
+        new SuccessResponse({
+            message: 'Đã seed master data thành công',
+            metadata: result,
+        }).send(res);
+    });
 }
 
 module.exports = new SeedController();

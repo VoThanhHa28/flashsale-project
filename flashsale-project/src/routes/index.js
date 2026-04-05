@@ -9,6 +9,7 @@ const adminRouter = require("./admin.route");
 const seedRouter = require("./seed.route");
 const userRouter = require("./user.route");
 const shopRouter = require("./shop.route");
+const categoryRouter = require("./category.route");
 // Hồng sửa – route nội bộ để Worker gọi Main App emit system-error khi Redis chết (Case 3)
 const internalRouter = require("./internal.route");
 
@@ -47,5 +48,8 @@ router.use("/v1/api/users", userRouter);
 
 // Shop routes (M3)
 router.use("/v1/api/shop", shopRouter);
+
+// Master data: categories cho dropdown frontend
+router.use("/v1/api/categories", categoryRouter);
 
 module.exports = router;

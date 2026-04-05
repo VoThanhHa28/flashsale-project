@@ -14,6 +14,7 @@ const logger = require("morgan");
 const app = express();
 const connectDB = require("./src/config/db");
 const OrderService = require("./src/services/order.service");
+const SeedService = require("./src/services/seed.service");
 const errorMiddleware = require("./src/middlewares/error.middleware");
 
 // Route tổng (Gom lại cho gọn app.js)
@@ -45,6 +46,9 @@ app.use(
 connectDB().then(() => {
     // Chỉ nạp kho khi DB đã kết nối thành công
     OrderService.initInventory();
+    SeedService.seedMasterData().catch((error) => {
+        console.error("[Seed] Khởi tạo master data thất bại:", error.message);
+    });
 });
 
 app.use(logger("dev"));

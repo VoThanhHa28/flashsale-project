@@ -25,6 +25,12 @@ const seedController = require("../controllers/seed.controller");
 router.post("/users", seedController.seedUsers);
 
 /**
+ * Seed master data cứng vào DB: roles, categories
+ * POST /seed/master-data
+ */
+router.post("/master-data", seedController.seedMasterData);
+
+/**
  * Xóa tất cả test users
  * DELETE /seed/users
  *
