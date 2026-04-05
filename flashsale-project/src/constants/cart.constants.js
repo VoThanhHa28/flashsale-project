@@ -24,7 +24,7 @@ module.exports = {
         UPDATED: 'Cập nhật giỏ hàng thành công',
         NOT_FOUND: 'Giỏ hàng không tồn tại',
         ITEM_NOT_FOUND: 'Sản phẩm không có trong giỏ hàng',
-        MAX_ITEMS_EXCEEDED: `Giỏ hàng không được vượt quá ${50} sản phẩm`,
+        get MAX_ITEMS_EXCEEDED() { return `Giỏ hàng không được vượt quá ${module.exports.MAX_ITEMS} sản phẩm`; },
         FLASH_SALE_BYPASS: 'Flash Sale dùng luồng Buy Now, không qua giỏ hàng',
     },
 };
