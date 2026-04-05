@@ -41,7 +41,7 @@ const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Tìm user từ token (password đã được ẩn mặc định)
-    const user = await User.findOne({ _id: decoded.userId, is_deleted: false });
+    const user = await User.findOne({ _id: decoded.userId, is_deleted: false }).populate('usr_role', 'roleCode roleName');
     if (!user) {
       return res.status(401).json({
         status: 'error',
