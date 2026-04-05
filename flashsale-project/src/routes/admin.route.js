@@ -36,9 +36,19 @@ router.post("/flash-sale/hot-activate", adminController.hotActivateFlashSale);
 router.get("/users", validate(adminValidation.getUsers), adminController.getUsers);
 
 /**
+ * GET /admin/roles - Lấy danh sách role khả dụng
+ */
+router.get("/roles", adminController.getRoles);
+
+/**
  * PATCH /admin/users/:id/ban - Khóa user (status inactive)
  */
 router.patch("/users/:id/ban", validate(adminValidation.banUser), adminController.banUser);
+
+/**
+ * PATCH /admin/users/:id/role - Gán role động cho user
+ */
+router.patch("/users/:id/role", validate(adminValidation.assignRoleToUser), adminController.assignRoleToUser);
 
 /**
  * GET /admin/health - Health check Mongo + Redis
