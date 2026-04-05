@@ -11,6 +11,10 @@ const userRouter = require("./user.route");
 const shopRouter = require("./shop.route");
 // Hồng sửa – route nội bộ để Worker gọi Main App emit system-error khi Redis chết (Case 3)
 const internalRouter = require("./internal.route");
+const activityLogMiddleware = require("../middlewares/activityLog.middleware");
+
+// Ghi log tự động mọi request PUT / PATCH / DELETE vào collection activity_logs
+router.use(activityLogMiddleware);
 
 // 1. Route kiểm tra Server sống hay chết (Health Check)
 router.get("/", (req, res) => {
