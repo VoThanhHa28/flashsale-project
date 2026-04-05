@@ -45,7 +45,10 @@ app.use(
 // Lưu ý: connectDB là async, nên logic init phải nằm trong .then()
 connectDB().then(() => {
     // Chỉ nạp kho khi DB đã kết nối thành công
-    OrderService.initInventory();
+    OrderService.initInventory().catch((error) => {
+        console.warn('⚠️  Lỗi initInventory (Redis may be down):', error.message);
+        // Don't crash - server can continue without Redis for Inventories/Checkout features
+    });
     SeedService.seedMasterData().catch((error) => {
         console.error("[Seed] Khởi tạo master data thất bại:", error.message);
     });
