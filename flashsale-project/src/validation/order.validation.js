@@ -12,6 +12,8 @@ const create = {
             .min(1)
             .required(),
 
+        shippingAddress: Joi.string().trim().min(5).max(500).required(),
+
         note: Joi.string().max(500).optional(),
     }),
 };

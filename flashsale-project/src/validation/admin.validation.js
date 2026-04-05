@@ -25,8 +25,18 @@ const assignRoleToUser = {
     }),
 };
 
+const patchPaymentStatus = {
+    params: Joi.object({
+        orderId: Joi.string().hex().length(24).required(),
+    }),
+    body: Joi.object({
+        status: Joi.string().valid('paid', 'failed', 'refunded').required(),
+    }),
+};
+
 module.exports = {
     getUsers,
     banUser,
     assignRoleToUser,
+    patchPaymentStatus,
 };

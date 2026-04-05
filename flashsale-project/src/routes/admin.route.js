@@ -55,4 +55,13 @@ router.patch("/users/:id/role", validate(adminValidation.assignRoleToUser), admi
  */
 router.get("/health", adminController.health);
 
+/**
+ * PATCH /admin/payments/:orderId/status — Cập nhật trạng thái thanh toán (shop admin)
+ */
+router.patch(
+    "/payments/:orderId/status",
+    validate(adminValidation.patchPaymentStatus),
+    adminController.patchPaymentStatus,
+);
+
 module.exports = router;

@@ -52,15 +52,12 @@ const processOrder = async (orderData, channel, msg) => {
         console.log("[Worker] 📦 Nhận đơn hàng mới");
         console.log("[Worker] Dữ liệu:", JSON.stringify(orderData, null, 2));
 
-        // Xử lý đơn hàng qua Service
         const order = await OrderService.processOrderFromQueue(orderData);
 
-        // Phát sự kiện Socket.io
-        await OrderService.notifyStockUpdate(
-            order.productId,
-            order.quantity,
-            null, // remainingStock - có thể query từ Product model nếu cần
-        );
+        const { lines } = OrderService.normalizeOrderQueuePayload(orderData);
+        for (const line of lines) {
+            await OrderService.notifyStockUpdate(line.productId, line.quantity, null);
+        }
 
         // Thông báo cho user (nếu cần)
         // await OrderService.notifyOrderSuccess(order.userId, order);

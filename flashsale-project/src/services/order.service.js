@@ -141,6 +141,52 @@ class OrderService {
         return true;
     }
 
+    /** Hoàn trả kho Redis khi đặt hàng lỗi sau khi đã reservation (rollback). */
+    static async releaseReservation(productId, quantity) {
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(String(productId));
+        await redisClient.incrBy(keyStock, Math.floor(Number(quantity)));
+    }
+
+    /**
+     * Chuẩn hóa payload queue: legacy 1 dòng hoặc items[] nhiều dòng (đã có price server-side).
+     */
+    static normalizeOrderQueuePayload(orderData) {
+        if (!orderData || orderData.userId == null) {
+            throw new BadRequestError("Invalid order payload");
+        }
+        const userId = String(orderData.userId);
+        const shippingAddress =
+            typeof orderData.shippingAddress === "string" ? orderData.shippingAddress.trim() : "";
+        const orderTime = orderData.orderTime ? new Date(orderData.orderTime) : new Date();
+
+        let lines;
+        if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+            lines = orderData.items.map((i) => ({
+                productId: String(i.productId),
+                quantity: Math.floor(Number(i.quantity)),
+                price: Number(i.price),
+            }));
+        } else if (orderData.productId != null && orderData.quantity != null && orderData.price != null) {
+            lines = [
+                {
+                    productId: String(orderData.productId),
+                    quantity: Math.floor(Number(orderData.quantity)),
+                    price: Number(orderData.price),
+                },
+            ];
+        } else {
+            throw new BadRequestError("Invalid order payload");
+        }
+
+        for (const l of lines) {
+            if (!l.productId || l.quantity < 1 || !Number.isFinite(l.price) || l.price < 0) {
+                throw new BadRequestError("Invalid order line");
+            }
+        }
+
+        return { userId, shippingAddress, lines, orderTime };
+    }
+
     // 3. UPDATE STOCK (Cho Admin / ProductService) — Redis + bảng inventories
     static async updateStock(productId, stock) {
         const pid = String(productId);
@@ -159,32 +205,34 @@ class OrderService {
 
     // 4. PROCESS ORDER FROM QUEUE
     static async processOrderFromQueue(orderData) {
-        const { userId, productId, quantity, price } = orderData;
+        const { userId, shippingAddress, lines, orderTime } = OrderService.normalizeOrderQueuePayload(orderData);
 
-        // Tạo order mới từ queue data
+        const detailInputs = lines.map((l) => ({
+            productId: l.productId,
+            quantity: l.quantity,
+            unitPrice: l.price,
+            lineTotal: l.quantity * l.price,
+        }));
+        const totalPrice = detailInputs.reduce((s, l) => s + l.lineTotal, 0);
+        const first = lines[0];
+
         const order = new OrderModel({
             userId,
-            productId,
-            quantity,
-            price,
-            totalPrice: quantity * price,
+            shippingAddress,
+            productId: first.productId,
+            quantity: lines.length === 1 ? first.quantity : undefined,
+            price: lines.length === 1 ? first.price : undefined,
+            totalPrice,
             status: CONST.ORDER.STATUS.COMPLETED,
-            orderTime: orderData.orderTime || new Date(),
+            orderTime,
             processedAt: new Date(),
         });
 
         await order.save();
         try {
-            await OrderDetailRepo.insertLines(order._id, [
-                {
-                    productId,
-                    quantity,
-                    unitPrice: price,
-                    lineTotal: quantity * price,
-                },
-            ]);
+            await OrderDetailRepo.insertLines(order._id, detailInputs);
             await PaymentRepo.insertForOrder(order._id, {
-                amount: order.totalPrice,
+                amount: totalPrice,
                 status: CONST.ORDER.PAYMENT.STATUS.PENDING,
             });
         } catch (persistErr) {
@@ -193,7 +241,9 @@ class OrderService {
         }
         console.log(`[OrderService] ✅ Đã lưu đơn + order_details + payment: ${order._id}`);
 
-        await OrderService._syncInventoryFromRedis(productId);
+        for (const l of lines) {
+            await OrderService._syncInventoryFromRedis(l.productId);
+        }
 
         return order;
     }
@@ -249,33 +299,44 @@ class OrderService {
 
     // 6. SAVE FAILED ORDER
     static async saveFailedOrder(orderData, errorMessage) {
+        let normalized;
         try {
-            const { userId, productId, quantity, price } = orderData;
+            normalized = OrderService.normalizeOrderQueuePayload(orderData);
+        } catch (e) {
+            console.error(`[OrderService] saveFailedOrder: payload không hợp lệ — ${e.message}`);
+            return null;
+        }
+
+        try {
+            const { userId, shippingAddress, lines, orderTime } = normalized;
+
+            const detailInputs = lines.map((l) => ({
+                productId: l.productId,
+                quantity: l.quantity,
+                unitPrice: l.price,
+                lineTotal: l.quantity * l.price,
+            }));
+            const totalPrice = detailInputs.reduce((s, l) => s + l.lineTotal, 0);
+            const first = lines[0];
 
             const order = new OrderModel({
                 userId,
-                productId,
-                quantity,
-                price,
-                totalPrice: quantity * price,
+                shippingAddress,
+                productId: first.productId,
+                quantity: lines.length === 1 ? first.quantity : undefined,
+                price: lines.length === 1 ? first.price : undefined,
+                totalPrice,
                 status: CONST.ORDER.STATUS.FAILED,
-                orderTime: orderData.orderTime || new Date(),
+                orderTime,
                 processedAt: new Date(),
                 errorMessage: errorMessage || "Unknown error",
             });
 
             await order.save();
             try {
-                await OrderDetailRepo.insertLines(order._id, [
-                    {
-                        productId,
-                        quantity,
-                        unitPrice: price,
-                        lineTotal: quantity * price,
-                    },
-                ]);
+                await OrderDetailRepo.insertLines(order._id, detailInputs);
                 await PaymentRepo.insertForOrder(order._id, {
-                    amount: order.totalPrice,
+                    amount: totalPrice,
                     status: CONST.ORDER.PAYMENT.STATUS.PENDING,
                 });
             } catch (persistErr) {
@@ -325,18 +386,24 @@ class OrderService {
             throw new BadRequestError(CONST.ORDER.MESSAGE.CANCEL_ORDER_NOT_ALLOWED);
         }
 
-        // Hoàn kho Redis
-        const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
-        await redisClient.incrBy(keyStock, order.quantity);
+        const details = await OrderDetailModel.find({ orderId: order._id }).lean();
+        if (details.length > 0) {
+            for (const d of details) {
+                const keyStock = CONST.REDIS.PRODUCT_STOCK(d.productId);
+                await redisClient.incrBy(keyStock, d.quantity);
+                await OrderService._syncInventoryFromRedis(d.productId);
+            }
+        } else if (order.productId && order.quantity != null) {
+            const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
+            await redisClient.incrBy(keyStock, order.quantity);
+            await OrderService._syncInventoryFromRedis(order.productId);
+        }
 
-        // Cập nhật status
         order.status = CONST.ORDER.STATUS.CANCELLED;
         order.processedAt = new Date();
         await order.save();
 
-        console.log(`[OrderService] ❌ Đã hủy đơn hàng: ${order._id}, hoàn ${order.quantity} sản phẩm vào kho`);
-
-        await OrderService._syncInventoryFromRedis(order.productId);
+        console.log(`[OrderService] ❌ Đã hủy đơn hàng: ${order._id}, hoàn kho Redis theo từng dòng`);
 
         const orderLean = await OrderModel.findById(order._id).lean();
         const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);

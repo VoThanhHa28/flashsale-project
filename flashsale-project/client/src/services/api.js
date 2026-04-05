@@ -306,11 +306,14 @@ export async function register(email, password, name) {
   return { user: payload?.user || payload, response: res };
 }
 
-/** POST order – body { items: [{ productId, quantity }] } (BE lấy giá từ DB). */
-export async function createOrder(productId, quantity, price) {
+/** POST order – body { items, shippingAddress } (BE lấy giá từ DB). */
+export async function createOrder(productId, quantity, price, shippingAddress) {
+  const addr =
+    (shippingAddress && String(shippingAddress).trim()) ||
+    "123 Địa chỉ mặc định — vui lòng cập nhật trong tài khoản";
   const res = await request('/v1/api/order', {
-    method: 'POST',
-    body: JSON.stringify({ items: [{ productId, quantity }] }),
+    method: "POST",
+    body: JSON.stringify({ items: [{ productId, quantity }], shippingAddress: addr }),
   });
   const payload = getPayload(res);
   return { message: res.message || payload?.message, metadata: payload, response: res };

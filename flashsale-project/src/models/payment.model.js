@@ -31,6 +31,7 @@ const paymentSchema = new mongoose.Schema(
         },
         method: {
             type: String,
+            enum: Object.values(PAYMENT.METHOD),
             default: PAYMENT.METHOD.COD,
             trim: true,
         },

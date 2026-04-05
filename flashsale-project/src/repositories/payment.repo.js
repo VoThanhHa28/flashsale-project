@@ -5,14 +5,45 @@ const CONST = require("../constants");
  * @param {import('mongoose').Types.ObjectId|string} orderId
  * @param {{ amount: number, status?: string, method?: string, currency?: string }} data
  */
+/** Tạo payment nếu chưa có (idempotent — không ghi đè nếu user đã tạo trước). */
 const insertForOrder = async (orderId, data) => {
-    await Payment.create({
-        orderId,
-        amount: data.amount,
-        currency: data.currency || CONST.ORDER.PAYMENT.CURRENCY.VND,
-        status: data.status || CONST.ORDER.PAYMENT.STATUS.PENDING,
-        method: data.method || CONST.ORDER.PAYMENT.METHOD.COD,
-    });
+    await Payment.findOneAndUpdate(
+        { orderId },
+        {
+            $setOnInsert: {
+                orderId,
+                amount: data.amount,
+                currency: data.currency || CONST.ORDER.PAYMENT.CURRENCY.VND,
+                status: data.status || CONST.ORDER.PAYMENT.STATUS.PENDING,
+                method: data.method || CONST.ORDER.PAYMENT.METHOD.COD,
+            },
+        },
+        { upsert: true, new: true, runValidators: true },
+    );
+};
+
+const setMethodByOrderId = async (orderId, method) => {
+    return Payment.findOneAndUpdate({ orderId }, { $set: { method } }, { new: true, runValidators: true }).lean();
+};
+
+const setStatusByOrderId = async (orderId, status) => {
+    return Payment.findOneAndUpdate({ orderId }, { $set: { status } }, { new: true, runValidators: true }).lean();
+};
+
+const upsertUserPayment = async (orderId, { amount, method }) => {
+    return Payment.findOneAndUpdate(
+        { orderId },
+        {
+            $set: { method },
+            $setOnInsert: {
+                orderId,
+                amount,
+                currency: CONST.ORDER.PAYMENT.CURRENCY.VND,
+                status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+            },
+        },
+        { upsert: true, new: true, runValidators: true },
+    ).lean();
 };
 
 /**
@@ -40,6 +71,9 @@ const enrichOrderWithPayment = async (order) => {
 
 module.exports = {
     insertForOrder,
+    setMethodByOrderId,
+    setStatusByOrderId,
+    upsertUserPayment,
     enrichOrdersWithPayment,
     enrichOrderWithPayment,
 };

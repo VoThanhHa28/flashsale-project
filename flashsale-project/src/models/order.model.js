@@ -11,21 +11,28 @@ const orderSchema = new mongoose.Schema(
             required: true,
             index: true,
         },
+        /** Dòng đầu (tương thích list/populate); đơn nhiều SKU vẫn có đủ trong order_details */
         productId: {
             type: String,
             ref: "Product",
-            required: true,
+            required: false,
+            default: null,
             index: true,
         },
         quantity: {
             type: Number,
-            required: true,
+            required: false,
             min: [1, "Số lượng phải lớn hơn 0"],
         },
         price: {
             type: Number,
-            required: true,
+            required: false,
             min: [0, "Giá không được âm"],
+        },
+        shippingAddress: {
+            type: String,
+            trim: true,
+            default: "",
         },
         totalPrice: {
             type: Number,
@@ -103,9 +110,9 @@ orderSchema.statics.getProductStats = function (productId) {
     ]);
 };
 
-// Middleware: Tự động tính totalPrice trước khi save
+// Middleware: chỉ auto totalPrice khi đơn 1 dòng cổ điển (đủ productId + quantity + price)
 orderSchema.pre("save", function () {
-    if (this.quantity && this.price) {
+    if (this.productId != null && this.quantity != null && this.price != null) {
         this.totalPrice = this.quantity * this.price;
     }
 });

@@ -1,5 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
+const PaymentService = require("../services/payment.service");
 const { SuccessResponse, OK } = require("../core/success.response");
 const CONST = require("../constants");
 
@@ -69,6 +70,14 @@ class AdminController {
         const result = await AdminService.assignRoleToUser(req.params.id, req.body.roleId);
         return new OK({
             message: CONST.ADMIN.MESSAGE.ASSIGN_ROLE_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    patchPaymentStatus = asyncHandler(async (req, res) => {
+        const result = await PaymentService.setPaymentStatusByAdmin(req.params.orderId, req.body.status);
+        return new OK({
+            message: CONST.ORDER.MESSAGE.PAYMENT_STATUS_UPDATED,
             data: result,
         }).send(res);
     });

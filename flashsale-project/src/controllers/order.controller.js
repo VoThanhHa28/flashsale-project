@@ -8,50 +8,61 @@ const Product = require("../models/product.model");
 
 class OrderController {
     static placeOrder = asyncHandler(async (req, res) => {
-        // 1️⃣ LẤY USER TỪ AUTH MIDDLEWARE hoặc từ body (cho test)
         const userId = req.user?._id || req.body.userId;
 
-        // 2️⃣ LẤY DATA từ items array (format mới) hoặc từ root (backward compatibility)
-        const items = req.body.items || [{ productId: req.body.productId, quantity: req.body.quantity }];
-        const firstItem = items[0];
-        const { productId, quantity } = firstItem;
-
-        // 3️⃣ LẤY GIÁ TỪ DATABASE (không tin client)
-        const product = await Product.findById(productId).select("productPrice").lean();
-        if (!product) {
-            throw new BadRequestError("Sản phẩm không tồn tại");
+        const itemsRaw = req.body.items || [{ productId: req.body.productId, quantity: req.body.quantity }];
+        const merged = new Map();
+        for (const item of itemsRaw) {
+            if (!item?.productId || item.quantity == null) continue;
+            const pid = String(item.productId);
+            merged.set(pid, (merged.get(pid) || 0) + Number(item.quantity));
         }
-        const price = product.productPrice;
-
-        // 4️⃣ TRỪ KHO (REDIS – ATOMIC)
-        const isInStock = await InventoryService.reservationInventory({
-            productId,
-            quantity,
-        });
-
-        if (!isInStock) {
-            throw new BadRequestError("Rất tiếc! Sản phẩm đã hết hàng.");
+        const mergedItems = [...merged.entries()].map(([productId, quantity]) => ({ productId, quantity }));
+        if (!mergedItems.length) {
+            throw new BadRequestError("Danh sách sản phẩm không hợp lệ");
         }
 
-        // 5️⃣ PAYLOAD ĐẨY QUEUE (CHỈ DATA CẦN THIẾT)
-        const orderPayload = {
-            userId: userId.toString(),
-            productId: productId.toString(),
-            quantity,
-            price,
-            orderTime: new Date().toISOString(),
-        };
+        const shippingAddress = String(req.body.shippingAddress || "").trim();
+        if (req.user && (!shippingAddress || shippingAddress.length < 5)) {
+            throw new BadRequestError("Vui lòng nhập địa chỉ giao hàng (ít nhất 5 ký tự)");
+        }
+        const addressForQueue = shippingAddress || (req.user ? "" : "K6 / test — địa chỉ mặc định");
 
-        // 6️⃣ ĐẨY SANG RABBITMQ (ASYNC)
-        await sendToQueue(CONST.RABBIT_QUEUE.ORDER_QUEUE, orderPayload);
+        const reserved = [];
+        try {
+            const linesForQueue = [];
+            for (const { productId, quantity } of mergedItems) {
+                const product = await Product.findById(productId).select("productPrice").lean();
+                if (!product) {
+                    throw new BadRequestError("Sản phẩm không tồn tại");
+                }
+                const price = product.productPrice;
+                await InventoryService.reservationInventory({ productId, quantity });
+                reserved.push({ productId, quantity });
+                linesForQueue.push({ productId: productId.toString(), quantity, price });
+            }
 
-        // 7️⃣ RESPONSE NGAY (NON-BLOCKING)
-        return new OK({
-            message: CONST.ORDER.MESSAGE.PLACE_ORDER_SUCCESS,
-            data: {
-                order: orderPayload,
-            },
-        }).send(res);
+            const orderPayload = {
+                userId: userId.toString(),
+                items: linesForQueue,
+                shippingAddress: addressForQueue,
+                orderTime: new Date().toISOString(),
+            };
+
+            await sendToQueue(CONST.RABBIT_QUEUE.ORDER_QUEUE, orderPayload);
+
+            return new OK({
+                message: CONST.ORDER.MESSAGE.PLACE_ORDER_SUCCESS,
+                data: {
+                    order: orderPayload,
+                },
+            }).send(res);
+        } catch (err) {
+            for (const r of reserved.reverse()) {
+                await InventoryService.releaseReservation(r.productId, r.quantity);
+            }
+            throw err;
+        }
     });
 
     static getMyOrders = asyncHandler(async (req, res) => {

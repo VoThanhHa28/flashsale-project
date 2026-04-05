@@ -120,6 +120,7 @@ function generateOrderData() {
                 quantity: quantity,
             },
         ],
+        shippingAddress: "123 K6 Test Street, District 1, Ho Chi Minh City",
         note: `K6 Load Test - VU ${__VU} - Iteration ${__ITER}`,
     };
 }

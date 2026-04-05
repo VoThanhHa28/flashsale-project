@@ -18,6 +18,8 @@ module.exports = {
         },
         METHOD: {
             COD: "cod",
+            CARD: "card",
+            BANK_TRANSFER: "bank_transfer",
         },
         CURRENCY: {
             VND: "VND",
@@ -33,5 +35,8 @@ module.exports = {
         ORDER_NOT_OWNED: "Bạn không có quyền xem đơn hàng này",
         CANCEL_ORDER_SUCCESS: "Hủy đơn hàng thành công",
         CANCEL_ORDER_NOT_ALLOWED: "Chỉ có thể hủy đơn hàng đang chờ xử lý",
+        PAYMENT_METHOD_UPDATED: "Cập nhật phương thức thanh toán thành công",
+        PAYMENT_STATUS_UPDATED: "Cập nhật trạng thái thanh toán thành công",
+        PAYMENT_ORDER_NOT_FOUND: "Không tìm thấy đơn hàng hoặc thanh toán",
     },
 };
