@@ -5,6 +5,7 @@ const { BadRequestError } = require("../core/error.response");
 const { OK } = require("../core/success.response");
 const CONST = require("../constants");
 const Product = require("../models/product.model");
+const { v4: uuidv4 } = require("uuid");
 
 class OrderController {
     static placeOrder = asyncHandler(async (req, res) => {
@@ -23,18 +24,26 @@ class OrderController {
         }
         const price = product.productPrice;
 
-        // 4️⃣ TRỪ KHO (REDIS – ATOMIC)
-        const isInStock = await InventoryService.reservationInventory({
+        // 4️⃣ GENERATE CLIENT_ORDER_ID (Idempotency Key)
+        const clientOrderId = uuidv4();
+        console.log(`[OrderController] 📦 New order attempt: ${clientOrderId}`);
+
+        // 5️⃣ RESERVE PRODUCT SLOT (Redis Lua Script + Reservation record)
+        const { success, reservation } = await InventoryService.reserveProductSlot({
+            userId,
             productId,
             quantity,
+            clientOrderId,
         });
 
-        if (!isInStock) {
+        if (!success) {
             throw new BadRequestError("Rất tiếc! Sản phẩm đã hết hàng.");
         }
 
-        // 5️⃣ PAYLOAD ĐẨY QUEUE (CHỈ DATA CẦN THIẾT)
+        // 6️⃣ PAYLOAD ĐẨY QUEUE (CHỈ DATA CẦN THIẾT + client_order_id)
         const orderPayload = {
+            client_order_id: clientOrderId, // ← Idempotency key
+            reservation_id: reservation._id.toString(), // ← Link tới Reservation model
             userId: userId.toString(),
             productId: productId.toString(),
             quantity,
@@ -42,13 +51,15 @@ class OrderController {
             orderTime: new Date().toISOString(),
         };
 
-        // 6️⃣ ĐẨY SANG RABBITMQ (ASYNC)
+        // 7️⃣ ĐẨY SANG RABBITMQ (ASYNC - non-blocking)
         await sendToQueue(CONST.RABBIT_QUEUE.ORDER_QUEUE, orderPayload);
 
-        // 7️⃣ RESPONSE NGAY (NON-BLOCKING)
+        // 8️⃣ RESPONSE NGAY (NON-BLOCKING)
         return new OK({
             message: CONST.ORDER.MESSAGE.PLACE_ORDER_SUCCESS,
             data: {
+                client_order_id: clientOrderId,
+                reservation_id: reservation._id.toString(),
                 order: orderPayload,
             },
         }).send(res);

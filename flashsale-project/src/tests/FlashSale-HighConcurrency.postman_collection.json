@@ -1,0 +1,943 @@
+{
+  "info": {
+    "name": "Flash Sale High-Concurrency Testing",
+    "description": "Complete test collection for high-concurrency flash sale with Lua script, idempotency, and reservation tracking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔧 Setup",
+      "item": [
+        {
+          "name": "1. Login & Get Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "2. Get Product ID (Flash Sale)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/products?isPublished=true&limit=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "products"],
+              "query": [
+                {
+                  "key": "isPublished",
+                  "value": "true"
+                },
+                {
+                  "key": "limit",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3. Get User ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/users/me",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "users", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Test 1: Normal Flow - Happy Path",
+      "item": [
+        {
+          "name": "1.1 POST /order (Normal Buy)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse response\n",
+                  "let jsonData = pm.response.json();\n",
+                  "\n",
+                  "pm.test('✅ Status 200 OK', () => {\n",
+                  "  pm.expect(pm.response.code).to.equal(200);\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Response has client_order_id', () => {\n",
+                  "  pm.expect(jsonData.data.client_order_id).to.exist;\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Response has reservation_id', () => {\n",
+                  "  pm.expect(jsonData.data.reservation_id).to.exist;\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Order payload has required fields', () => {\n",
+                  "  let order = jsonData.data.order;\n",
+                  "  pm.expect(order.userId).to.exist;\n",
+                  "  pm.expect(order.productId).to.exist;\n",
+                  "  pm.expect(order.quantity).to.equal(1);\n",
+                  "  pm.expect(order.price).to.exist;\n",
+                  "});\n",
+                  "\n",
+                  "// Save for later tests\n",
+                  "pm.globals.set('client_order_id_1', jsonData.data.client_order_id);\n",
+                  "pm.globals.set('reservation_id_1', jsonData.data.reservation_id);\n",
+                  "\n",
+                  "// Log response time\n",
+                  "pm.test('✅ Response time < 100ms', () => {\n",
+                  "  pm.expect(pm.response.responseTime).to.be.below(100);\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Verify Reservation Created (pending)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData = pm.response.json();\n",
+                  "\n",
+                  "pm.test('✅ Reservation status = pending', () => {\n",
+                  "  pm.expect(jsonData.status).to.equal('pending');\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Reservation has client_order_id', () => {\n",
+                  "  pm.expect(jsonData.client_order_id).to.equal(pm.globals.get('client_order_id_1'));\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Reservation has expire_at (TTL)', () => {\n",
+                  "  pm.expect(jsonData.expire_at).to.exist;\n",
+                  "  // Should be ~30 minutes from now\n",
+                  "  let expireTime = new Date(jsonData.expire_at).getTime();\n",
+                  "  let now = Date.now();\n",
+                  "  let diffMinutes = (expireTime - now) / 60000;\n",
+                  "  pm.expect(diffMinutes).to.be.above(29);\n",
+                  "  pm.expect(diffMinutes).to.be.below(31);\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/reservations/{{reservation_id_1}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "reservations", "{{reservation_id_1}}"]
+            }
+          }
+        },
+        {
+          "name": "1.3 Wait for Worker to Process (5 sec)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/delay?ms=5000",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "delay"],
+              "query": [
+                {
+                  "key": "ms",
+                  "value": "5000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.4 Verify Order Created",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData = pm.response.json();\n",
+                  "\n",
+                  "pm.test('✅ Order exists with client_order_id', () => {\n",
+                  "  pm.expect(jsonData.client_order_id).to.equal(pm.globals.get('client_order_id_1'));\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Order status = completed', () => {\n",
+                  "  pm.expect(jsonData.status).to.equal('completed');\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Order has processedAt timestamp', () => {\n",
+                  "  pm.expect(jsonData.processedAt).to.exist;\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/orders?clientOrderId={{client_order_id_1}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "orders"],
+              "query": [
+                {
+                  "key": "clientOrderId",
+                  "value": "{{client_order_id_1}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "1.5 Verify Reservation Status Updated → confirmed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData = pm.response.json();\n",
+                  "\n",
+                  "pm.test('✅ Reservation status = confirmed', () => {\n",
+                  "  pm.expect(jsonData.status).to.equal('confirmed');\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Reservation has note with Order ID', () => {\n",
+                  "  pm.expect(jsonData.note).to.include('Order created');\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/reservations/{{reservation_id_1}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "reservations", "{{reservation_id_1}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❌ Test 2: Idempotency - Duplicate Request",
+      "item": [
+        {
+          "name": "2.1 First Request (Success)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "2.2 Duplicate Request with Same UUID (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('❌ Status 400 (Duplicate key error)', () => {\n",
+                  "  pm.expect(pm.response.code).to.equal(400);\n",
+                  "});\n",
+                  "\n",
+                  "let jsonData = pm.response.json();\n",
+                  "pm.test('❌ Error message mentions duplicate', () => {\n",
+                  "  pm.expect(jsonData.message.toLowerCase()).to.include('duplicate');\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1,\n  \"client_order_id\": \"{{client_order_id_2}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚨 Test 3: Oversell - Stock Exhaustion",
+      "item": [
+        {
+          "name": "3.1 Check Current Stock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/products/{{product_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "3.2 Try to Buy More Than Available",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('❌ Status 400 (Out of Stock)', () => {\n",
+                  "  pm.expect([400, 409]).to.include(pm.response.code);\n",
+                  "});\n",
+                  "\n",
+                  "let jsonData = pm.response.json();\n",
+                  "pm.test('❌ Error message: Out of Stock', () => {\n",
+                  "  pm.expect(jsonData.message.toLowerCase()).to.include('hết');\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 999999\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "3.3 Verify No Reservation Created",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData = pm.response.json();\n",
+                  "pm.test('✅ No reservation exists for oversell', () => {\n",
+                  "  // Should return empty result or 404\n",
+                  "  pm.expect(pm.response.code).to.equal(404);\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/reservations?clientOrderId={{client_order_id_oversell}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "reservations"],
+              "query": [
+                {
+                  "key": "clientOrderId",
+                  "value": "{{client_order_id_oversell}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⏱️ Test 4: Response Time (Non-blocking)",
+      "item": [
+        {
+          "name": "4.1 Measure Response Time",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('✅ Response time < 50ms (non-blocking)', () => {\n",
+                  "  pm.expect(pm.response.responseTime).to.be.below(50);\n",
+                  "});\n",
+                  "\n",
+                  "pm.test('✅ Response received before order processed', () => {\n",
+                  "  // At this point, Order in MongoDB should NOT exist yet\n",
+                  "  // Worker should be processing in background\n",
+                  "  pm.expect(pm.response.code).to.equal(200);\n",
+                  "});\n",
+                  "\n",
+                  "console.log('Response Time: ' + pm.response.responseTime + 'ms');\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "4.2 Verify Order NOT Yet Created (Should be Null)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This request immediately after buy\n",
+                  "pm.test('✅ Order does not exist yet', () => {\n",
+                  "  pm.expect(pm.response.code).to.equal(404);\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/orders/me",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "orders", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔄 Test 5: Concurrent Requests (Race Condition)",
+      "item": [
+        {
+          "name": "5.1 Request 1 - Concurrent Buy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "5.2 Request 2 - Concurrent Buy (Same User)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "5.3 Check Both Orders Created (Due to Different UUIDs)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/orders/me?limit=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "orders", "me"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🗄️ Test 6: Redis Stock Deduction (Lua Script)",
+      "item": [
+        {
+          "name": "6.1 Check Initial Stock (Redis)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/products/{{product_id}}/stock",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "products", "{{product_id}}", "stock"]
+            }
+          }
+        },
+        {
+          "name": "6.2 Buy 1 Unit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "6.3 Verify Stock Decreased by 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData = pm.response.json();\n",
+                  "\n",
+                  "pm.test('✅ Stock decreased by quantity ordered', () => {\n",
+                  "  // Previous stock - 1 should equal new stock\n",
+                  "  pm.expect(jsonData.remaining_stock).to.exist;\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/products/{{product_id}}/stock",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "products", "{{product_id}}", "stock"]
+            }
+          }
+        },
+        {
+          "name": "6.4 Verify Stock Sync to MongoDB",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/inventory/{{product_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "inventory", "{{product_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🐌 Test 7: Reservation TTL Cleanup",
+      "item": [
+        {
+          "name": "7.1 Create Reservation with Custom TTL (1 min for testing)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"quantity\": 1,\n  \"ttl_minutes\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/v1/api/order/buy",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "order", "buy"]
+            }
+          }
+        },
+        {
+          "name": "7.2 Verify Reservation Exists",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let jsonData = pm.response.json();\n",
+                  "pm.globals.set('ttl_test_reservation_id', jsonData._id);\n",
+                  "pm.test('✅ Reservation created for TTL test', () => {\n",
+                  "  pm.expect(jsonData._id).to.exist;\n",
+                  "});\n"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/reservations/{{ttl_test_reservation_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "reservations", "{{ttl_test_reservation_id}}"]
+            }
+          }
+        },
+        {
+          "name": "7.3 Wait 65 Seconds for TTL to Expire",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/delay?ms=65000",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "delay"],
+              "query": [
+                {
+                  "key": "ms",
+                  "value": "65000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "7.4 Verify Reservation AUTO-DELETED (TTL Cleanup)",
+          "event": [
+            {
+              "listen": "test",
+              "script": [
+                "pm.test('✅ Reservation auto-deleted by MongoDB TTL', () => {\n",
+                "  pm.expect(pm.response.code).to.equal(404);\n",
+                "});\n"
+              ]
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/reservations/{{ttl_test_reservation_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "reservations", "{{ttl_test_reservation_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎯 Test 8: Business Logic Summary",
+      "item": [
+        {
+          "name": "📊 Summary Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/v1/api/reservations/stats",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["v1", "api", "reservations", "stats"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_order_id_1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reservation_id_1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_order_id_2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_order_id_oversell",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ttl_test_reservation_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

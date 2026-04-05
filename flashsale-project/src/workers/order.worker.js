@@ -5,6 +5,7 @@ require("dotenv").config();
 const { getChannel, connectToRabbitMQ } = require("../config/rabbitmq");
 const { initSocket } = require("../config/socket");
 const OrderService = require("../services/order.service");
+const ReservationModel = require("../models/reservation.model");
 const mongoose = require("mongoose");
 const http = require("http");
 const { RABBIT_QUEUE } = require("../constants");
@@ -43,34 +44,69 @@ const initWorkerSocket = async () => {
 
 /**
  * Xử lý đơn hàng từ queue
+ * 
+ * FLOW:
+ * 1. Check idempotency: client_order_id đã confirm chưa?
+ * 2. Nếu confirm → return (bỏ qua)
+ * 3. Nếu pending → create Order, update Reservation(confirmed)
+ * 4. Nếu error → update Reservation(failed), nack để retry/DLX
  */
 const processOrder = async (orderData, channel, msg) => {
     const startTime = Date.now();
+    const { client_order_id, reservation_id, userId, productId, quantity, price } = orderData;
 
     try {
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         console.log("[Worker] 📦 Nhận đơn hàng mới");
+        console.log(`[Worker] client_order_id: ${client_order_id}`);
         console.log("[Worker] Dữ liệu:", JSON.stringify(orderData, null, 2));
 
-        // Xử lý đơn hàng qua Service
+        // A. CHECK IDEMPOTENCY - Kiểm tra client_order_id đã process chưa?
+        console.log("[Worker] 🔍 Kiểm tra idempotency...");
+        let reservation = await ReservationModel.findOne({ client_order_id });
+
+        if (!reservation) {
+            throw new Error(`Không tìm thấy Reservation với client_order_id: ${client_order_id}`);
+        }
+
+        // Nếu đã confirmed → bỏ qua (chống duplicate)
+        if (reservation.status === "confirmed") {
+            console.log(`[Worker] ⚠️  Đơn này đã xử lý (status: confirmed), bỏ qua`);
+            channel.ack(msg); // ACK để không retry lại
+            return;
+        }
+
+        // Nếu status = failed → bỏ qua (hoặc có thể implement retry logic)
+        if (reservation.status === "failed") {
+            console.log(`[Worker] ⚠️  Đơn này đã fail trước đó, bỏ qua`);
+            channel.ack(msg);
+            return;
+        }
+
+        // B. XỬ LÝ ĐƠN HÀNG
+        console.log("[Worker] 📝 Tạo Order, OrderDetail, Payment...");
         const order = await OrderService.processOrderFromQueue(orderData);
 
-        // Phát sự kiện Socket.io
-        await OrderService.notifyStockUpdate(
-            order.productId,
-            order.quantity,
-            null, // remainingStock - có thể query từ Product model nếu cần
+        // C. UPDATE RESERVATION STATUS → confirmed
+        console.log("[Worker] ✅ Cập nhật Reservation: pending → confirmed");
+        reservation = await ReservationModel.findByIdAndUpdate(
+            reservation._id,
+            {
+                status: "confirmed",
+                note: `Order created: ${order._id}`,
+            },
+            { new: true }
         );
 
-        // Thông báo cho user (nếu cần)
-        // await OrderService.notifyOrderSuccess(order.userId, order);
+        // D. PHÁT SỰ KIỆN SOCKET.IO
+        await OrderService.notifyStockUpdate(productId, quantity, null);
 
         const processingTime = Date.now() - startTime;
         console.log(`[Worker] ✅ Hoàn thành trong ${processingTime}ms`);
         console.log(`[Worker] Order ID: ${order._id}`);
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        // ACK tin nhắn
+        // E. ACK TIN NHẮN - Xác nhận đã xử lý xong
         channel.ack(msg);
 
         return order;
@@ -82,11 +118,30 @@ const processOrder = async (orderData, channel, msg) => {
         console.error("[Worker] Dữ liệu lỗi:", JSON.stringify(orderData, null, 2));
         console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-        // Lưu đơn hàng lỗi vào DB
+        // F. UPDATE RESERVATION STATUS → failed
+        try {
+            await ReservationModel.findByIdAndUpdate(
+                reservation_id,
+                {
+                    status: "failed",
+                    note: `Worker error: ${error.message}`,
+                },
+                { new: true }
+            );
+            console.log("[Worker] 📌 Đã cập nhật Reservation status → failed");
+        } catch (updateErr) {
+            console.error("[Worker] ❌ Lỗi cập nhật Reservation:", updateErr.message);
+        }
+
+        // G. LƯU ĐƠN HÀNG LỖI VÀO DB
         await OrderService.saveFailedOrder(orderData, error.message);
 
-        // NACK message (không requeue để tránh loop vô hạn)
-        channel.nack(msg, false, false);
+        // H. NACK MESSAGE - Gửi vào DLX để retry hoặc manual check
+        // channel.nack(msg, false, false): không requeue, gửi DLX
+        // channel.nack(msg, false, true): requeue lại queue (trong trường hợp temporary error)
+        const isTemporaryError = error.message.includes("timeout") || error.message.includes("ECONNREFUSED");
+        channel.nack(msg, false, isTemporaryError);
+        console.log(`[Worker] 🔄 NACK message${isTemporaryError ? " (requeue)" : " (→ DLX)"}`);
     }
 };
 
@@ -115,13 +170,21 @@ const startWorker = async () => {
         const channel = await getChannel();
         console.log("[RabbitMQ] ✅ Kết nối thành công!");
 
-        // 4. Khai báo Queue
+        // 4. Khai báo Queue (với Dead Letter Exchange)
+        await channel.assertExchange('dlx-exchange', 'direct', { durable: true });
+        await channel.assertQueue('failed-orders-queue', {
+            durable: true,
+            deadLetterExchange: 'dlx-exchange',
+            deadLetterRoutingKey: 'failed-orders',
+        });
+        
         await channel.assertQueue(QUEUE_NAME.ORDER, {
             durable: true,
             arguments: {
-                // Có thể thêm Dead Letter Exchange
-                // 'x-dead-letter-exchange': 'dlx-exchange',
-                // 'x-dead-letter-routing-key': 'failed-orders'
+                'x-dead-letter-exchange': 'dlx-exchange',
+                'x-dead-letter-routing-key': 'failed-orders',
+                'x-max-length': 100000, // Safety: max 100k message
+                'x-message-ttl': 3600000, // Message TTL: 1 hour
             },
         });
 

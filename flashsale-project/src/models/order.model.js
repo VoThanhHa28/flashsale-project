@@ -51,6 +51,24 @@ const orderSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
+        /**
+         * client_order_id (Idempotency Key)
+         * Link tới Reservation.client_order_id để chống duplicate order
+         * 
+         * LUỒNG:
+         * 1. Client → client_order_id = UUID
+         * 2. Controller → create Reservation(client_order_id)
+         * 3. RabbitMQ payload → client_order_id
+         * 4. Worker → check Order.findOne({client_order_id}) đã exist?
+         *            Nếu exist → bỏ qua (idempotency)
+         *            Nếu không → create Order với client_order_id
+         */
+        client_order_id: {
+            type: String,
+            sparse: true, // Allow null, nhưng unique nếu có value
+            unique: true, // Chống duplicate
+            index: true,
+        },
     },
     {
         timestamps: true,
