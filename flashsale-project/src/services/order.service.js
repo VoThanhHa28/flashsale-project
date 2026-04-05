@@ -453,7 +453,11 @@ class OrderService {
 
         // Hoàn kho Redis
         const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
-        await redisClient.incrBy(keyStock, order.quantity);
+        const keyInfo = CONST.REDIS.PRODUCT_INFO(order.productId);
+        await Promise.all([
+            redisClient.incrBy(keyStock, order.quantity),
+            redisClient.del(keyInfo).catch(() => {}), // Clear cache for fresh product info
+        ]);
 
         // Cập nhật status
         order.status = CONST.ORDER.STATUS.CANCELLED;
