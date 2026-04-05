@@ -12,4 +12,5 @@ module.exports = {
     STATUS: require("./status.constants"),
     SOCKET: require("./socket.constant"),
     ACTIVITY_LOG: require("./activityLog.constants"),
+    CART: require("./cart.constants"),
 };
