@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/product.model");
+const User = require("../models/user.model");
+const Role = require("../models/role.model");
 const redisClient = require("../config/redis");
 const UserRepo = require("../repositories/user.repo");
 const { BadRequestError, NotFoundError } = require("../core/error.response");
@@ -163,6 +165,40 @@ class AdminService {
         }
 
         return { mongo, redis };
+    }
+
+    static async getRoles() {
+        const roles = await Role.find({ is_deleted: false, isActive: true })
+            .select("roleCode roleName description isActive")
+            .sort({ roleCode: 1 })
+            .lean();
+
+        return { roles };
+    }
+
+    static async assignRoleToUser(userId, roleId) {
+        const [user, role] = await Promise.all([
+            User.findOne({ _id: userId, is_deleted: false }),
+            Role.findOne({ _id: roleId, is_deleted: false, isActive: true }),
+        ]);
+
+        if (!user) {
+            throw new NotFoundError(CONST.ADMIN.MESSAGE.USER_NOT_FOUND);
+        }
+
+        if (!role) {
+            throw new NotFoundError(CONST.ADMIN.MESSAGE.ROLE_NOT_FOUND);
+        }
+
+        user.usr_role = role._id;
+        await user.save();
+
+        const updatedUser = await User.findById(user._id)
+            .select("-password")
+            .populate("usr_role", "roleCode roleName")
+            .lean();
+
+        return { user: updatedUser };
     }
 }
 
