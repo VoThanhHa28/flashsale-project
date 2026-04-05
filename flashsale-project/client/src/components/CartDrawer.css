@@ -1,0 +1,215 @@
+.cart-drawer-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.cart-drawer-root .cart-drawer-backdrop,
+.cart-drawer-root .cart-drawer-panel {
+  pointer-events: auto;
+}
+
+.cart-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cart-drawer-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(100%, 400px);
+  height: 100%;
+  background: var(--color-bg-primary, #fff);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  animation: cartDrawerSlide 0.22s ease-out;
+}
+
+@keyframes cartDrawerSlide {
+  from {
+    transform: translateX(100%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.cart-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3, 1rem) var(--spacing-4, 1.25rem);
+  border-bottom: 1px solid var(--color-gray-200, #e5e7eb);
+}
+
+.cart-drawer-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #1a1a2e);
+}
+
+.cart-drawer-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: transparent;
+  color: var(--color-text-secondary, #444);
+  cursor: pointer;
+}
+
+.cart-drawer-close:hover {
+  background: var(--color-gray-100, #f3f4f6);
+}
+
+.cart-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-3, 1rem);
+}
+
+.cart-drawer-muted {
+  margin: 0;
+  color: var(--color-text-disabled, #888);
+  font-size: 0.9375rem;
+}
+
+.cart-drawer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-drawer-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-gray-100, #f3f4f6);
+}
+
+.cart-drawer-row-main {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.cart-drawer-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: var(--radius-md, 8px);
+  flex-shrink: 0;
+}
+
+.cart-drawer-thumb--placeholder {
+  background: var(--color-gray-200, #e5e7eb);
+}
+
+.cart-drawer-row-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.cart-drawer-name {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-text-secondary, #1a1a2e);
+}
+
+.cart-drawer-price {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-primary, #ee4d2d);
+  font-weight: 600;
+}
+
+.cart-drawer-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: calc(56px + 0.75rem);
+}
+
+.cart-drawer-qty {
+  width: 4rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-gray-300, #d1d5db);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.875rem;
+}
+
+.cart-drawer-remove {
+  border: none;
+  background: none;
+  color: var(--color-text-disabled, #888);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.cart-drawer-remove:hover {
+  color: var(--color-primary, #ee4d2d);
+}
+
+.cart-drawer-footer {
+  padding: var(--spacing-3, 1rem) var(--spacing-4, 1.25rem);
+  border-top: 1px solid var(--color-gray-200, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cart-drawer-total {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary, #333);
+}
+
+.cart-drawer-link-full {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-primary, #ee4d2d);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cart-drawer-link-full:hover {
+  text-decoration: underline;
+}
+
+.cart-drawer-btn-checkout {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-primary, #ee4d2d);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.cart-drawer-btn-checkout:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cart-drawer-btn-checkout:not(:disabled):hover {
+  filter: brightness(0.95);
+}
