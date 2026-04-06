@@ -14,6 +14,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import styles from './OrderCard.module.css';
+import { orderStatusLineLabel } from '../../utils/orderShape';
 
 /**
  * Cấu hình trạng thái đơn hàng: icon, màu nhãn, bước stepper tương ứng
@@ -23,7 +24,7 @@ const STATUS_CONFIG = {
   pending_payment: { label: 'Chờ thanh toán', Icon: FiClock,       step: 1 },
   pending_confirm: { label: 'Chờ xác nhận',   Icon: FiAlertCircle, step: 1 },
   processing:      { label: 'Đang xử lý',      Icon: FiPackage,     step: 2 },
-  shipping:        { label: 'Đang giao hàng',  Icon: FiTruck,       step: 3 },
+  shipping:        { label: 'Đang giao',  Icon: FiTruck,       step: 3 },
   completed:       { label: 'Hoàn tất',         Icon: FiCheck,       step: 4 },
   failed:          { label: 'Thất bại',         Icon: FiAlertCircle, step: -1 },
   cancelled:       { label: 'Đã hủy',           Icon: FiX,           step: -1 },
@@ -186,6 +187,17 @@ function OrderCard({ order, onCopyCode, onCancelOrder }) {
             <StatusIcon size={13} aria-hidden="true" />
             <span>{statusConfig.label}</span>
           </div>
+        </div>
+
+        <div className={styles.statusLines}>
+          <p className={styles.statusLine}>
+            <span className={styles.statusKey}>Trạng thái đơn:</span>{' '}
+            <strong className={styles.statusValue}>{orderStatusLineLabel(order.status)}</strong>
+          </p>
+          <p className={styles.statusLine}>
+            <span className={styles.statusKey}>Thanh toán:</span>{' '}
+            <strong className={styles.statusValue}>{order.payment?.lineLabel ?? 'Thu hộ'}</strong>
+          </p>
         </div>
 
         {/* ── Countdown bar ── */}

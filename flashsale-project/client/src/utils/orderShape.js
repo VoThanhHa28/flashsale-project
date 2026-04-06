@@ -139,6 +139,39 @@ function normalizeTimelineEvent(raw) {
   };
 }
 
+/** Chuẩn hóa payment từ BE (bảng payments / lean object) — không gửi từ checkout FE */
+function normalizePayment(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return { status: 'pending', method: 'cod', lineLabel: 'Thu hộ' };
+  }
+  const status = String(raw.status || 'pending').toLowerCase();
+  const method = String(raw.method || 'cod').toLowerCase();
+  let lineLabel = 'Thu hộ';
+  if (status === 'paid') lineLabel = 'Đã trả';
+  else if (status === 'failed') lineLabel = 'Thanh toán thất bại';
+  else if (status === 'refunded') lineLabel = 'Đã hoàn tiền';
+  else if (status === 'pending' && (method === 'cod' || method === '')) lineLabel = 'Thu hộ';
+  else if (status === 'pending') lineLabel = 'Chưa thanh toán';
+  return { status, method, lineLabel };
+}
+
+/** Nhãn một dòng cho trạng thái đơn (UI) — ví dụ Đang giao */
+export const ORDER_STATUS_LINE_LABELS = {
+  pending_payment: 'Chờ thanh toán',
+  pending_confirm: 'Chờ xác nhận',
+  processing: 'Đang xử lý',
+  shipping: 'Đang giao',
+  completed: 'Hoàn tất',
+  failed: 'Thất bại',
+  cancelled: 'Đã hủy',
+  refunded: 'Hoàn tiền',
+};
+
+export function orderStatusLineLabel(uiStatus) {
+  if (!uiStatus) return '—';
+  return ORDER_STATUS_LINE_LABELS[uiStatus] || String(uiStatus);
+}
+
 /**
  * Chuẩn hóa 1 order từ API
  */
@@ -167,6 +200,7 @@ export function normalizeOrder(raw) {
       ? raw.timeline.map(normalizeTimelineEvent).filter(Boolean)
       : [],
     items: buildOrderItems(raw),
+    payment: normalizePayment(raw.payment),
   };
 }
 

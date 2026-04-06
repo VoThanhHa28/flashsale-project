@@ -54,6 +54,34 @@
   cursor: pointer;
 }
 
+/* ── Trạng thái rõ ràng (đơn / thanh toán) ── */
+.statusLines {
+  margin: 0 0 var(--spacing-4) 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+}
+
+.statusLine {
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.statusLine:last-child {
+  margin-bottom: 0;
+}
+
+.statusKey {
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-medium);
+}
+
+.statusValue {
+  color: var(--color-text-primary);
+}
+
 /* ── Header ── */
 .header {
   display: flex;
