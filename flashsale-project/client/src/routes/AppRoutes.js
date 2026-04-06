@@ -2,7 +2,7 @@ import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import ProductDetail from '../pages/ProductDetail';
-import Cart from '../pages/Cart';
+import Cart from '../pages/cart/CartPage';
 import Account from '../pages/Account';
 import OrderHistory from '../pages/OrderHistory';
 import OrderDetail from '../pages/OrderDetail';

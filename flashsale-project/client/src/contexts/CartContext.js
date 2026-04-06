@@ -14,7 +14,6 @@ const CartContext = createContext(null);
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
 
   const refreshCart = useCallback(async () => {
@@ -51,12 +50,10 @@ export function CartProvider({ children }) {
     () => ({
       cart,
       loading,
-      drawerOpen,
-      setDrawerOpen,
       refreshCart,
       itemCount,
     }),
-    [cart, loading, drawerOpen, refreshCart, itemCount],
+    [cart, loading, refreshCart, itemCount],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

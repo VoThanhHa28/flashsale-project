@@ -5,7 +5,6 @@ import { FiSearch, FiShoppingCart } from 'react-icons/fi';
 import * as api from '../services/api';
 import TopPromoStrip from './TopPromoStrip';
 import Footer from './Footer';
-import CartDrawer from './CartDrawer';
 import { useCart } from '../contexts/CartContext';
 import './Layout.css';
 
@@ -28,7 +27,7 @@ function formatPrice(price) {
 function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { itemCount, setDrawerOpen } = useCart();
+  const { itemCount } = useCart();
   const user = api.getUser();
   const token = api.getToken();
   const isLoggedIn = Boolean(token || user);
@@ -244,8 +243,8 @@ function Layout() {
                 <button
                   type="button"
                   className="layout-link layout-cart-link layout-cart-trigger"
-                  aria-label="Mở giỏ hàng"
-                  onClick={() => setDrawerOpen(true)}
+                  aria-label="Đi tới giỏ hàng"
+                  onClick={() => navigate('/cart')}
                 >
                   <span className="layout-cart-icon-wrap">
                     <FiShoppingCart size={20} />
@@ -302,8 +301,6 @@ function Layout() {
       </main>
 
       <Footer />
-
-      <CartDrawer />
     </div>
   );
 }

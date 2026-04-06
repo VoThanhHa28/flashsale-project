@@ -137,28 +137,14 @@ function ShopInventoryHistory() {
             <div>
               <h1 className={styles.title}>Lịch sử nhập / xuất kho</h1>
               <p className={styles.subtitle}>
-                Dữ liệu do backend cung cấp (biến động tồn qua Flash Sale / đơn hàng). Bên BE cần triển
-                khai endpoint tương ứng.
+                Theo dõi biến động tồn (giữ chỗ, xác nhận đơn, hoàn kho).
+                {fromMock
+                  ? ` Dữ liệu đang minh họa trên máy bạn${mockErrorHint ? ` — ${mockErrorHint}` : ''}; khi server có API tương thích, bảng sẽ hiển thị số liệu thật.`
+                  : ''}
               </p>
             </div>
           </div>
         </header>
-
-        <p className={styles.apiHint}>
-          <strong>API dự kiến:</strong> <code>GET /v1/api/admin/inventory/history</code> — query{' '}
-          <code>page</code>, <code>limit</code>, <code>productId?</code>, <code>source?</code>. Response{' '}
-          <code>data.items[]</code> + <code>data.pagination</code> (chi tiết trong <code>api.js</code>).
-        </p>
-
-        {fromMock && (
-          <div className={styles.mockBanner} role="status">
-            <strong>Dữ liệu mẫu:</strong> {mockErrorHint ? 'Không gọi được API — đang dùng bản ghi giả để xem layout.' : 'Backend có thể chưa có route — đang dùng bản ghi giả.'} Khi BE khớp
-            định dạng, trang sẽ tự hiển thị dữ liệu thật.
-            {mockErrorHint ? (
-              <div className={styles.mockDetail}>Chi tiết: {mockErrorHint}</div>
-            ) : null}
-          </div>
-        )}
 
         <div className={styles.toolbar}>
           <div className={styles.field}>
