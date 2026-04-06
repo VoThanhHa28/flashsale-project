@@ -17,6 +17,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { orderStatusLineLabel } from '../utils/orderShape';
 import styles from './OrderDetail.module.css';
 
 /**
@@ -26,7 +27,7 @@ const STATUS_CONFIG = {
   pending_payment: { label: 'Chờ thanh toán', Icon: FiClock       },
   pending_confirm: { label: 'Chờ xác nhận',   Icon: FiAlertCircle },
   processing:      { label: 'Đang xử lý',      Icon: FiPackage     },
-  shipping:        { label: 'Đang giao hàng',  Icon: FiTruck       },
+  shipping:        { label: 'Đang giao',  Icon: FiTruck       },
   completed:       { label: 'Hoàn tất',         Icon: FiCheck       },
   failed:          { label: 'Thất bại',         Icon: FiAlertCircle },
   cancelled:       { label: 'Đã hủy',           Icon: FiX           },
@@ -188,6 +189,17 @@ function OrderDetail() {
             <StatusIcon size={13} />
             <span>{statusConfig.label}</span>
           </div>
+        </div>
+
+        <div className={styles.statusSummary}>
+          <p className={styles.statusSummaryRow}>
+            <span className={styles.statusSummaryKey}>Trạng thái đơn:</span>{' '}
+            <strong>{orderStatusLineLabel(order.status)}</strong>
+          </p>
+          <p className={styles.statusSummaryRow}>
+            <span className={styles.statusSummaryKey}>Thanh toán:</span>{' '}
+            <strong>{order.payment?.lineLabel ?? 'Thu hộ'}</strong>
+          </p>
         </div>
 
         {/* Shop info */}

@@ -24,6 +24,8 @@ export default function CheckoutPage() {
   const [stockById, setStockById] = useState({});
   const deadlineRef = useRef(Date.now() + CHECKOUT_LIMIT_MS);
   const [remainingMs, setRemainingMs] = useState(CHECKOUT_LIMIT_MS);
+  /** Chỉ UI — không gửi body order; trạng thái thanh toán trên /orders theo dữ liệu server */
+  const [paymentMethod, setPaymentMethod] = useState('cod');
 
   const token = api.getToken();
   const items = useMemo(
@@ -239,6 +241,42 @@ export default function CheckoutPage() {
                 />
               ))}
             </ul>
+
+            <fieldset className="checkout-pay-fieldset">
+              <legend className="checkout-pay-legend">Phương thức thanh toán</legend>
+              <label className={`checkout-pay-option ${paymentMethod === 'cod' ? 'checkout-pay-option--on' : ''}`}>
+                <input
+                  type="radio"
+                  name="checkout-payment"
+                  value="cod"
+                  checked={paymentMethod === 'cod'}
+                  onChange={() => setPaymentMethod('cod')}
+                  disabled={checkoutLoading || timeExpired}
+                />
+                <span className="checkout-pay-option-body">
+                  <strong>Thu hộ (COD)</strong>
+                  <span className="checkout-pay-hint">Thanh toán khi nhận hàng</span>
+                </span>
+              </label>
+              <label className={`checkout-pay-option ${paymentMethod === 'prepaid' ? 'checkout-pay-option--on' : ''}`}>
+                <input
+                  type="radio"
+                  name="checkout-payment"
+                  value="prepaid"
+                  checked={paymentMethod === 'prepaid'}
+                  onChange={() => setPaymentMethod('prepaid')}
+                  disabled={checkoutLoading || timeExpired}
+                />
+                <span className="checkout-pay-option-body">
+                  <strong>Thanh toán trước</strong>
+                  <span className="checkout-pay-hint">Chuyển khoản / ví điện tử (theo hướng dẫn shop)</span>
+                </span>
+              </label>
+              <p className="checkout-pay-note">
+                Lựa chọn này chỉ hiển thị trên bước thanh toán. Dòng <strong>Thanh toán: Đã trả / Thu hộ</strong> ở
+                trang Đơn hàng lấy từ máy chủ khi có dữ liệu thanh toán.
+              </p>
+            </fieldset>
 
             <div className="cart-page-footer">
               <div className="cart-page-total-row">
