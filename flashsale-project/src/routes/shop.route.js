@@ -43,6 +43,7 @@ router.get(
     '/stats/revenue',
     verifyToken,
     requireShopAdmin,
+    validate(shopValidation.getRevenueStats),
     ShopController.getRevenueStats
 );
 

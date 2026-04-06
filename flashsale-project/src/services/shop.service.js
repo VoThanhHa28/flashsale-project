@@ -1,6 +1,6 @@
 'use strict';
 
-const { NotFoundError } = require('../core/error.response');
+const { NotFoundError, BadRequestError } = require('../core/error.response');
 const CONST = require('../constants');
 const ShopRepo = require('../repositories/shop.repo');
 
@@ -30,6 +30,10 @@ class ShopService {
     }
 
     static async updateOrderStatus(orderId, status) {
+        if (!CONST.SHOP.ALLOWED_UPDATE_STATUSES.includes(status)) {
+            throw new BadRequestError(CONST.SHOP.MESSAGE.INVALID_STATUS);
+        }
+
         const order = await ShopRepo.findOrderById(orderId);
         if (!order) throw new NotFoundError(CONST.SHOP.MESSAGE.ORDER_NOT_FOUND);
 
@@ -37,14 +41,19 @@ class ShopService {
         return updated;
     }
 
-    static async getRevenueStats() {
-        const dailyRevenue = await ShopRepo.getRevenueLast7Days(CONST.SHOP.REVENUE_DAYS);
+    static async getRevenueStats(days = CONST.SHOP.REVENUE_DAYS) {
+        const revenueDays = Math.max(
+            1,
+            Math.min(CONST.SHOP.MAX_REVENUE_DAYS, parseInt(days, 10) || CONST.SHOP.REVENUE_DAYS)
+        );
+
+        const dailyRevenue = await ShopRepo.getRevenueLastDays(revenueDays);
 
         const totalRevenue = dailyRevenue.reduce((sum, d) => sum + d.totalRevenue, 0);
         const totalOrders = dailyRevenue.reduce((sum, d) => sum + d.totalOrders, 0);
 
         return {
-            period: `${CONST.SHOP.REVENUE_DAYS} ngày gần nhất`,
+            period: `${revenueDays} ngày gần nhất`,
             totalRevenue,
             totalOrders,
             daily: dailyRevenue,

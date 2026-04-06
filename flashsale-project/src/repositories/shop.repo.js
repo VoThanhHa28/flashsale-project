@@ -37,12 +37,13 @@ const updateOrderStatus = async (orderId, status) => {
 };
 
 // Aggregate doanh thu N ngày gần nhất (chỉ đơn status = 'success')
-const getRevenueLast7Days = async (days) => {
+const getRevenueLastDays = async (days) => {
+    const totalDays = Math.max(1, parseInt(days, 10) || 1);
     const since = new Date();
-    since.setDate(since.getDate() - days);
-    since.setHours(0, 0, 0, 0);
+    since.setUTCHours(0, 0, 0, 0);
+    since.setUTCDate(since.getUTCDate() - (totalDays - 1));
 
-    return await OrderModel.aggregate([
+    const rows = await OrderModel.aggregate([
         {
             $match: {
                 status: 'success',
@@ -52,7 +53,7 @@ const getRevenueLast7Days = async (days) => {
         {
             $group: {
                 _id: {
-                    $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
+                    $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'UTC' },
                 },
                 totalRevenue: { $sum: '$totalPrice' },
                 totalOrders: { $sum: 1 },
@@ -68,6 +69,26 @@ const getRevenueLast7Days = async (days) => {
             },
         },
     ]);
+
+    const revenueByDate = new Map(
+        rows.map((row) => [row.date, { totalRevenue: row.totalRevenue || 0, totalOrders: row.totalOrders || 0 }])
+    );
+
+    const daily = [];
+    for (let index = 0; index < totalDays; index += 1) {
+        const current = new Date(since);
+        current.setUTCDate(since.getUTCDate() + index);
+        const date = current.toISOString().slice(0, 10);
+        const item = revenueByDate.get(date) || { totalRevenue: 0, totalOrders: 0 };
+
+        daily.push({
+            date,
+            totalRevenue: item.totalRevenue,
+            totalOrders: item.totalOrders,
+        });
+    }
+
+    return daily;
 };
 
 module.exports = {
@@ -75,5 +96,5 @@ module.exports = {
     countOrders,
     findOrderById,
     updateOrderStatus,
-    getRevenueLast7Days,
+    getRevenueLastDays,
 };
