@@ -1098,6 +1098,265 @@ export async function getActivityLogs({ page = 1, limit = 20, method } = {}) {
   }
 }
 
+/** Dữ liệu mẫu khi BE chưa có GET /v1/api/admin/inventory/history hoặc gọi lỗi. */
+const MOCK_INVENTORY_HISTORY_ALL = [
+  {
+    id: 'mock-1',
+    createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c1',
+    productName: 'Tai nghe Bluetooth Pro',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 1,
+    price: 890000,
+    remainingStockAfter: 42,
+    orderId: null,
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-2',
+    createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c1',
+    productName: 'Tai nghe Bluetooth Pro',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 1,
+    price: 890000,
+    remainingStockAfter: 42,
+    orderId: '64f0e1d2c3b4a59687786950',
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-3',
+    createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c2',
+    productName: 'Bàn phím cơ RGB',
+    direction: 'in',
+    source: 'rollback',
+    sourceLabel: 'Hoàn kho',
+    kindLabel: 'Nhập lại (hoàn kho)',
+    quantity: 2,
+    price: 1290000,
+    remainingStockAfter: 18,
+    orderId: null,
+    userId: '68a1c02f3b4d5e6f7890abce',
+    note: 'Worker timeout — hoàn slot',
+  },
+  {
+    id: 'mock-4',
+    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c3',
+    productName: 'Chuột không dây X1',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 3,
+    price: 349000,
+    remainingStockAfter: 76,
+    userId: '68a1c02f3b4d5e6f7890abce',
+    note: null,
+  },
+  {
+    id: 'mock-5',
+    createdAt: new Date(Date.now() - 1000 * 60 * 150).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c3',
+    productName: 'Chuột không dây X1',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 3,
+    price: 349000,
+    remainingStockAfter: 76,
+    orderId: '64f0e1d2c3b4a59687786951',
+    userId: '68a1c02f3b4d5e6f7890abce',
+    note: null,
+  },
+  {
+    id: 'mock-6',
+    createdAt: new Date(Date.now() - 1000 * 60 * 220).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c4',
+    productName: 'Loa mini 20W',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 1,
+    price: 599000,
+    remainingStockAfter: 9,
+    orderId: '64f0e1d2c3b4a59687786952',
+    userId: null,
+    note: null,
+  },
+  {
+    id: 'mock-7',
+    createdAt: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c4',
+    productName: 'Loa mini 20W',
+    direction: 'in',
+    source: 'rollback',
+    sourceLabel: 'Hoàn kho',
+    kindLabel: 'Nhập lại (hoàn kho)',
+    quantity: 1,
+    price: 599000,
+    remainingStockAfter: 10,
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: 'Thanh toán thất bại',
+  },
+  {
+    id: 'mock-8',
+    createdAt: new Date(Date.now() - 1000 * 60 * 400).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c5',
+    productName: 'USB-C 256GB',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 2,
+    price: 450000,
+    remainingStockAfter: 30,
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-9',
+    createdAt: new Date(Date.now() - 1000 * 60 * 500).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c5',
+    productName: 'USB-C 256GB',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 2,
+    price: 450000,
+    remainingStockAfter: 30,
+    orderId: '64f0e1d2c3b4a59687786953',
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-10',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c6',
+    productName: 'Webcam Full HD',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 1,
+    price: 720000,
+    remainingStockAfter: 5,
+    orderId: '64f0e1d2c3b4a59687786954',
+    userId: '68a1c02f3b4d5e6f7890abcf',
+    note: null,
+  },
+  {
+    id: 'mock-11',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c7',
+    productName: 'Đế tản nhiệt laptop',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 4,
+    price: 280000,
+    remainingStockAfter: 52,
+    userId: '68a1c02f3b4d5e6f7890abcf',
+    note: null,
+  },
+  {
+    id: 'mock-12',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c7',
+    productName: 'Đế tản nhiệt laptop',
+    direction: 'in',
+    source: 'rollback',
+    sourceLabel: 'Hoàn kho',
+    kindLabel: 'Nhập lại (hoàn kho)',
+    quantity: 4,
+    price: 280000,
+    remainingStockAfter: 56,
+    userId: '68a1c02f3b4d5e6f7890abcf',
+    note: 'Hủy giữ chỗ',
+  },
+];
+
+function paginateMockInventoryHistory({ page = 1, limit = 20, productId, source }) {
+  let list = [...MOCK_INVENTORY_HISTORY_ALL];
+  if (source) list = list.filter((r) => r.source === source);
+  if (productId && String(productId).trim()) {
+    const q = String(productId).trim().toLowerCase();
+    list = list.filter((r) => String(r.productId).toLowerCase().includes(q));
+  }
+  const total = list.length;
+  const pageSize = Math.min(Math.max(1, limit), 100);
+  const pageNum = Math.max(1, page);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const start = (pageNum - 1) * pageSize;
+  const items = list.slice(start, start + pageSize);
+  return {
+    items,
+    pagination: {
+      page: pageNum,
+      pageSize,
+      total,
+      totalPages,
+    },
+  };
+}
+
+/**
+ * GET /v1/api/admin/inventory/history — Lịch sử biến động kho (do BE triển khai).
+ * Query: page, limit, productId?, source? (redis_claim | worker_commit | rollback).
+ * Mong đợi payload: { items: [...], pagination: { page, pageSize, total, totalPages } }.
+ * Mỗi item nên có: id, createdAt, productId, productName?, direction ('in'|'out'),
+ * source?, sourceLabel?, kindLabel?, quantity, price?, remainingStockAfter?, orderId?, userId?, note?
+ *
+ * Nếu API lỗi / chưa có route: trả dữ liệu mẫu (fromMock: true) để xem giao diện.
+ */
+export async function getInventoryHistory({ page = 1, limit = 20, productId, source } = {}) {
+  try {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    if (productId) params.set('productId', String(productId));
+    if (source) params.set('source', String(source));
+    const res = await request(`/v1/api/admin/inventory/history?${params.toString()}`);
+    const data = getPayload(res);
+    const pg = data?.pagination;
+    return {
+      success: true,
+      fromMock: false,
+      message: res.message || '',
+      items: Array.isArray(data?.items) ? data.items : [],
+      pagination: {
+        page: pg?.page ?? page,
+        pageSize: pg?.pageSize ?? limit,
+        total: pg?.total ?? 0,
+        totalPages: pg?.totalPages ?? 0,
+      },
+    };
+  } catch (err) {
+    const mock = paginateMockInventoryHistory({ page, limit, productId, source });
+    return {
+      success: true,
+      fromMock: true,
+      message: 'Đang hiển thị dữ liệu mẫu (API chưa sẵn sàng hoặc lỗi mạng).',
+      mockErrorHint: err.message || '',
+      items: mock.items,
+      pagination: mock.pagination,
+    };
+  }
+}
+
 // =====================================================================
 // ============ SYSTEM HEALTH (SUPER ADMIN only) =======================
 // =====================================================================

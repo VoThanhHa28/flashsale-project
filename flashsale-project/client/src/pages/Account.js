@@ -18,6 +18,7 @@ import {
   FiFileText,
   FiLayers,
   FiZap,
+  FiTruck,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import { getUserRoleCode } from '../utils/userRole';
@@ -138,6 +139,13 @@ function Account() {
             icon: <FiFileText size={24} />,
             title: 'Nhật ký hoạt động',
             desc: 'Ai vừa làm gì, lúc mấy giờ',
+            color: 'purple',
+          },
+          {
+            to: '/shop/inventory-history',
+            icon: <FiTruck size={24} />,
+            title: 'Nhập / xuất kho',
+            desc: 'Lịch sử biến động tồn',
             color: 'purple',
           },
           {

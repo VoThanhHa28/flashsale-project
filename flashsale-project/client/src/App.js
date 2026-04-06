@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
-import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign } from './routes/AppRoutes';
+import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign, ShopInventoryHistory } from './routes/AppRoutes';
 
 function App() {
   return (
@@ -30,6 +30,7 @@ function App() {
           <Route path="shop/users" element={<AdminUsers />} />
           <Route path="shop/health" element={<SystemHealth />} />
           <Route path="shop/logs" element={<ActivityLogs />} />
+          <Route path="shop/inventory-history" element={<ShopInventoryHistory />} />
           <Route path="search" element={<Search />} />
         </Route>
       </Routes>
