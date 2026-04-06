@@ -4,6 +4,7 @@ const User = require("../models/user.model");
 const Role = require("../models/role.model");
 const redisClient = require("../config/redis");
 const UserRepo = require("../repositories/user.repo");
+const ActivityLogRepo = require("../repositories/activityLog.repo");
 const { BadRequestError, NotFoundError } = require("../core/error.response");
 const { getIO } = require("../config/socket");
 const { SOCKET_EVENT, SOCKET_ROOM } = require("../constants/socket.constant");
@@ -199,6 +200,14 @@ class AdminService {
             .lean();
 
         return { user: updatedUser };
+    }
+
+    static async getActivityLogs(query = {}) {
+        return ActivityLogRepo.findPaginated({
+            page: query.page,
+            limit: query.limit,
+            method: query.method,
+        });
     }
 }
 

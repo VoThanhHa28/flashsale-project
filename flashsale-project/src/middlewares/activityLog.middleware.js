@@ -25,13 +25,14 @@ function sanitizeBody(body) {
  */
 function resolveAction(method) {
     if (method === "DELETE") return CONST.ACTIVITY_LOG.ACTION.DELETE;
+    if (method === "POST") return CONST.ACTIVITY_LOG.ACTION.CREATE;
     return CONST.ACTIVITY_LOG.ACTION.UPDATE; // PUT, PATCH
 }
 
 /**
  * activityLogMiddleware
  *
- * - Chỉ log các method: PUT, PATCH, DELETE.
+ * - Log các method: POST, PUT, PATCH, DELETE.
  * - Ghi log SAU KHI response gửi xong (res.on('finish')) → không block request.
  * - Dùng fire-and-forget (không await) → lỗi ghi log không crash app.
  */

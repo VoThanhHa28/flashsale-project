@@ -30,6 +30,19 @@ export function isMockMode() {
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
+/** Cùng một chuỗi localStorage → cùng một object; tránh JSON.parse mỗi render làm useEffect([user]) lặp vô hạn. */
+let userCacheRaw = null;
+let userCacheParsed = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === USER_KEY || e.key === null) {
+      userCacheRaw = null;
+      userCacheParsed = null;
+    }
+  });
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -42,20 +55,35 @@ export function setToken(token) {
 export function getUser() {
   try {
     const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (raw === userCacheRaw) return userCacheParsed;
+    userCacheRaw = raw;
+    userCacheParsed = raw ? JSON.parse(raw) : null;
+    return userCacheParsed;
   } catch {
+    userCacheRaw = null;
+    userCacheParsed = null;
     return null;
   }
 }
 
 export function setUser(user) {
-  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
-  else localStorage.removeItem(USER_KEY);
+  if (user) {
+    const s = JSON.stringify(user);
+    localStorage.setItem(USER_KEY, s);
+    userCacheRaw = s;
+    userCacheParsed = user;
+  } else {
+    localStorage.removeItem(USER_KEY);
+    userCacheRaw = null;
+    userCacheParsed = null;
+  }
 }
 
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  userCacheRaw = null;
+  userCacheParsed = null;
 }
 
 /**
@@ -821,6 +849,44 @@ export async function banUser(userId) {
     return { success: true, message: res.message || 'Khóa tài khoản thành công', user: data?.user ?? null };
   } catch (err) {
     return { success: false, message: err.message || 'Không thể khóa tài khoản' };
+  }
+}
+
+// =====================================================================
+// ============ ACTIVITY LOGS (SHOP_ADMIN) ==============================
+// =====================================================================
+
+/**
+ * GET /v1/api/admin/logs – Nhật ký POST/PUT/PATCH/DELETE (phân trang).
+ * Query: page, limit, method (optional: POST | PUT | PATCH | DELETE)
+ */
+export async function getActivityLogs({ page = 1, limit = 20, method } = {}) {
+  try {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    if (method) params.set('method', method);
+    const res = await request(`/v1/api/admin/logs?${params.toString()}`);
+    const data = getPayload(res);
+    const pg = data?.pagination;
+    return {
+      success: true,
+      message: res.message || '',
+      logs: Array.isArray(data?.logs) ? data.logs : [],
+      pagination: {
+        page: pg?.page ?? page,
+        pageSize: pg?.pageSize ?? limit,
+        total: pg?.total ?? 0,
+        totalPages: pg?.totalPages ?? 0,
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.message || 'Không thể tải nhật ký',
+      logs: [],
+      pagination: { page, pageSize: limit, total: 0, totalPages: 0 },
+    };
   }
 }
 

@@ -16,6 +16,7 @@ import {
   FiMapPin,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './Profile.module.css';
 
 /**
@@ -166,7 +167,8 @@ function Profile() {
 
   const displayName = fields.name || user.email || 'Người dùng';
   const userInitial = displayName.trim().charAt(0).toUpperCase();
-  const isAdmin = user.role === 'SHOP_ADMIN' || user.usr_role === 'SHOP_ADMIN';
+  const rc = getUserRoleCode(user);
+  const isAdmin = rc === 'SHOP_ADMIN' || rc === 'OWNER' || rc === 'ADMIN';
   const genderLabel = GENDER_OPTIONS.find((g) => g.value === fields.gender)?.label || '—';
   /** Khi đang sửa: hiển thị draft để preview avatar/tên */
   const displayAvatar = editing ? draft.avatar : fields.avatar;

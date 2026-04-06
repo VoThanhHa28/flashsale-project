@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiCheckCircle, FiClock, FiSearch, FiTruck, FiXCircle } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './ShopOrders.module.css';
 
 const PAGE_SIZE = 10;
@@ -51,7 +52,7 @@ function StatusBadge({ status }) {
 function ShopOrders() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const isShopAdmin = user?.usr_role === 'SHOP_ADMIN' || user?.role === 'SHOP_ADMIN';
+  const isShopAdmin = getUserRoleCode(user) === 'SHOP_ADMIN';
 
   const [orders, setOrders] = useState([]);
   const [pagination, setPagination] = useState(null);
