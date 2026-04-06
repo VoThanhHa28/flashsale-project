@@ -5,7 +5,7 @@ const { BadRequestError } = require("../core/error.response");
 const { OK } = require("../core/success.response");
 const CONST = require("../constants");
 const Product = require("../models/product.model");
-const { v4: uuidv4 } = require("uuid");
+const { randomUUID } = require("crypto");
 
 class OrderController {
     static placeOrder = asyncHandler(async (req, res) => {
@@ -24,8 +24,10 @@ class OrderController {
         }
         const price = product.productPrice;
 
-        // 4️⃣ GENERATE CLIENT_ORDER_ID (Idempotency Key)
-        const clientOrderId = uuidv4();
+        // 4️⃣ GENERATE OR USE CLIENT_ORDER_ID (Idempotency Key)
+        // If client provides one, use it (for idempotency testing)
+        // Otherwise generate new one
+        const clientOrderId = req.body.client_order_id || randomUUID();
         console.log(`[OrderController] 📦 New order attempt: ${clientOrderId}`);
 
         // 5️⃣ RESERVE PRODUCT SLOT (Redis Lua Script + Reservation record)
