@@ -329,7 +329,12 @@ class FlashSaleCampaignService {
         const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
         const skip = (pageNum - 1) * limitNum;
 
-        const filter = includeDeleted ? {} : { is_deleted: false };
+        const includeDel =
+            includeDeleted === true ||
+            includeDeleted === "true" ||
+            includeDeleted === 1 ||
+            includeDeleted === "1";
+        const filter = includeDel ? {} : { is_deleted: false };
         const [items, total] = await Promise.all([
             FlashSaleCampaign.find(filter)
                 .sort({ createdAt: -1 })
