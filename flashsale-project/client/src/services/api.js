@@ -296,6 +296,91 @@ export async function getProductById(id) {
   }
 }
 
+// =====================================================================
+// ============ CATEGORIES (public list + SHOP_ADMIN CRUD) =============
+// =====================================================================
+
+/**
+ * GET /v1/api/categories — danh mục đang hoạt động (không cần token).
+ */
+export async function getCategories() {
+  if (!isApiConfigured()) {
+    return { success: true, categories: [], message: '' };
+  }
+  try {
+    const res = await request('/v1/api/categories');
+    const data = getPayload(res);
+    const categories = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.categories)
+        ? data.categories
+        : [];
+    return { success: true, categories, message: res.message || '' };
+  } catch (err) {
+    return {
+      success: false,
+      categories: [],
+      message: err.message || 'Không tải được danh mục',
+    };
+  }
+}
+
+/** POST /v1/api/categories — Shop Admin */
+export async function createCategory(body) {
+  try {
+    const res = await request('/v1/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    const data = getPayload(res);
+    const category = data?.category ?? data;
+    return {
+      success: true,
+      message: res.message || 'Đã tạo danh mục',
+      category: category || null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không tạo được danh mục', category: null };
+  }
+}
+
+/** PUT /v1/api/categories/:id — Shop Admin */
+export async function updateCategory(id, body) {
+  try {
+    const res = await request(`/v1/api/categories/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    const data = getPayload(res);
+    const category = data?.category ?? data;
+    return {
+      success: true,
+      message: res.message || 'Đã cập nhật danh mục',
+      category: category || null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không cập nhật được danh mục', category: null };
+  }
+}
+
+/** DELETE /v1/api/categories/:id — Shop Admin (soft delete) */
+export async function deleteCategory(id) {
+  try {
+    const res = await request(`/v1/api/categories/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    const data = getPayload(res);
+    const category = data?.category ?? data;
+    return {
+      success: true,
+      message: res.message || 'Đã xóa danh mục',
+      category: category || null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không xóa được danh mục', category: null };
+  }
+}
+
 /** POST login; token lấy từ payload.accessToken. */
 export async function login(email, password) {
   const res = await request('/v1/api/auth/login', {

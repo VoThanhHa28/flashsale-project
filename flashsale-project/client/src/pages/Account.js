@@ -16,6 +16,7 @@ import {
   FiActivity,
   FiClipboard,
   FiFileText,
+  FiLayers,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import { getUserRoleCode } from '../utils/userRole';
@@ -108,6 +109,13 @@ function Account() {
             icon: <FiPackage size={24} />,
             title: 'Sản phẩm',
             desc: 'Quản lý & Flash Sale',
+            color: 'purple',
+          },
+          {
+            to: '/shop/categories',
+            icon: <FiLayers size={24} />,
+            title: 'Danh mục',
+            desc: 'Quản lý danh mục sản phẩm',
             color: 'purple',
           },
           {

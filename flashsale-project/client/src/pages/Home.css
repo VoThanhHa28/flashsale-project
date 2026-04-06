@@ -141,6 +141,59 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* ── Thanh lọc danh mục (Trang chủ) ── */
+.home-category-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-5);
+  flex-wrap: wrap;
+}
+
+.home-category-bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+
+.home-category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.home-category-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-gray-300);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.home-category-chip:hover {
+  border-color: rgba(238, 77, 45, 0.45);
+  color: var(--color-primary);
+}
+
+.home-category-chip--active {
+  border-color: var(--color-primary);
+  background: rgba(238, 77, 45, 0.08);
+  color: var(--color-primary);
+}
+
 /* Stagger fade-in animation cho product cards */
 @keyframes cardEnter {
   from {
