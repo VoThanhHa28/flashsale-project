@@ -5,61 +5,55 @@
 
 require("dotenv").config();
 const mongoose = require("mongoose");
-const Product = require("../models/product.model");
+const FlashSaleCampaign = require("../models/flashSaleCampaign.model");
 const connectDB = require("../config/db");
 const redisClient = require("../config/redis");
+const CONST = require("../constants");
 
 async function extendFlashSale() {
     try {
-        console.log("⏰ Bắt đầu extend flash sale time...\n");
+        console.log("⏰ Bắt đầu extend thời gian chiến dịch Flash Sale...\n");
 
-        // Kết nối database
         await connectDB();
         console.log("✅ Đã kết nối MongoDB");
 
-        // Redis đã kết nối tự động qua module
         console.log("✅ Redis sẵn sàng");
 
-        // Lấy tất cả products
-        const products = await Product.find({});
-        console.log(`\n📦 Tìm thấy ${products.length} products`);
+        const campaigns = await FlashSaleCampaign.find({ is_deleted: false });
+        console.log(`\n📦 Tìm thấy ${campaigns.length} chiến dịch`);
 
-        if (products.length === 0) {
-            console.log("⚠️  Không có products nào!");
+        if (campaigns.length === 0) {
+            console.log("⚠️  Không có chiến dịch nào!");
             console.log("💡 Chạy: npm run seed:products");
             return;
         }
 
-        // Extend time: Start = now, End = now + 24 hours
         const now = new Date();
         const startTime = now;
-        const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 hours
+        const endTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
         console.log(`\n⏰ Thời gian mới:`);
         console.log(`   Start: ${startTime.toISOString()}`);
         console.log(`   End: ${endTime.toISOString()}`);
         console.log("");
 
-        // Update tất cả products
         let updated = 0;
-        for (const product of products) {
-            await Product.findByIdAndUpdate(product._id, {
-                productStartTime: startTime,
-                productEndTime: endTime,
-            });
-
-            // Clear Redis cache cho product này
-            const keyInfo = `product:${product._id}:info`;
-            await redisClient.del(keyInfo);
-
+        for (const c of campaigns) {
+            c.startTime = startTime;
+            c.endTime = endTime;
+            c.status = "running";
+            await c.save();
+            for (const pid of c.productIds) {
+                await redisClient.del(CONST.REDIS.PRODUCT_INFO(String(pid)));
+            }
             updated++;
-            console.log(`✅ [${updated}/${products.length}] Updated: ${product.productName}`);
+            console.log(`✅ [${updated}/${campaigns.length}] ${c.campaignName}`);
         }
 
         console.log("\n🎉 HOÀN THÀNH!");
-        console.log(`✅ Đã extend flash sale cho ${updated} products`);
-        console.log(`⏰ Flash sale sẽ kéo dài đến: ${endTime.toLocaleString("vi-VN")}`);
-        console.log("\n💡 Giờ có thể tạo order mới!");
+        console.log(`✅ Đã cập nhật ${updated} chiến dịch`);
+        console.log(`⏰ Kết thúc dự kiến: ${endTime.toLocaleString("vi-VN")}`);
+        console.log("\n💡 Giờ có thể tạo order mới (sản phẩm trong chiến dịch)!");
     } catch (error) {
         console.log("\n❌ Lỗi:", error.message);
     } finally {

@@ -9,7 +9,6 @@ const ALLOWED_SORT_FIELDS = [
   'productQuantity',
   'createdAt',
   'updatedAt',
-  'productStartTime',
 ];
 
 const ALLOWED_SORT_ORDERS = ['asc', 'desc'];
@@ -38,18 +37,6 @@ const createProduct = {
     productDescription: Joi.string().trim().max(2000).required(),
     productPrice: Joi.number().min(0).required(),
     productQuantity: Joi.number().integer().min(0).required(),
-    startTime: Joi.date().iso().required()
-      .messages({
-        'date.base': 'Thời gian bắt đầu phải là định dạng ngày hợp lệ',
-        'any.required': 'Thời gian bắt đầu là bắt buộc'
-      }),
-    endTime: Joi.date().iso().required()
-      .greater(Joi.ref('startTime'))
-      .messages({
-        'date.base': 'Thời gian kết thúc phải là định dạng ngày hợp lệ',
-        'any.required': 'Thời gian kết thúc là bắt buộc',
-        'date.greater': 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu'
-      }),
     isPublished: Joi.boolean().default(true),
   }),
 };
@@ -64,20 +51,7 @@ const updateProduct = {
     productDescription: Joi.string().trim().max(2000),
     productPrice: Joi.number().min(0),
     productQuantity: Joi.number().integer().min(0),
-    startTime: Joi.date().iso(),
-    endTime: Joi.date().iso(),
     isPublished: Joi.boolean(),
-  }).custom((value, helpers) => {
-    if (value.startTime && value.endTime) {
-      const start = new Date(value.startTime);
-      const end = new Date(value.endTime);
-      if (start >= end) {
-        return helpers.error('custom.startTimeMustBeLessThanEndTime');
-      }
-    }
-    return value;
-  }).messages({
-    'custom.startTimeMustBeLessThanEndTime': 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu'
   }),
 };
 

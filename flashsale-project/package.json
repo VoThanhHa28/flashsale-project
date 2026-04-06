@@ -19,6 +19,7 @@
         "test:k6": "k6 run src/tests/k6/order.load.test.js",
         "test:k6-auth": "k6 run src/tests/k6/order.load.test.auth.js",
         "test:k6-simple": "k6 run src/tests/k6/simple.test.js",
+        "test": "node src/tests/validate-logic.test.js",
         "dev": "nodemon ./bin/www",
         "dev-worker": "nodemon src/workers/order.worker.js"
     },

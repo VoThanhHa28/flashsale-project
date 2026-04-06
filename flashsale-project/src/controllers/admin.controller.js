@@ -1,6 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
-const { SuccessResponse, OK } = require("../core/success.response");
+const { SuccessResponse, OK, CREATED } = require("../core/success.response");
 const CONST = require("../constants");
 
 class AdminController {
@@ -69,6 +69,46 @@ class AdminController {
         const result = await AdminService.assignRoleToUser(req.params.id, req.body.roleId);
         return new OK({
             message: CONST.ADMIN.MESSAGE.ASSIGN_ROLE_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    listFlashSaleCampaigns = asyncHandler(async (req, res) => {
+        const result = await AdminService.listFlashSaleCampaigns(req.query);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.LIST_CAMPAIGNS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    getFlashSaleCampaign = asyncHandler(async (req, res) => {
+        const campaign = await AdminService.getFlashSaleCampaign(req.params.id);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_CAMPAIGN_SUCCESS,
+            data: { campaign },
+        }).send(res);
+    });
+
+    createFlashSaleCampaign = asyncHandler(async (req, res) => {
+        const campaign = await AdminService.createFlashSaleCampaign(req.body);
+        return new CREATED({
+            message: CONST.ADMIN.MESSAGE.CREATE_CAMPAIGN_SUCCESS,
+            data: { campaign },
+        }).send(res);
+    });
+
+    updateFlashSaleCampaign = asyncHandler(async (req, res) => {
+        const campaign = await AdminService.updateFlashSaleCampaign(req.params.id, req.body);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.UPDATE_CAMPAIGN_SUCCESS,
+            data: { campaign },
+        }).send(res);
+    });
+
+    deleteFlashSaleCampaign = asyncHandler(async (req, res) => {
+        const result = await AdminService.deleteFlashSaleCampaign(req.params.id);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.DELETE_CAMPAIGN_SUCCESS,
             data: result,
         }).send(res);
     });
