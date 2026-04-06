@@ -20,6 +20,22 @@ const createPayment = {
     }),
 };
 
+/** PATCH /v1/api/admin/payments/:orderId/status — SHOP_ADMIN */
+const patchAdminPaymentStatus = {
+    params: Joi.object({
+        orderId: Joi.string().hex().length(24).required(),
+    }),
+    body: Joi.object({
+        status: Joi.string()
+            .valid(...STATUSES)
+            .required()
+            .messages({
+                "any.only": `status phải là một trong: ${STATUSES.join(", ")}`,
+            }),
+    }),
+};
+
 module.exports = {
     createPayment,
+    patchAdminPaymentStatus,
 };

@@ -5,6 +5,7 @@ const validate = require("../middlewares/validate.middleware");
 const { verifyToken } = require("../middlewares/auth");
 const { requireShopAdmin } = require("../middlewares/rbac");
 const adminValidation = require("../validation/admin.validation");
+const paymentValidation = require("../validation/payment.validation");
 // const { verifyToken } = require('../middlewares/auth');
 // const { checkRole } = require('../middlewares/role');
 
@@ -54,5 +55,14 @@ router.patch("/users/:id/role", validate(adminValidation.assignRoleToUser), admi
  * GET /admin/health - Health check Mongo + Redis
  */
 router.get("/health", adminController.health);
+
+/**
+ * PATCH /admin/payments/:orderId/status - Cập nhật trạng thái thanh toán
+ */
+router.patch(
+    "/payments/:orderId/status",
+    validate(paymentValidation.patchAdminPaymentStatus),
+    adminController.updatePaymentStatus,
+);
 
 module.exports = router;

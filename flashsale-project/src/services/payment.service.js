@@ -43,6 +43,19 @@ class PaymentService {
 
         return { payment: created.toObject(), updated: false };
     }
+
+    /**
+     * Admin: cập nhật trạng thái thanh toán theo orderId (không kiểm tra chủ đơn).
+     */
+    static async updatePaymentStatusByOrderIdForAdmin(orderId, status) {
+        const payment = await PaymentModel.findOne({ orderId });
+        if (!payment) {
+            throw new NotFoundError(CONST.ADMIN.MESSAGE.PAYMENT_NOT_FOUND);
+        }
+        payment.status = status;
+        await payment.save();
+        return { payment: payment.toObject() };
+    }
 }
 
 module.exports = PaymentService;

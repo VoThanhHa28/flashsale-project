@@ -7,5 +7,7 @@ module.exports = {
         HEALTH_SUCCESS: 'Health check thành công',
         USER_NOT_FOUND: 'Không tìm thấy user',
         ROLE_NOT_FOUND: 'Không tìm thấy role',
+        PAYMENT_NOT_FOUND: 'Không tìm thấy thanh toán cho đơn này',
+        PAYMENT_STATUS_UPDATED: 'Cập nhật trạng thái thanh toán thành công',
     },
 };
