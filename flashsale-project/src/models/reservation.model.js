@@ -86,7 +86,6 @@ const reservationSchema = new mongoose.Schema(
         expire_at: {
             type: Date,
             default: () => new Date(Date.now() + 30 * 60 * 1000),
-            index: true,
         },
 
         /**
