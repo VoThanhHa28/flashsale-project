@@ -5,6 +5,7 @@ import {
   FiCheck, FiAlertCircle, FiChevronLeft, FiChevronRight,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './AdminUsers.module.css';
 
 function formatDate(iso) {
@@ -26,7 +27,7 @@ const PAGE_SIZE = 10;
 function AdminUsers() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const isSuperAdmin = !!user?.is_super_admin;
+  const isShopAdmin = getUserRoleCode(user) === 'SHOP_ADMIN';
 
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
@@ -77,13 +78,13 @@ function AdminUsers() {
   };
 
   if (!user) return null;
-  if (!isSuperAdmin) {
+  if (!isShopAdmin) {
     return (
       <div className={styles.page}>
         <div className={styles.container}>
           <div className={styles.blocked}>
             <h1>Không có quyền truy cập</h1>
-            <p>Trang này chỉ dành cho Admin.</p>
+            <p>Trang này chỉ dành cho Shop Admin.</p>
             <Link to="/account" className={styles.backLink}>Về trang tài khoản</Link>
           </div>
         </div>
@@ -153,7 +154,8 @@ function AdminUsers() {
                     const isSelf = String(uid) === String(currentUserId);
                     const isInactive = u.status === 'inactive';
                     const initial = (u.name || u.email || '?').charAt(0).toUpperCase();
-                    const roleLabel = ROLE_LABELS[u.usr_role] || u.usr_role || 'USER';
+                    const roleCode = getUserRoleCode(u);
+                    const roleLabel = ROLE_LABELS[roleCode] || roleCode || 'USER';
 
                     return (
                       <tr key={uid} className={isInactive ? styles.rowInactive : ''}>
@@ -171,7 +173,7 @@ function AdminUsers() {
                           </div>
                         </td>
                         <td>
-                          <span className={`${styles.roleBadge} ${u.usr_role === 'SHOP_ADMIN' ? styles.roleAdmin : ''}`}>
+                          <span className={`${styles.roleBadge} ${roleCode === 'SHOP_ADMIN' ? styles.roleAdmin : ''}`}>
                             {roleLabel}
                           </span>
                         </td>

@@ -6,8 +6,6 @@ const { verifyToken } = require("../middlewares/auth");
 const { requireShopAdmin } = require("../middlewares/rbac");
 const adminValidation = require("../validation/admin.validation");
 const paymentValidation = require("../validation/payment.validation");
-// const { verifyToken } = require('../middlewares/auth');
-// const { checkRole } = require('../middlewares/role');
 
 /**
  * Admin Routes - Quản lý Flash Sale
@@ -55,6 +53,11 @@ router.patch("/users/:id/role", validate(adminValidation.assignRoleToUser), admi
  * GET /admin/health - Health check Mongo + Redis
  */
 router.get("/health", adminController.health);
+
+/**
+ * GET /admin/logs - Nhật ký thao tác POST/PUT/PATCH/DELETE (SHOP_ADMIN)
+ */
+router.get("/logs", validate(adminValidation.getActivityLogs), adminController.getActivityLogs);
 
 /**
  * PATCH /admin/payments/:orderId/status - Cập nhật trạng thái thanh toán

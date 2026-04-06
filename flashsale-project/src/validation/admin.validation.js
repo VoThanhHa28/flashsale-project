@@ -25,8 +25,17 @@ const assignRoleToUser = {
     }),
 };
 
+const getActivityLogs = {
+    query: Joi.object({
+        page: Joi.number().integer().min(1).default(1),
+        limit: Joi.number().integer().min(1).max(100).default(20),
+        method: Joi.string().valid("POST", "PUT", "PATCH", "DELETE").optional(),
+    }),
+};
+
 module.exports = {
     getUsers,
     banUser,
     assignRoleToUser,
+    getActivityLogs,
 };

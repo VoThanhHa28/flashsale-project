@@ -1,6 +1,6 @@
 /**
  * Tạo / nâng cấp user SHOP_ADMIN cho môi trường dev (không production).
- * Chạy: node src/scripts/seedShopAdmin.js
+ * Chạy: node src/scripts/seedShopAdmin.js hoặc npm run seed:shop-admin
  */
 
 require("dotenv").config();

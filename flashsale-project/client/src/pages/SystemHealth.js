@@ -6,6 +6,7 @@ import {
   FiZap, FiGlobe, FiCpu,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './SystemHealth.module.css';
 
 const AUTO_REFRESH_MS = 30_000;
@@ -35,7 +36,7 @@ function responseTimeColor(ms) {
 function SystemHealth() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const isSuperAdmin = !!user?.is_super_admin;
+  const isShopAdmin = getUserRoleCode(user) === 'SHOP_ADMIN';
 
   const [health, setHealth] = useState({ mongo: 'unknown', redis: 'unknown', checkedAt: null, responseTime: 0 });
   const [loading, setLoading] = useState(true);
@@ -88,13 +89,13 @@ function SystemHealth() {
   }, [check]);
 
   if (!user) return null;
-  if (!isSuperAdmin) {
+  if (!isShopAdmin) {
     return (
       <div className={styles.page}>
         <div className={styles.container}>
           <div className={styles.blocked}>
             <h1>Không có quyền truy cập</h1>
-            <p>Trang này chỉ dành cho Admin.</p>
+            <p>Trang này chỉ dành cho Shop Admin.</p>
             <Link to="/account" className={styles.backLink}>Về trang tài khoản</Link>
           </div>
         </div>

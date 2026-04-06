@@ -20,7 +20,7 @@ const activityLogMiddleware = require("../middlewares/activityLog.middleware");
 require("../models/cart.model");
 require("../models/reservationLog.model");
 
-// Ghi log tự động mọi request PUT / PATCH / DELETE vào collection activity_logs
+// Ghi log tự động mọi request POST / PUT / PATCH / DELETE vào collection activity_logs
 router.use(activityLogMiddleware);
 
 // 1. Route kiểm tra Server sống hay chết (Health Check)

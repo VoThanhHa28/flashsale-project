@@ -74,7 +74,14 @@ class AdminController {
         }).send(res);
     });
 
-    /** PATCH /admin/payments/:orderId/status */
+    getActivityLogs = asyncHandler(async (req, res) => {
+        const result = await AdminService.getActivityLogs(req.query);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_LOGS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
     updatePaymentStatus = asyncHandler(async (req, res) => {
         const result = await PaymentService.updatePaymentStatusByOrderIdForAdmin(
             req.params.orderId,

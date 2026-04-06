@@ -1,9 +1,10 @@
 module.exports = {
-    LOG_METHODS: ['PUT', 'PATCH', 'DELETE'],
+    LOG_METHODS: ["POST", "PUT", "PATCH", "DELETE"],
 
     ACTION: {
-        UPDATE: 'update',
-        DELETE: 'delete',
+        CREATE: "create",
+        UPDATE: "update",
+        DELETE: "delete",
     },
 
     MESSAGE: {

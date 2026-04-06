@@ -15,8 +15,11 @@ import {
   FiBarChart2,
   FiActivity,
   FiClipboard,
+  FiFileText,
+  FiLayers,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import './Account.css';
 
 /**
@@ -60,12 +63,7 @@ function Account() {
 
   const displayName = user.name || user.email || 'Người dùng';
   const userInitial = displayName.trim().charAt(0).toUpperCase();
-  const userRole = user.usr_role || user.role || '';
-  const isAdmin =
-    userRole === 'SHOP_ADMIN' ||
-    userRole === 'OWNER' ||
-    userRole === 'ADMIN';
-  const isSuperAdmin = !!user.is_super_admin;
+  const isShopAdmin = getUserRoleCode(user) === 'SHOP_ADMIN';
 
   /** Nhóm menu: Quick Actions */
   const quickItems = [
@@ -97,7 +95,7 @@ function Account() {
       desc: 'Sản phẩm đã lưu',
       color: 'pink',
     },
-    ...(isAdmin
+    ...(isShopAdmin
       ? [
           {
             to: '/shop/orders',
@@ -114,16 +112,26 @@ function Account() {
             color: 'purple',
           },
           {
+            to: '/shop/categories',
+            icon: <FiLayers size={24} />,
+            title: 'Danh mục',
+            desc: 'Quản lý danh mục sản phẩm',
+            color: 'purple',
+          },
+          {
             to: '/shop/report',
             icon: <FiBarChart2 size={24} />,
             title: 'Báo cáo',
             desc: 'Biểu đồ doanh thu',
             color: 'purple',
           },
-        ]
-      : []),
-    ...(isSuperAdmin
-      ? [
+          {
+            to: '/shop/logs',
+            icon: <FiFileText size={24} />,
+            title: 'Nhật ký hoạt động',
+            desc: 'Ai vừa làm gì, lúc mấy giờ',
+            color: 'purple',
+          },
           {
             to: '/shop/users',
             icon: <FiUsers size={24} />,
@@ -186,8 +194,8 @@ function Account() {
             {user.email && user.name && (
               <p className="acc-email">{user.email}</p>
             )}
-            <span className={`acc-role ${isAdmin ? 'acc-role--admin' : ''}`}>
-              {isAdmin ? '👑 Shop Admin' : '🛍️ Khách hàng'}
+            <span className={`acc-role ${isShopAdmin ? 'acc-role--admin' : ''}`}>
+              {isShopAdmin ? '👑 Shop Admin' : '🛍️ Khách hàng'}
             </span>
           </div>
 

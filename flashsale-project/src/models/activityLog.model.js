@@ -4,9 +4,8 @@ const mongoose = require("mongoose");
 const { ACTIVITY_LOG } = require("../constants");
 
 /**
- * ActivityLog – tự động ghi mỗi khi có request PUT / PATCH / DELETE.
- * Không cần UI, chỉ để "khoe" logic hệ thống với hội đồng.
- * Middleware activityLog.middleware.js sẽ ghi vào collection này sau khi response gửi xong.
+ * ActivityLog – tự động ghi mỗi khi có request POST / PUT / PATCH / DELETE.
+ * Middleware activityLog.middleware.js ghi vào collection này sau khi response gửi xong.
  */
 const activityLogSchema = new mongoose.Schema(
     {

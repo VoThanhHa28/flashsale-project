@@ -12,6 +12,7 @@
         "seed:shop-admin": "node src/scripts/seedShopAdmin.js",
         "fix:inventory-indexes": "node src/scripts/fixInventoryIndexes.js",
         "seed:users:clean": "node src/scripts/seedUsers.js clean",
+        "seed:admin": "node src/scripts/seedShopAdmin.js",
         "get:products": "node src/scripts/getProducts.js",
         "extend:flashsale": "node src/scripts/extendFlashSale.js",
         "test:login": "node src/scripts/testLogin.js",
