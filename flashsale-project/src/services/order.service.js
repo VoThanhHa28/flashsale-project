@@ -24,7 +24,7 @@ class OrderService {
         ]);
     }
 
-    /** Đồng bộ MongoDB inventories.quantityOnHand từ Redis (sau đặt/hủy đơn). */
+    /** Đồng bộ MongoDB inventories.stock từ Redis (sau đặt/hủy đơn). */
     static async _syncInventoryFromRedis(productId) {
         try {
             const pid = String(productId);
@@ -48,7 +48,7 @@ class OrderService {
                 if (!product || !product.isPublished) return;
 
                 const inv = await InventoryRepo.findByProductId(pid);
-                const qty = inv != null ? inv.quantityOnHand : product.productQuantity;
+                const qty = inv != null ? inv.stock : product.productQuantity;
 
                 await Promise.all([
                     redisClient.set(CONST.REDIS.PRODUCT_STOCK(pid), String(qty), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
@@ -71,12 +71,12 @@ class OrderService {
 
             const ids = products.map((p) => p._id.toString());
             const invs = await InventoryRepo.findByProductIds(ids);
-            const invMap = new Map(invs.map((i) => [i.productId.toString(), i]));
+            const invMap = new Map(invs.map((i) => [i.product_id.toString(), i]));
 
             const commands = [];
             for (const p of products) {
                 const inv = invMap.get(p._id.toString());
-                const qty = inv != null ? inv.quantityOnHand : p.productQuantity;
+                const qty = inv != null ? inv.stock : p.productQuantity;
                 commands.push(
                     redisClient.set(CONST.REDIS.PRODUCT_STOCK(p._id), String(qty), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
                 );

@@ -162,6 +162,52 @@ class SeedService {
 
         return users.map((u) => u._id.toString());
     }
+
+    /**
+     * Tạo hoặc nâng cấp user dev có role SHOP_ADMIN (Postman / QA).
+     * Chặn khi NODE_ENV=production.
+     * Mật khẩu mặc định thỏa rule đăng ký: hoa, thường, số, ký tự đặc biệt.
+     */
+    static async seedShopAdminDev() {
+        if (process.env.NODE_ENV === "production") {
+            throw new BadRequestError("seed shop-admin không được bật trong production.");
+        }
+
+        const adminRoleId = await this.getRoleIdByCode(CONST.AUTH.USR_ROLE.SHOP_ADMIN);
+        const email = (process.env.SEED_SHOP_ADMIN_EMAIL || "shopadmin@flashsale.local").toLowerCase().trim();
+        const password = process.env.SEED_SHOP_ADMIN_PASSWORD || "DevShop1!";
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        const existing = await User.findOne({ email, is_deleted: false });
+        if (existing) {
+            await User.updateOne(
+                { _id: existing._id },
+                { $set: { usr_role: adminRoleId, password: passwordHash } },
+            );
+            return {
+                email,
+                password,
+                role: CONST.AUTH.USR_ROLE.SHOP_ADMIN,
+                updated: true,
+                hint: "Đăng nhập POST /v1/api/auth/login rồi dùng accessToken cho các API SHOP_ADMIN.",
+            };
+        }
+
+        await User.create({
+            email,
+            password: passwordHash,
+            name: "Shop Admin (dev seed)",
+            usr_role: adminRoleId,
+        });
+
+        return {
+            email,
+            password,
+            role: CONST.AUTH.USR_ROLE.SHOP_ADMIN,
+            updated: false,
+            hint: "Đăng nhập POST /v1/api/auth/login rồi dùng accessToken cho các API SHOP_ADMIN.",
+        };
+    }
 }
 
 module.exports = SeedService;
