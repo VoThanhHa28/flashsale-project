@@ -308,6 +308,42 @@
   }
 }
 
+.layout-cart-wrap {
+  display: inline-flex;
+}
+
+.layout-cart-trigger {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.layout-cart-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.layout-cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse, #fff);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 /* Đăng ký button - nổi bật hơn link thường */
 .layout-link--register {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
