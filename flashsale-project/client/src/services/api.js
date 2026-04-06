@@ -429,6 +429,43 @@ export async function createOrder(productId, quantity, price) {
   return { message: res.message || payload?.message, metadata: payload, response: res };
 }
 
+/** GET /v1/api/cart – cần đăng nhập */
+export async function getCart() {
+  if (!isApiConfigured()) return null;
+  const res = await request('/v1/api/cart');
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** POST /v1/api/cart/items */
+export async function addCartItem(productId, quantity) {
+  const res = await request('/v1/api/cart/items', {
+    method: 'POST',
+    body: JSON.stringify({ productId: String(productId), quantity }),
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** PATCH /v1/api/cart/items/:productId */
+export async function updateCartItem(productId, quantity) {
+  const res = await request(`/v1/api/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ quantity }),
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** DELETE /v1/api/cart/items/:productId */
+export async function removeCartItem(productId) {
+  const res = await request(`/v1/api/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'DELETE',
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
 /**
  * GET /v1/api/order/me
  *

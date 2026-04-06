@@ -5,6 +5,8 @@ import { FiSearch, FiShoppingCart } from 'react-icons/fi';
 import * as api from '../services/api';
 import TopPromoStrip from './TopPromoStrip';
 import Footer from './Footer';
+import CartDrawer from './CartDrawer';
+import { useCart } from '../contexts/CartContext';
 import './Layout.css';
 
 /** Cấu hình animation cho page transitions */
@@ -26,6 +28,7 @@ function formatPrice(price) {
 function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { itemCount, setDrawerOpen } = useCart();
   const user = api.getUser();
   const token = api.getToken();
   const isLoggedIn = Boolean(token || user);
@@ -237,11 +240,22 @@ function Layout() {
         <nav className="layout-nav">
           {isLoggedIn ? (
             <>
-              {/* Cart link */}
-              <Link to="/cart" className="layout-link layout-cart-link" aria-label="Giỏ hàng">
-                <FiShoppingCart size={20} />
-                <span className="layout-cart-label">Giỏ hàng</span>
-              </Link>
+              <div className="layout-cart-wrap">
+                <button
+                  type="button"
+                  className="layout-link layout-cart-link layout-cart-trigger"
+                  aria-label="Mở giỏ hàng"
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  <span className="layout-cart-icon-wrap">
+                    <FiShoppingCart size={20} />
+                    {itemCount > 0 && (
+                      <span className="layout-cart-badge">{itemCount > 99 ? '99+' : itemCount}</span>
+                    )}
+                  </span>
+                  <span className="layout-cart-label">Giỏ hàng</span>
+                </button>
+              </div>
 
               {/* User chip */}
               <button
@@ -288,6 +302,8 @@ function Layout() {
       </main>
 
       <Footer />
+
+      <CartDrawer />
     </div>
   );
 }

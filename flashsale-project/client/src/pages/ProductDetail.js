@@ -8,6 +8,7 @@ import OrderResultModal from '../components/OrderResultModal';
 import { useOrderResult } from '../hooks/useOrderResult';
 import './ProductDetail.css';
 import { useSocket } from '../contexts/SocketContext';
+import { useCart } from '../contexts/CartContext';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN', {
@@ -40,6 +41,8 @@ function ProductDetail() {
     resetOrderResult,
   } = useOrderResult();
   const { productStockUpdates, socket, connectionStatus, systemError } = useSocket();
+  const { refreshCart, setDrawerOpen } = useCart();
+  const [addToCartLoading, setAddToCartLoading] = useState(false);
   const prevConnectionStatusRef = useRef(undefined);
   const successModalCloseRef = useRef(null);
   const errorModalCloseRef = useRef(null);
@@ -209,6 +212,32 @@ function ProductDetail() {
     }
   };
 
+  const handleAddToCart = async () => {
+    setOrderError('');
+    setOrderSuccess('');
+    const token = api.getToken();
+    if (!token) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (!api.isApiConfigured()) {
+      setOrderError('Chưa cấu hình API.');
+      return;
+    }
+    const qty = Math.max(1, Math.floor(Number(quantity)) || 1);
+    setAddToCartLoading(true);
+    try {
+      await api.addCartItem(product.product_id, qty);
+      await refreshCart();
+      setOrderSuccess('Đã thêm vào giỏ hàng.');
+      setDrawerOpen(true);
+    } catch (err) {
+      setOrderError(err.message || 'Không thể thêm vào giỏ hàng.');
+    } finally {
+      setAddToCartLoading(false);
+    }
+  };
+
   const handleQuantityChange = (e) => {
     const v = parseInt(e.target.value, 10);
     if (!Number.isNaN(v) && v >= 1) setQuantity(v);
@@ -240,7 +269,6 @@ function ProductDetail() {
     );
   }
 
-  const qty = Math.max(1, Math.floor(Number(quantity)) || 1);
   const maxQty = product.product_quantity != null ? Math.max(1, product.product_quantity) : 99;
 
   // Case 1: Mất kết nối → khóa nút Mua. Case 3: system-error → bảo trì
@@ -270,6 +298,17 @@ function ProductDetail() {
   } else if (flashSaleStatus?.status === 'ended') {
     buyButtonText = 'Đã kết thúc';
   }
+
+  const flashSaleActive = flashSaleStatus?.status === 'active';
+  const showAddToCart =
+    flashSaleStatus != null &&
+    !flashSaleActive &&
+    !isSoldOut &&
+    isConnected &&
+    !maintenanceMode &&
+    api.isApiConfigured() &&
+    !addToCartLoading &&
+    !orderSubmitting;
 
   return (
     <div className="product-detail">
@@ -357,16 +396,32 @@ function ProductDetail() {
                   {buyButtonText}
                 </p>
               )}
-              <button
-                type="button"
-                className={`product-detail-buy ${buyButtonDisabled ? 'product-detail-buy--disabled' : ''}`}
-                onClick={handleBuyNow}
-                disabled={buyButtonDisabled}
-                aria-label={buyButtonDisabled ? `${buyButtonText}. Nút tạm khóa.` : 'Mua ngay sản phẩm này'}
-              >
-                {orderSubmitting && <span className="product-detail-buy-spinner" aria-hidden="true" />}
-                {buyButtonText}
-              </button>
+              <div className="product-detail-cta-row">
+                {showAddToCart && (
+                  <button
+                    type="button"
+                    className="product-detail-add-cart"
+                    onClick={handleAddToCart}
+                    disabled={addToCartLoading}
+                    aria-label="Thêm sản phẩm vào giỏ hàng"
+                  >
+                    {addToCartLoading && (
+                      <span className="product-detail-buy-spinner product-detail-add-cart-spinner" aria-hidden="true" />
+                    )}
+                    {addToCartLoading ? 'Đang thêm…' : 'Thêm vào giỏ'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`product-detail-buy ${buyButtonDisabled ? 'product-detail-buy--disabled' : ''}`}
+                  onClick={handleBuyNow}
+                  disabled={buyButtonDisabled}
+                  aria-label={buyButtonDisabled ? `${buyButtonText}. Nút tạm khóa.` : 'Mua ngay sản phẩm này'}
+                >
+                  {orderSubmitting && <span className="product-detail-buy-spinner" aria-hidden="true" />}
+                  {buyButtonText}
+                </button>
+              </div>
               <Link to="/" className="product-detail-back">← Quay lại danh sách</Link>
             </div>
           </div>

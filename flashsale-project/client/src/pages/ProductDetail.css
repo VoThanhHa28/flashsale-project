@@ -471,6 +471,50 @@
   box-shadow: none;
 }
 
+.product-detail-cta-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .product-detail-cta-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+}
+
+.product-detail-add-cart {
+  padding: var(--spacing-4) var(--spacing-6);
+  min-height: var(--button-height-xl);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  flex: 1;
+  min-width: 160px;
+}
+
+.product-detail-add-cart:hover:not(:disabled) {
+  background: var(--color-primary-bg);
+}
+
+.product-detail-add-cart:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.product-detail-add-cart-spinner {
+  border-color: rgba(238, 77, 45, 0.25);
+  border-top-color: var(--color-primary);
+}
+
 /* CSS ring spinner trong button - thay thế emoji ⏳ */
 .product-detail-buy-spinner {
   display: inline-block;
