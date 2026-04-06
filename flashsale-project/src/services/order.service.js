@@ -419,11 +419,21 @@ class OrderService {
 
     // 7. ORDER HISTORY (không đụng Inventory)
     static async getMyOrders(userId, query = {}) {
-        const result = await OrderRepo.findByUserId(userId.toString(), {
-            page: query.page,
-            limit: query.limit,
+        const { page, limit, status, search, sort, dateFrom, dateTo } = query;
+
+        if (dateFrom && dateTo && String(dateFrom) > String(dateTo)) {
+            throw new BadRequestError("dateFrom must be before or equal to dateTo");
+        }
+
+        return OrderRepo.findByUserId(userId.toString(), {
+            page,
+            limit,
+            status,
+            search,
+            sort,
+            dateFrom: dateFrom || "",
+            dateTo: dateTo || "",
         });
-        return result;
     }
 
     static async getMyOrderById(userId, orderId) {
