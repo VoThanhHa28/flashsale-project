@@ -42,6 +42,7 @@
 .status_processing      .accentBar { background: var(--color-primary); }
 .status_shipping        .accentBar { background: #3b82f6; }
 .status_completed       .accentBar { background: var(--color-success); }
+.status_failed          .accentBar { background: var(--color-error); }
 .status_cancelled       .accentBar { background: var(--color-error); }
 .status_refunded        .accentBar { background: var(--color-gray-500); }
 
@@ -50,6 +51,7 @@
   flex: 1;
   padding: var(--spacing-5) var(--spacing-6);
   min-width: 0;
+  cursor: pointer;
 }
 
 /* ── Header ── */
@@ -149,6 +151,7 @@
 .badge_processing      { background: var(--color-primary-bg);  color: var(--color-primary); }
 .badge_shipping        { background: #eff6ff;                  color: #3b82f6; }
 .badge_completed       { background: var(--color-success-bg);  color: var(--color-success); }
+.badge_failed          { background: var(--color-error-bg);    color: var(--color-error); }
 .badge_cancelled       { background: var(--color-error-bg);    color: var(--color-error); }
 .badge_refunded        { background: var(--color-gray-100);    color: var(--color-gray-600); }
 

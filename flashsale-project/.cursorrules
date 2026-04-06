@@ -133,3 +133,10 @@ const getProducts = async (req, res) => {
 router.get('/products', productController.getProducts);
 router.post('/create-order', verifyToken, orderController.createOrder);
 ```
+
+---
+
+## Hướng dẫn cho Cursor Agent (Flash Sale)
+
+- **Mặc định chỉ sửa FE** trong repo này. **Không** thay đổi code backend (`src/` server Node) trừ khi người dùng **yêu cầu rõ ràng** sửa BE.
+- Khi FE cần API chưa có: **mô tả trong comment gần `api.js` hoặc trong chat** những gì BE nên bổ sung (method, path, shape JSON); không tự triển khai BE.
