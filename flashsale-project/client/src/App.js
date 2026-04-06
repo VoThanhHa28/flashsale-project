@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
-import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign, ShopInventoryHistory } from './routes/AppRoutes';
+import { Home, Login, Register, ProductDetail, Cart, Checkout, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign, ShopInventoryHistory } from './routes/AppRoutes';
 
 function App() {
   return (
@@ -14,6 +14,7 @@ function App() {
           <Route path="register" element={<Register />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="checkout" element={<Checkout />} />
           <Route path="account" element={<Account />} />
           <Route path="profile" element={<Profile />} />
           <Route path="change-password" element={<ChangePassword />} />
