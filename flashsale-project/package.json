@@ -10,6 +10,7 @@
         "seed:products": "node src/scripts/seedProducts.js",
         "seed:users": "node src/scripts/seedUsers.js",
         "seed:users:clean": "node src/scripts/seedUsers.js clean",
+        "seed:admin": "node src/scripts/seedShopAdmin.js",
         "get:products": "node src/scripts/getProducts.js",
         "extend:flashsale": "node src/scripts/extendFlashSale.js",
         "test:login": "node src/scripts/testLogin.js",

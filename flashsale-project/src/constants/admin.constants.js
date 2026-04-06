@@ -5,6 +5,7 @@ module.exports = {
         ASSIGN_ROLE_SUCCESS: 'Gán role cho user thành công',
         BAN_SUCCESS: 'Khóa tài khoản thành công',
         HEALTH_SUCCESS: 'Health check thành công',
+        GET_LOGS_SUCCESS: 'Lấy nhật ký hoạt động thành công',
         USER_NOT_FOUND: 'Không tìm thấy user',
         ROLE_NOT_FOUND: 'Không tìm thấy role',
         LIST_CAMPAIGNS_SUCCESS: 'Lấy danh sách chiến dịch Flash Sale thành công',
