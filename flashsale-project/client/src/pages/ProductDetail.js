@@ -41,7 +41,7 @@ function ProductDetail() {
     resetOrderResult,
   } = useOrderResult();
   const { productStockUpdates, socket, connectionStatus, systemError } = useSocket();
-  const { refreshCart, setDrawerOpen } = useCart();
+  const { refreshCart } = useCart();
   const [addToCartLoading, setAddToCartLoading] = useState(false);
   const prevConnectionStatusRef = useRef(undefined);
   const successModalCloseRef = useRef(null);
@@ -230,7 +230,7 @@ function ProductDetail() {
       await api.addCartItem(product.product_id, qty);
       await refreshCart();
       setOrderSuccess('Đã thêm vào giỏ hàng.');
-      setDrawerOpen(true);
+      navigate('/cart');
     } catch (err) {
       setOrderError(err.message || 'Không thể thêm vào giỏ hàng.');
     } finally {
