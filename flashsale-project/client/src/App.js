@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
-import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, AdminUsers, SystemHealth } from './routes/AppRoutes';
+import { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, AdminUsers, SystemHealth, ActivityLogs } from './routes/AppRoutes';
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
           <Route path="shop/report" element={<Report />} />
           <Route path="shop/users" element={<AdminUsers />} />
           <Route path="shop/health" element={<SystemHealth />} />
+          <Route path="shop/logs" element={<ActivityLogs />} />
           <Route path="search" element={<Search />} />
         </Route>
       </Routes>

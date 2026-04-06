@@ -6,6 +6,7 @@ import {
   FiClock, FiLayers,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './ProductForm.module.css';
 
 function toLocalDatetime(iso) {
@@ -56,7 +57,7 @@ function ProductForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const user = api.getUser();
-  const userRole = user?.usr_role || user?.role || '';
+  const userRole = getUserRoleCode(user);
   const isAdmin = userRole === 'SHOP_ADMIN' || userRole === 'OWNER' || userRole === 'ADMIN';
 
   const [form, setForm] = useState(EMPTY_FORM);
