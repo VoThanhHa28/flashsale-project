@@ -566,7 +566,9 @@ export async function getRevenueReport({ days = 7 } = {}) {
   if (!isApiConfigured()) return EMPTY_REVENUE;
 
   try {
-    const res = await request('/v1/api/shop/stats/revenue');
+    const params = new URLSearchParams();
+    params.set('days', days);
+    const res = await request(`/v1/api/shop/stats/revenue?${params.toString()}`);
     const data = getPayload(res);
 
     const dailyData = Array.isArray(data?.daily) ? data.daily : [];

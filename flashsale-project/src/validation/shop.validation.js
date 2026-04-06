@@ -1,6 +1,7 @@
 'use strict';
 
 const Joi = require('joi');
+const CONST = require('../constants');
 
 const getOrders = {
     query: Joi.object({
@@ -27,7 +28,18 @@ const updateOrderStatus = {
     }),
 };
 
+const getRevenueStats = {
+    query: Joi.object({
+        days: Joi.number()
+            .integer()
+            .min(1)
+            .max(CONST.SHOP.MAX_REVENUE_DAYS)
+            .default(CONST.SHOP.REVENUE_DAYS),
+    }),
+};
+
 module.exports = {
     getOrders,
     updateOrderStatus,
+    getRevenueStats,
 };

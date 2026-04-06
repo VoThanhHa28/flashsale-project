@@ -28,7 +28,7 @@ class ShopController {
 
     // GET /v1/api/shop/stats/revenue
     static getRevenueStats = asyncHandler(async (req, res) => {
-        const result = await ShopService.getRevenueStats();
+        const result = await ShopService.getRevenueStats(req.query.days);
         new OK({
             message: CONST.SHOP.MESSAGE.GET_REVENUE_SUCCESS,
             data: result,

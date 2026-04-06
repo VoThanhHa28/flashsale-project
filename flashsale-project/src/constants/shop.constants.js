@@ -13,4 +13,5 @@ module.exports = {
     ALLOWED_UPDATE_STATUSES: ['confirmed', 'cancelled'],
 
     REVENUE_DAYS: 7,
+    MAX_REVENUE_DAYS: 30,
 };
