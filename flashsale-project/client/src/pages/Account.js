@@ -17,6 +17,7 @@ import {
   FiClipboard,
   FiFileText,
   FiLayers,
+  FiZap,
 } from 'react-icons/fi';
 import * as api from '../services/api';
 import { getUserRoleCode } from '../utils/userRole';
@@ -109,6 +110,13 @@ function Account() {
             icon: <FiPackage size={24} />,
             title: 'Sản phẩm',
             desc: 'Quản lý & Flash Sale',
+            color: 'purple',
+          },
+          {
+            to: '/shop/flash-sale/campaign',
+            icon: <FiZap size={24} />,
+            title: 'Chiến dịch Flash Sale',
+            desc: 'Chọn giờ & nhiều sản phẩm',
             color: 'purple',
           },
           {

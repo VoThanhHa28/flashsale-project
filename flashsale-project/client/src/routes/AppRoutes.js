@@ -18,5 +18,6 @@ import ShopPermissions from '../pages/ShopPermissions';
 import AdminUsers from '../pages/AdminUsers';
 import SystemHealth from '../pages/SystemHealth';
 import ActivityLogs from '../pages/ActivityLogs';
+import ShopFlashSaleCampaign from '../pages/ShopFlashSaleCampaign';
 
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs };
+export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign };

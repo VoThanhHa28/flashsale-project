@@ -919,6 +919,56 @@ export async function scheduleFlashSale(productId, startTime, endTime) {
 }
 
 /**
+ * Lên lịch Flash Sale cho nhiều sản phẩm (cùng khoảng thời gian).
+ * Gọi song song; invalidate cache một lần nếu có ít nhất một thành công.
+ */
+export async function scheduleFlashSaleBatch(productIds, startTime, endTime) {
+  const ids = [...new Set((productIds || []).map(String))];
+  if (!ids.length) {
+    return {
+      ok: 0,
+      fail: 0,
+      failures: [],
+      allSuccess: false,
+      message: 'Chưa chọn sản phẩm',
+    };
+  }
+
+  const settled = await Promise.allSettled(
+    ids.map((productId) =>
+      request('/v1/api/admin/flash-sale/activate', {
+        method: 'POST',
+        body: JSON.stringify({ productId, startTime, endTime }),
+      }),
+    ),
+  );
+
+  const failures = [];
+  let ok = 0;
+  settled.forEach((s, i) => {
+    if (s.status === 'fulfilled') ok += 1;
+    else {
+      const msg = s.reason?.message || 'Không thể lên lịch';
+      failures.push({ productId: ids[i], message: msg });
+    }
+  });
+
+  if (ok > 0) invalidateAllCaches();
+
+  const allSuccess = failures.length === 0;
+  let message = '';
+  if (allSuccess) {
+    message = `Đã lên lịch Flash Sale cho ${ok} sản phẩm.`;
+  } else if (ok > 0) {
+    message = `Thành công ${ok}/${ids.length} sản phẩm. Một số mục lỗi — xem chi tiết bên dưới.`;
+  } else {
+    message = failures[0]?.message || 'Không thể lên lịch cho sản phẩm nào.';
+  }
+
+  return { ok, fail: failures.length, failures, allSuccess, message };
+}
+
+/**
  * DELETE /v1/api/products/:id – Xóa mềm sản phẩm.
  * Backend set is_deleted = true, stock Redis về 0.
  */
