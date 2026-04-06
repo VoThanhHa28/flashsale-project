@@ -939,6 +939,40 @@ export async function banUser(userId) {
   }
 }
 
+/**
+ * GET /v1/api/admin/roles — Danh sách role (USER, SHOP_ADMIN, …).
+ */
+export async function getAdminRoles() {
+  try {
+    const res = await request('/v1/api/admin/roles');
+    const data = getPayload(res);
+    const roles = Array.isArray(data?.roles) ? data.roles : [];
+    return { success: true, roles, message: res.message || '' };
+  } catch (err) {
+    return { success: false, roles: [], message: err.message || 'Không tải được vai trò' };
+  }
+}
+
+/**
+ * PATCH /v1/api/admin/users/:id/role — Gán role (body { roleId }).
+ */
+export async function assignUserRole(userId, roleId) {
+  try {
+    const res = await request(`/v1/api/admin/users/${encodeURIComponent(userId)}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ roleId }),
+    });
+    const data = getPayload(res);
+    return {
+      success: true,
+      message: res.message || 'Đã cập nhật vai trò',
+      user: data?.user ?? null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể cập nhật vai trò', user: null };
+  }
+}
+
 // =====================================================================
 // ============ ACTIVITY LOGS (SHOP_ADMIN) ==============================
 // =====================================================================

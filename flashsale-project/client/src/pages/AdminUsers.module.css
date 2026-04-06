@@ -54,6 +54,22 @@
 .selfLabel { font-size: var(--font-size-xs); color: var(--color-text-tertiary); font-style: italic; }
 .bannedLabel { font-size: var(--font-size-xs); color: var(--color-error); font-weight: var(--font-weight-medium); }
 
+.roleSelect {
+  min-width: 200px;
+  max-width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-300);
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+.roleSelect:focus { outline: none; border-color: var(--color-primary); }
+.roleSelect:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.permHint { margin: 0 0 var(--spacing-4); padding: var(--spacing-3); border-radius: var(--radius-lg); background: rgba(238, 77, 45, 0.06); border: 1px solid rgba(238, 77, 45, 0.15); font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+
 /* Pagination */
 .pagination { display: flex; align-items: center; justify-content: center; gap: var(--spacing-3); margin-top: var(--spacing-4); }
 .pageBtn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-lg); border: 1px solid var(--color-gray-200); background: var(--color-bg-primary); color: var(--color-text-secondary); cursor: pointer; }
