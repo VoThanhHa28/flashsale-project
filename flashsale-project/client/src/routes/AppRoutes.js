@@ -3,6 +3,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import ProductDetail from '../pages/ProductDetail';
 import Cart from '../pages/cart/CartPage';
+import Checkout from '../pages/checkout/CheckoutPage';
 import Account from '../pages/Account';
 import OrderHistory from '../pages/OrderHistory';
 import OrderDetail from '../pages/OrderDetail';
@@ -21,4 +22,4 @@ import ActivityLogs from '../pages/ActivityLogs';
 import ShopFlashSaleCampaign from '../pages/ShopFlashSaleCampaign';
 import ShopInventoryHistory from '../pages/ShopInventoryHistory';
 
-export { Home, Login, Register, ProductDetail, Cart, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign, ShopInventoryHistory };
+export { Home, Login, Register, ProductDetail, Cart, Checkout, Account, OrderHistory, OrderDetail, ShopOrders, Profile, ChangePassword, Search, Report, ShopProducts, ProductForm, ShopCategories, ShopPermissions, AdminUsers, SystemHealth, ActivityLogs, ShopFlashSaleCampaign, ShopInventoryHistory };
