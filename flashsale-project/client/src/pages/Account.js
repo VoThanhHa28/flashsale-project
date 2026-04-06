@@ -133,6 +133,13 @@ function Account() {
             color: 'purple',
           },
           {
+            to: '/shop/permissions',
+            icon: <FiShield size={24} />,
+            title: 'Phân quyền',
+            desc: 'Gán Shop Admin / User',
+            color: 'purple',
+          },
+          {
             to: '/shop/users',
             icon: <FiUsers size={24} />,
             title: 'Người dùng',

@@ -429,6 +429,43 @@ export async function createOrder(productId, quantity, price) {
   return { message: res.message || payload?.message, metadata: payload, response: res };
 }
 
+/** GET /v1/api/cart – cần đăng nhập */
+export async function getCart() {
+  if (!isApiConfigured()) return null;
+  const res = await request('/v1/api/cart');
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** POST /v1/api/cart/items */
+export async function addCartItem(productId, quantity) {
+  const res = await request('/v1/api/cart/items', {
+    method: 'POST',
+    body: JSON.stringify({ productId: String(productId), quantity }),
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** PATCH /v1/api/cart/items/:productId */
+export async function updateCartItem(productId, quantity) {
+  const res = await request(`/v1/api/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ quantity }),
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** DELETE /v1/api/cart/items/:productId */
+export async function removeCartItem(productId) {
+  const res = await request(`/v1/api/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'DELETE',
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
 /**
  * GET /v1/api/order/me
  *
@@ -936,6 +973,40 @@ export async function banUser(userId) {
     return { success: true, message: res.message || 'Khóa tài khoản thành công', user: data?.user ?? null };
   } catch (err) {
     return { success: false, message: err.message || 'Không thể khóa tài khoản' };
+  }
+}
+
+/**
+ * GET /v1/api/admin/roles — Danh sách role (USER, SHOP_ADMIN, …).
+ */
+export async function getAdminRoles() {
+  try {
+    const res = await request('/v1/api/admin/roles');
+    const data = getPayload(res);
+    const roles = Array.isArray(data?.roles) ? data.roles : [];
+    return { success: true, roles, message: res.message || '' };
+  } catch (err) {
+    return { success: false, roles: [], message: err.message || 'Không tải được vai trò' };
+  }
+}
+
+/**
+ * PATCH /v1/api/admin/users/:id/role — Gán role (body { roleId }).
+ */
+export async function assignUserRole(userId, roleId) {
+  try {
+    const res = await request(`/v1/api/admin/users/${encodeURIComponent(userId)}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ roleId }),
+    });
+    const data = getPayload(res);
+    return {
+      success: true,
+      message: res.message || 'Đã cập nhật vai trò',
+      user: data?.user ?? null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể cập nhật vai trò', user: null };
   }
 }
 
