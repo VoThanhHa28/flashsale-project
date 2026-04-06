@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FiZap, FiClock } from 'react-icons/fi';
+import { FiZap, FiClock, FiLayers } from 'react-icons/fi';
 import * as api from '../services/api';
 import { useSocket } from '../contexts/SocketContext';
 import { getFlashSaleStatus } from '../utils/flashSaleUtils';
@@ -32,19 +32,34 @@ function getStockBadge(quantity) {
 }
 
 function Home() {
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [apiCategories, setApiCategories] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { productStockUpdates } = useSocket();
 
+  const loadData = useCallback(async () => {
+    const [list, catRes] = await Promise.all([
+      api.getProductsList(),
+      api.getCategories(),
+    ]);
+    return { list, catRes };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    
+
     async function load() {
       try {
-        const list = await api.getProductsList();
+        const { list, catRes } = await loadData();
         if (!cancelled) {
-          setProducts(list);
+          setAllProducts(list);
+          if (catRes.success && Array.isArray(catRes.categories) && catRes.categories.length > 0) {
+            setApiCategories(catRes.categories);
+          } else {
+            setApiCategories([]);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -59,20 +74,46 @@ function Home() {
 
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [loadData]);
 
   // Update products quantity từ Socket real-time
   useEffect(() => {
     if (!productStockUpdates || productStockUpdates.size === 0) return;
 
-    setProducts(prev => prev.map(p => {
-      const updatedQuantity = productStockUpdates.get(String(p.product_id));
-      if (updatedQuantity !== undefined) {
-        return { ...p, product_quantity: updatedQuantity };
-      }
-      return p;
-    }));
+    setAllProducts((prev) =>
+      prev.map((p) => {
+        const updatedQuantity = productStockUpdates.get(String(p.product_id));
+        if (updatedQuantity !== undefined) {
+          return { ...p, product_quantity: updatedQuantity };
+        }
+        return p;
+      })
+    );
   }, [productStockUpdates]);
+
+  /** Chip danh mục: ưu tiên API; không có thì gom từ product_category */
+  const categoryChips = useMemo(() => {
+    if (apiCategories.length > 0) {
+      return [...apiCategories].sort(
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.categoryName).localeCompare(String(b.categoryName), 'vi')
+      );
+    }
+    const seen = new Map();
+    allProducts.forEach((p) => {
+      const n = String(p.product_category || '').trim();
+      if (n) seen.set(n, { _id: n, categoryName: n });
+    });
+    return Array.from(seen.values()).sort((a, b) =>
+      String(a.categoryName).localeCompare(String(b.categoryName), 'vi')
+    );
+  }, [apiCategories, allProducts]);
+
+  const products = useMemo(() => {
+    if (!categoryFilter) return allProducts;
+    return allProducts.filter(
+      (p) => String(p.product_category || '').trim() === categoryFilter
+    );
+  }, [allProducts, categoryFilter]);
 
   // Tính xem có Flash Sale đang diễn ra hay không (chỉ cho UI section header)
   const hasActiveFlashSale = useMemo(
@@ -156,12 +197,48 @@ function Home() {
             )}
           </div>
 
+          {categoryChips.length > 0 && (
+            <nav className="home-category-bar" aria-label="Lọc theo danh mục">
+              <span className="home-category-bar-label">
+                <FiLayers size={14} aria-hidden />
+                Danh mục
+              </span>
+              <div className="home-category-chips">
+                <button
+                  type="button"
+                  className={`home-category-chip${categoryFilter === '' ? ' home-category-chip--active' : ''}`}
+                  onClick={() => setCategoryFilter('')}
+                >
+                  Tất cả
+                </button>
+                {categoryChips.map((c) => {
+                  const name = c.categoryName;
+                  const key = c._id || name;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`home-category-chip${categoryFilter === name ? ' home-category-chip--active' : ''}`}
+                      onClick={() => setCategoryFilter(name)}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+          )}
+
           {products.length === 0 ? (
             <div className="home-empty">
               <p className="home-empty-message">
-                Hiện chưa có sản phẩm nào trong hệ thống.
+                {allProducts.length === 0
+                  ? 'Hiện chưa có sản phẩm nào trong hệ thống.'
+                  : categoryFilter
+                    ? `Không có sản phẩm nào trong danh mục «${categoryFilter}».`
+                    : 'Không có sản phẩm hiển thị.'}
               </p>
-              {api.isApiConfigured() && (
+              {allProducts.length === 0 && api.isApiConfigured() && (
                 <p className="home-empty-hint">
                   💡 Vui lòng chạy lệnh <code>npm run seed:products</code> để thêm dữ liệu sản phẩm vào database.
                 </p>
