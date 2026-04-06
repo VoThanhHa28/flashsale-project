@@ -685,6 +685,13 @@ export async function getShopOrders({
 }
 
 /**
+ * Chi tiết đơn shop (đủ dòng hàng + F5): BE chưa có — cần team BE bổ sung (khi được yêu cầu), ví dụ:
+ *   GET /v1/api/shop/orders/:id  (auth SHOP_ADMIN) trả { order } lean + populate productId từng dòng
+ *   order_details (hoặc items[]), userId (khách: name, email, phone), status, totalPrice, …
+ * FE hiện dùng dữ liệu truyền qua react-router state khi bấm hàng ở /shop/orders.
+ */
+
+/**
  * PATCH /v1/api/shop/orders/:id/status
  * Body: { status: 'confirmed' | 'cancelled' }
  */

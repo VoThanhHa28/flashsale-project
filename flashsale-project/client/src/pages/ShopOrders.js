@@ -34,9 +34,12 @@ function formatPrice(value) {
 function StatusBadge({ status }) {
   const map = {
     pending: { label: 'Chờ duyệt', icon: <FiClock size={12} />, className: styles.statusPending },
+    confirmed: { label: 'Đã xác nhận', icon: <FiCheckCircle size={12} />, className: styles.statusProcessing },
     processing: { label: 'Đang xử lý', icon: <FiCheckCircle size={12} />, className: styles.statusProcessing },
     shipping: { label: 'Đang giao', icon: <FiTruck size={12} />, className: styles.statusShipping },
     completed: { label: 'Hoàn tất', icon: <FiCheckCircle size={12} />, className: styles.statusCompleted },
+    success: { label: 'Hoàn tất', icon: <FiCheckCircle size={12} />, className: styles.statusCompleted },
+    failed: { label: 'Thất bại', icon: <FiXCircle size={12} />, className: styles.statusCancelled },
     cancelled: { label: 'Đã hủy', icon: <FiXCircle size={12} />, className: styles.statusCancelled },
     refunded: { label: 'Hoàn tiền', icon: <FiXCircle size={12} />, className: styles.statusRefunded },
   };
@@ -281,7 +284,11 @@ function ShopOrders() {
                   </tr>
                 ) : (
                   orders.map((order) => (
-                    <tr key={order.id}>
+                    <tr
+                      key={order.id}
+                      className={styles.rowClickable}
+                      onClick={() => navigate(`/shop/orders/${order.id}`, { state: { shopOrder: order } })}
+                    >
                       <td className={styles.code}>{order.code}</td>
                       <td>
                         <div className={styles.customerName}>{order.customerName}</div>
@@ -297,7 +304,10 @@ function ShopOrders() {
                             <button
                               type="button"
                               className={`${styles.actionBtn} ${styles.approveBtn}`}
-                              onClick={() => handleAction(order.id, 'confirmed')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(order.id, 'confirmed');
+                              }}
                             >
                               Duyệt
                             </button>
@@ -306,7 +316,10 @@ function ShopOrders() {
                             <button
                               type="button"
                               className={`${styles.actionBtn} ${styles.cancelBtn}`}
-                              onClick={() => handleAction(order.id, 'cancelled')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(order.id, 'cancelled');
+                              }}
                             >
                               Hủy
                             </button>

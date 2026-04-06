@@ -172,6 +172,14 @@
   background: #fffdfa;
 }
 
+.rowClickable {
+  cursor: pointer;
+}
+
+.rowClickable:hover {
+  background: #fff8f0;
+}
+
 .code {
   font-family: var(--font-family-mono);
   color: var(--color-text-primary);
