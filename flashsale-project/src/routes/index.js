@@ -12,6 +12,8 @@ const shopRouter = require("./shop.route");
 const categoryRouter = require("./category.route");
 const paymentRouter = require("./payment.route");
 const cartRouter = require("./cart.route");
+const inventoryRouter = require("./inventory.route");
+const checkoutRouter = require("./checkout.route");
 // Hồng sửa – route nội bộ để Worker gọi Main App emit system-error khi Redis chết (Case 3)
 const internalRouter = require("./internal.route");
 const activityLogMiddleware = require("../middlewares/activityLog.middleware");
@@ -20,6 +22,7 @@ const activityLogMiddleware = require("../middlewares/activityLog.middleware");
 // (Cart dùng kiến trúc Buy Now cho Flash Sale; model này chuẩn bị sẵn cho e-commerce mở rộng)
 require("../models/cart.model");
 require("../models/reservationLog.model");
+require("../models/flashSaleCampaign.model");
 
 // Ghi log tự động mọi request POST / PUT / PATCH / DELETE vào collection activity_logs
 router.use(activityLogMiddleware);
@@ -40,6 +43,12 @@ router.use("/v1/api/order", orderRouter);
 
 // Route cho K6 test (không cần /v1 prefix)
 router.use("/api/orders", orderRouter);
+
+// Inventory routes (Quản lý kho - import/export transactions)
+router.use("/v1/api/inventories", inventoryRouter);
+
+// Checkout routes (5 min countdown - lock inventory)
+router.use("/v1/api/checkout", checkoutRouter);
 
 // Định nghĩa resource name ở đây
 router.use("/v1/api/products", productRouter);

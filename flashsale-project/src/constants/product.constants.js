@@ -13,7 +13,6 @@ module.exports = {
     'productQuantity',
     'createdAt',
     'updatedAt',
-    'productStartTime',
   ],
 
   // 3. THÔNG BÁO (Message)

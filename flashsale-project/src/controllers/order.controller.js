@@ -24,8 +24,10 @@ class OrderController {
         }
         const price = product.productPrice;
 
-        // 4️⃣ GENERATE CLIENT_ORDER_ID (Idempotency Key)
-        const clientOrderId = randomUUID();
+        // 4️⃣ GENERATE OR USE CLIENT_ORDER_ID (Idempotency Key)
+        // If client provides one, use it (for idempotency testing)
+        // Otherwise generate new one
+        const clientOrderId = req.body.client_order_id || randomUUID();
         console.log(`[OrderController] 📦 New order attempt: ${clientOrderId}`);
 
         // 5️⃣ RESERVE PRODUCT SLOT (Redis Lua Script + Reservation record)

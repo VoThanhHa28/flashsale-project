@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { FiGrid, FiZap, FiChevronRight } from 'react-icons/fi';
 import './SidebarLeft.css';
 
-const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   { id: 'phone',     label: 'Điện thoại, Tablet',    icon: '📱' },
   { id: 'laptop',    label: 'Laptop',                 icon: '💻' },
   { id: 'audio',     label: 'Âm thanh, Mic thu âm',  icon: '🎧' },
@@ -17,7 +17,29 @@ const CATEGORIES = [
   { id: 'news',      label: 'Tin công nghệ',            icon: '📰' },
 ];
 
-function SidebarLeft() {
+function mapCategoryIcon(name = '') {
+  const n = String(name).toLowerCase();
+  if (n.includes('điện thoại') || n.includes('tablet')) return '📱';
+  if (n.includes('laptop') || n.includes('macbook')) return '💻';
+  if (n.includes('âm thanh') || n.includes('tai nghe')) return '🎧';
+  if (n.includes('đồng hồ') || n.includes('camera')) return '⌚';
+  if (n.includes('gia dụng') || n.includes('làm đẹp')) return '🏠';
+  if (n.includes('phụ kiện')) return '🔌';
+  if (n.includes('pc') || n.includes('màn hình') || n.includes('máy in')) return '🖥️';
+  if (n.includes('tivi') || n.includes('điện máy')) return '📺';
+  if (n.includes('khuyến mãi')) return '🏷️';
+  return '📦';
+}
+
+function SidebarLeft({ categories = [] }) {
+  const navCategories = Array.isArray(categories) && categories.length > 0
+    ? categories.map((c, idx) => ({
+        id: String(c._id || c.id || c.categoryName || idx),
+        label: c.categoryName || c.name || 'Danh mục',
+        icon: mapCategoryIcon(c.categoryName || c.name || ''),
+      }))
+    : FALLBACK_CATEGORIES;
+
   return (
     <aside className="sidebar-left">
       {/* Header danh mục */}
@@ -43,7 +65,7 @@ function SidebarLeft() {
 
       {/* Danh mục thông thường */}
       <ul className="sidebar-left-list">
-        {CATEGORIES.map((c) => (
+        {navCategories.map((c) => (
           <li key={c.id}>
             <Link to="/" className="sidebar-left-item">
               <span className="sidebar-left-icon">{c.icon}</span>

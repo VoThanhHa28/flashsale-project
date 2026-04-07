@@ -13,6 +13,7 @@ const PaymentModel = require("../models/payment.model");
 const { NotFoundError, BadRequestError } = require("../core/error.response");
 const { ForbiddenError } = require("../core/error.response");
 const CONST = require("../constants");
+const FlashSaleCampaignService = require("./flashSaleCampaign.service");
 
 class OrderService {
     /** Hoàn tác order + order_details + payments nếu lưu chi tiết/payment thất bại. */
@@ -94,25 +95,13 @@ class OrderService {
     // 2. RESERVATION (Logic chính)
     static async reservationInventory({ productId, quantity }) {
         const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
-        const keyInfo = CONST.REDIS.PRODUCT_INFO(productId); // 👉 Dùng constant mới
+        const keyInfo = CONST.REDIS.PRODUCT_INFO(productId);
 
-        // A. LẤY THÔNG TIN GIỜ G
         let productInfo = await redisClient.get(keyInfo);
 
-        // B. CACHE MISS -> GỌI DB
         if (!productInfo) {
-            const product = await ProductModel.findById(productId)
-                .select("productStartTime productEndTime") // Đổi sang camelCase
-                .lean();
-
-            if (!product) throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
-
-            productInfo = JSON.stringify({
-                start: new Date(product.productStartTime).getTime(), // Đổi sang camelCase
-                end: new Date(product.productEndTime).getTime(), // Đổi sang camelCase
-            });
-
-            // Set TTL từ Constant (604800s)
+            const window = await FlashSaleCampaignService.getReservationWindowMillisForProduct(productId);
+            productInfo = JSON.stringify({ start: window.start, end: window.end });
             await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
         }
 
@@ -168,26 +157,14 @@ class OrderService {
         const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
         const keyInfo = CONST.REDIS.PRODUCT_INFO(productId);
 
-        // A. LẤY THÔNG TIN GIỜ G
         let productInfo = await redisClient.get(keyInfo);
 
-        // B. CACHE MISS -> GỌI DB
         if (!productInfo) {
-            const product = await ProductModel.findById(productId)
-                .select("productStartTime productEndTime")
-                .lean();
-
-            if (!product) throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
-
-            productInfo = JSON.stringify({
-                start: new Date(product.productStartTime).getTime(),
-                end: new Date(product.productEndTime).getTime(),
-            });
-
+            const window = await FlashSaleCampaignService.getReservationWindowMillisForProduct(productId);
+            productInfo = JSON.stringify({ start: window.start, end: window.end });
             await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
         }
 
-        // C. CHECK GIỜ G
         const { start, end } = JSON.parse(productInfo);
         const now = Date.now();
 

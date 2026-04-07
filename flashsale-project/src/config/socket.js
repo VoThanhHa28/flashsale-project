@@ -28,7 +28,7 @@ const initSocket = async (server) => {
     // Setup Redis Adapter (cho phép nhiều Socket.io servers share events)
     try {
         const pubClient = createClient({
-            url: process.env.REDIS_URL || "redis://localhost:6379",
+            url: process.env.REDIS_URI || "redis://localhost:6379",
         });
         const subClient = pubClient.duplicate();
 

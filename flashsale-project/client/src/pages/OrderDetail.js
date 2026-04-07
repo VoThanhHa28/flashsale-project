@@ -17,6 +17,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { orderStatusLineLabel } from '../utils/orderShape';
 import styles from './OrderDetail.module.css';
 
 /**
@@ -26,8 +27,9 @@ const STATUS_CONFIG = {
   pending_payment: { label: 'Chờ thanh toán', Icon: FiClock       },
   pending_confirm: { label: 'Chờ xác nhận',   Icon: FiAlertCircle },
   processing:      { label: 'Đang xử lý',      Icon: FiPackage     },
-  shipping:        { label: 'Đang giao hàng',  Icon: FiTruck       },
+  shipping:        { label: 'Đang giao',  Icon: FiTruck       },
   completed:       { label: 'Hoàn tất',         Icon: FiCheck       },
+  failed:          { label: 'Thất bại',         Icon: FiAlertCircle },
   cancelled:       { label: 'Đã hủy',           Icon: FiX           },
   refunded:        { label: 'Hoàn tiền',        Icon: FiRotateCcw   },
 };
@@ -189,6 +191,17 @@ function OrderDetail() {
           </div>
         </div>
 
+        <div className={styles.statusSummary}>
+          <p className={styles.statusSummaryRow}>
+            <span className={styles.statusSummaryKey}>Trạng thái đơn:</span>{' '}
+            <strong>{orderStatusLineLabel(order.status)}</strong>
+          </p>
+          <p className={styles.statusSummaryRow}>
+            <span className={styles.statusSummaryKey}>Thanh toán:</span>{' '}
+            <strong>{order.payment?.lineLabel ?? 'Thu hộ'}</strong>
+          </p>
+        </div>
+
         {/* Shop info */}
         {order.shop?.name && (
           <div className={styles.shopRow}>
@@ -228,21 +241,32 @@ function OrderDetail() {
 
         {/* ── Danh sách sản phẩm ── */}
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Sản phẩm đặt mua</h2>
-          <div className={styles.items}>
-            {order.items.map((item, idx) => (
-              <div key={idx} className={styles.item}>
-                <img src={item.thumb} alt={item.name} className={styles.itemImage} />
-                <div className={styles.itemInfo}>
-                  <p className={styles.itemName}>{item.name}</p>
-                  <p className={styles.itemMeta}>
-                    <span className={styles.itemQty}>x{item.quantity}</span>
-                  </p>
+          <h2 className={styles.sectionTitle}>Sản phẩm trong đơn</h2>
+          {order.items.length === 0 ? (
+            <p className={styles.itemsEmpty}>Chưa có dòng sản phẩm từ máy chủ.</p>
+          ) : (
+            <div className={styles.items}>
+              {order.items.map((item, idx) => (
+                <div key={`${item.productId || idx}-${idx}`} className={styles.item}>
+                  {item.thumb ? (
+                    <img src={item.thumb} alt="" className={styles.itemImage} />
+                  ) : (
+                    <div className={styles.itemImagePh} aria-hidden />
+                  )}
+                  <div className={styles.itemInfo}>
+                    <p className={styles.itemName}>{item.name || 'Sản phẩm'}</p>
+                    <p className={styles.itemMeta}>
+                      <span className={styles.itemQty}>× {item.quantity}</span>
+                      <span className={styles.itemUnit}>
+                        {formatPrice(item.salePrice)} / SP
+                      </span>
+                    </p>
+                  </div>
+                  <span className={styles.itemPrice}>{formatPrice(item.salePrice * item.quantity)}</span>
                 </div>
-                <span className={styles.itemPrice}>{formatPrice(item.salePrice)}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* ── Địa chỉ giao hàng ── */}

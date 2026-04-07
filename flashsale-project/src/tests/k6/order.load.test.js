@@ -33,7 +33,14 @@ const PRODUCTS = [
     { id: "698f0a382d13189379eb9be4", price: 15000000 }, // Xiaomi 14
 ];
 
-const USERS = ["65b2user001", "65b2user002", "65b2user003", "65b2user004", "65b2user005"];
+// Must be valid MongoDB ObjectId strings (24 hex chars)
+const USERS = [
+    "65b2c4e11a2b3c4d5e6f7001",
+    "65b2c4e11a2b3c4d5e6f7002",
+    "65b2c4e11a2b3c4d5e6f7003",
+    "65b2c4e11a2b3c4d5e6f7004",
+    "65b2c4e11a2b3c4d5e6f7005",
+];
 
 /**
  * Generate random order data

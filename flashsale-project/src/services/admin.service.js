@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const Product = require("../models/product.model");
 const User = require("../models/user.model");
 const Role = require("../models/role.model");
 const redisClient = require("../config/redis");
@@ -9,118 +8,71 @@ const { BadRequestError, NotFoundError } = require("../core/error.response");
 const { getIO } = require("../config/socket");
 const { SOCKET_EVENT, SOCKET_ROOM } = require("../constants/socket.constant");
 const OrderService = require("./order.service");
+const FlashSaleCampaignService = require("./flashSaleCampaign.service");
 const CONST = require("../constants");
 
 class AdminService {
-    /**
-     * Kích hoạt Flash Sale cho sản phẩm
-     * @param {Object} data - { productId, startTime, endTime }
-     */
     static async activateFlashSale({ productId, startTime, endTime }) {
         if (!productId) {
             throw new BadRequestError("productId là bắt buộc");
         }
 
-        const product = await Product.findById(productId);
-        if (!product) {
-            throw new NotFoundError("Không tìm thấy sản phẩm");
-        }
+        const { campaign, product } = await FlashSaleCampaignService.upsertSingleProductWindow({
+            productId,
+            startTime,
+            endTime,
+        });
 
-        // Validate thời gian
-        const start = new Date(startTime);
-        const end = new Date(endTime);
-
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            throw new BadRequestError("Thời gian không hợp lệ");
-        }
-
-        if (start >= end) {
-            throw new BadRequestError("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc");
-        }
-
-        // Cập nhật thời gian flash sale
-        product.productStartTime = start;
-        product.productEndTime = end;
-        await product.save();
-
-        // Khởi tạo inventory trong Redis
         await OrderService.initInventory(productId);
 
         return {
             productId: product._id,
             productName: product.productName,
-            startTime: product.productStartTime,
-            endTime: product.productEndTime,
+            campaignId: campaign._id,
+            startTime: campaign.startTime,
+            endTime: campaign.endTime,
             quantity: product.productQuantity,
         };
     }
 
-    /**
-     * Kích hoạt nóng Flash Sale (Hot Activation)
-     * Kích hoạt ngay lập tức và bắn socket event
-     * @param {Object} data - { productId, duration }
-     */
     static async hotActivateFlashSale({ productId, duration = 3600 }) {
         if (!productId) {
             throw new BadRequestError("productId là bắt buộc");
         }
 
-        const product = await Product.findById(productId);
-        if (!product) {
-            throw new NotFoundError("Không tìm thấy sản phẩm");
-        }
+        const { campaign, product } = await FlashSaleCampaignService.hotUpsertSingleProduct({
+            productId,
+            durationSeconds: duration,
+        });
 
-        // Kích hoạt ngay lập tức
-        const now = new Date();
-        const endTime = new Date(now.getTime() + duration * 1000); // duration in seconds
-
-        product.productStartTime = now;
-        product.productEndTime = endTime;
-        await product.save();
-
-        // Khởi tạo inventory trong Redis
         await OrderService.initInventory(productId);
 
-        // Bắn socket event flash-sale-start
         try {
             const io = getIO();
-
-            // Emit to product room
+            const payload = {
+                productId: product._id.toString(),
+                productName: product.productName,
+                productPrice: product.productPrice,
+                productThumb: product.productThumb,
+                startTime: campaign.startTime,
+                endTime: campaign.endTime,
+                quantity: product.productQuantity,
+                message: `Flash Sale ${product.productName} đã bắt đầu!`,
+            };
             const productRoom = SOCKET_ROOM.PRODUCT(productId);
-            io.to(productRoom).emit(SOCKET_EVENT.FLASH_SALE_START, {
-                productId: product._id.toString(),
-                productName: product.productName,
-                productPrice: product.productPrice,
-                productThumb: product.productThumb,
-                startTime: product.productStartTime,
-                endTime: product.productEndTime,
-                quantity: product.productQuantity,
-                message: `Flash Sale ${product.productName} đã bắt đầu!`,
-            });
-
-            // Emit to all users
-            io.to(SOCKET_ROOM.ALL_USERS).emit(SOCKET_EVENT.FLASH_SALE_START, {
-                productId: product._id.toString(),
-                productName: product.productName,
-                productPrice: product.productPrice,
-                productThumb: product.productThumb,
-                startTime: product.productStartTime,
-                endTime: product.productEndTime,
-                quantity: product.productQuantity,
-                message: `Flash Sale ${product.productName} đã bắt đầu!`,
-            });
-
+            io.to(productRoom).emit(SOCKET_EVENT.FLASH_SALE_START, payload);
+            io.to(SOCKET_ROOM.ALL_USERS).emit(SOCKET_EVENT.FLASH_SALE_START, payload);
             console.log(`[Admin] ✅ Đã bắn socket event FLASH_SALE_START cho productId: ${productId}`);
         } catch (error) {
             console.error("[Admin] ❌ Lỗi khi bắn socket event:", error.message);
-            // Không throw error, vì flash sale đã được kích hoạt thành công
         }
 
         return {
             productId: product._id,
             productName: product.productName,
-            startTime: product.productStartTime,
-            endTime: product.productEndTime,
+            campaignId: campaign._id,
+            startTime: campaign.startTime,
+            endTime: campaign.endTime,
             quantity: product.productQuantity,
             duration: `${duration} seconds`,
             socketEmitted: true,
@@ -200,6 +152,30 @@ class AdminService {
             .lean();
 
         return { user: updatedUser };
+    }
+
+    static async listFlashSaleCampaigns(query) {
+        return FlashSaleCampaignService.listCampaigns({
+            page: query.page,
+            limit: query.limit,
+            includeDeleted: query.includeDeleted,
+        });
+    }
+
+    static async getFlashSaleCampaign(id) {
+        return FlashSaleCampaignService.getCampaignById(id);
+    }
+
+    static async createFlashSaleCampaign(body) {
+        return FlashSaleCampaignService.createCampaign(body);
+    }
+
+    static async updateFlashSaleCampaign(id, body) {
+        return FlashSaleCampaignService.updateCampaign(id, body);
+    }
+
+    static async deleteFlashSaleCampaign(id) {
+        return FlashSaleCampaignService.softDeleteCampaign(id);
     }
 
     static async getActivityLogs(query = {}) {

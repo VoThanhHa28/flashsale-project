@@ -25,7 +25,8 @@ class ProductController {
 
   // POST /v1/api/products
   static createProduct = asyncHandler(async (req, res) => {
-    const result = await ProductService.createProduct(req.body);
+    const userId = req.user ? req.user._id : null;
+    const result = await ProductService.createProduct(req.body, userId);
     new CREATED({
       message: CONST.PRODUCT.MESSAGE.CREATE_SUCCESS,
       data: result,
