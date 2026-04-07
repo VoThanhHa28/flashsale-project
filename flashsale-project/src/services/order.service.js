@@ -187,6 +187,17 @@ class OrderService {
             await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
         }
 
+        // C-1. CHECK: User có pending reservation khác chưa?
+        const existingReservation = await ReservationModel.findOne({
+            user_id: userId,
+            status: "pending",
+            product_id: { $ne: productId }, // ← Product KHÁC
+        });
+
+        if (existingReservation) {
+            throw new BadRequestError(CONST.ORDER.MESSAGE.ACTIVE_ORDER_EXISTS);
+        }
+
         // C. CHECK GIỜ G
         const { start, end } = JSON.parse(productInfo);
         const now = Date.now();

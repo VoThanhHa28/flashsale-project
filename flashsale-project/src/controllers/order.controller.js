@@ -10,7 +10,7 @@ const { randomUUID } = require("crypto");
 class OrderController {
     static placeOrder = asyncHandler(async (req, res) => {
         // 1️⃣ LẤY USER TỪ AUTH MIDDLEWARE hoặc từ body (cho test)
-        const userId = req.user?._id || req.body.userId;
+        const userId = req.user?._id;
 
         // 2️⃣ LẤY DATA từ items array (format mới) hoặc từ root (backward compatibility)
         const items = req.body.items || [{ productId: req.body.productId, quantity: req.body.quantity }];

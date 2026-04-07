@@ -33,5 +33,6 @@ module.exports = {
         ORDER_NOT_OWNED: "Bạn không có quyền xem đơn hàng này",
         CANCEL_ORDER_SUCCESS: "Hủy đơn hàng thành công",
         CANCEL_ORDER_NOT_ALLOWED: "Chỉ có thể hủy đơn hàng đang chờ xử lý",
+        ACTIVE_ORDER_EXISTS: "Bạn đang có đơn hàng chờ xử lý. Vui lòng hoàn tất hoặc hủy trước khi đặt đơn khác.",
     },
 };
