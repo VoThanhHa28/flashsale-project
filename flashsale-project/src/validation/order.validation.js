@@ -25,6 +25,7 @@ const create = {
             otherwise: Joi.required(),
         }),
         client_order_id: Joi.string().optional(),
+        holdPayment: Joi.boolean().optional(),
 
         note: Joi.string().max(500).optional(),
     }).xor('items', 'productId'), // Either items OR productId, not both
@@ -59,8 +60,18 @@ const getMyOrderById = {
     }),
 };
 
+const confirmPayment = {
+    params: Joi.object({
+        id: Joi.string().required(),
+    }),
+    body: Joi.object({
+        paymentMethod: Joi.string().valid("cod", "prepaid").default("cod"),
+    }).default({}),
+};
+
 module.exports = {
     create,
     getMyOrders,
     getMyOrderById,
+    confirmPayment,
 };

@@ -47,6 +47,11 @@ const orderSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        holdExpiresAt: {
+            type: Date,
+            default: null,
+            index: true,
+        },
         errorMessage: {
             type: String,
             default: null,

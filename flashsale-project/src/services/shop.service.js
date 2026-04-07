@@ -37,6 +37,22 @@ class ShopService {
         const order = await ShopRepo.findOrderById(orderId);
         if (!order) throw new NotFoundError(CONST.SHOP.MESSAGE.ORDER_NOT_FOUND);
 
+        const currentStatus = String(order.status || "");
+        const validTransitions = {
+            pending: ["confirmed", "cancelled"],
+            confirmed: ["shipping", "cancelled"],
+            shipping: ["completed", "cancelled"],
+            completed: [],
+            cancelled: [],
+            failed: [],
+            success: [],
+            pending_payment: [],
+        };
+        const nextAllowed = validTransitions[currentStatus] || [];
+        if (!nextAllowed.includes(status)) {
+            throw new BadRequestError(CONST.SHOP.MESSAGE.INVALID_STATUS_TRANSITION);
+        }
+
         const updated = await ShopRepo.updateOrderStatus(orderId, status);
         return updated;
     }

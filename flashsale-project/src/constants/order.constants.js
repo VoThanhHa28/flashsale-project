@@ -1,5 +1,7 @@
 module.exports = {
+    CHECKOUT_HOLD_MS: 5 * 60 * 1000,
     STATUS: {
+        PENDING_PAYMENT: "pending_payment",
         PENDING: "pending",
         CONFIRMED: "confirmed",
         COMPLETED: "completed",
@@ -18,6 +20,7 @@ module.exports = {
         },
         METHOD: {
             COD: "cod",
+            PREPAID: "prepaid",
         },
         CURRENCY: {
             VND: "VND",
@@ -32,6 +35,8 @@ module.exports = {
         GET_MY_ORDER_SUCCESS: "Lấy chi tiết đơn hàng thành công",
         ORDER_NOT_OWNED: "Bạn không có quyền xem đơn hàng này",
         CANCEL_ORDER_SUCCESS: "Hủy đơn hàng thành công",
-        CANCEL_ORDER_NOT_ALLOWED: "Chỉ có thể hủy đơn hàng đang chờ xử lý",
+        CANCEL_ORDER_NOT_ALLOWED: "Chỉ có thể hủy đơn hàng chờ thanh toán hoặc chờ xử lý",
+        CONFIRM_PAYMENT_SUCCESS: "Xác nhận thanh toán thành công",
+        HOLD_EXPIRED: "Đơn giữ chỗ đã hết hạn",
     },
 };

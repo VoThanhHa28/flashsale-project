@@ -15,6 +15,16 @@ const { ForbiddenError } = require("../core/error.response");
 const CONST = require("../constants");
 
 class OrderService {
+    static async _restoreStockForOrder(order) {
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
+        const keyInfo = CONST.REDIS.PRODUCT_INFO(order.productId);
+        await Promise.all([
+            redisClient.incrBy(keyStock, order.quantity),
+            redisClient.del(keyInfo).catch(() => {}),
+        ]);
+        await OrderService._syncInventoryFromRedis(order.productId);
+    }
+
     /** Hoàn tác order + order_details + payments nếu lưu chi tiết/payment thất bại. */
     static async _rollbackOrderPersist(orderId) {
         await Promise.all([
@@ -48,7 +58,7 @@ class OrderService {
                 if (!product || !product.isPublished) return;
 
                 const inv = await InventoryRepo.findByProductId(pid);
-                const qty = inv != null ? inv.quantityOnHand : product.productQuantity;
+                const qty = inv != null ? inv.stock : product.productQuantity;
 
                 await Promise.all([
                     redisClient.set(CONST.REDIS.PRODUCT_STOCK(pid), String(qty), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
@@ -71,12 +81,12 @@ class OrderService {
 
             const ids = products.map((p) => p._id.toString());
             const invs = await InventoryRepo.findByProductIds(ids);
-            const invMap = new Map(invs.map((i) => [i.productId.toString(), i]));
+            const invMap = new Map(invs.map((i) => [String(i.product_id), i]));
 
             const commands = [];
             for (const p of products) {
                 const inv = invMap.get(p._id.toString());
-                const qty = inv != null ? inv.quantityOnHand : p.productQuantity;
+                const qty = inv != null ? inv.stock : p.productQuantity;
                 commands.push(
                     redisClient.set(CONST.REDIS.PRODUCT_STOCK(p._id), String(qty), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
                 );
@@ -312,6 +322,90 @@ class OrderService {
         return order;
     }
 
+    static async createPendingPaymentOrder({ userId, productId, quantity, price, client_order_id }) {
+        const expiresAt = new Date(Date.now() + CONST.ORDER.CHECKOUT_HOLD_MS);
+        const order = await OrderModel.create({
+            client_order_id,
+            userId,
+            productId,
+            quantity,
+            price,
+            totalPrice: quantity * price,
+            status: CONST.ORDER.STATUS.PENDING_PAYMENT,
+            holdExpiresAt: expiresAt,
+            orderTime: new Date(),
+            processedAt: null,
+        });
+        try {
+            await OrderDetailRepo.insertLines(order._id, [
+                {
+                    productId,
+                    quantity,
+                    unitPrice: price,
+                    lineTotal: quantity * price,
+                },
+            ]);
+            await PaymentRepo.insertForOrder(order._id, {
+                amount: order.totalPrice,
+                status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+                method: CONST.ORDER.PAYMENT.METHOD.COD,
+            });
+        } catch (persistErr) {
+            await OrderService._rollbackOrderPersist(order._id);
+            throw persistErr;
+        }
+        const orderLean = await OrderModel.findById(order._id).lean();
+        const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
+        const orderWithPayment = await PaymentRepo.enrichOrderWithPayment(orderWithDetails);
+        return { order: orderWithPayment };
+    }
+
+    static async confirmOrderPayment({ userId, orderId, paymentMethod }) {
+        const order = await OrderModel.findOne({
+            _id: orderId,
+            userId: userId.toString(),
+        });
+        if (!order) throw new NotFoundError(CONST.ORDER.MESSAGE.ORDER_NOT_FOUND);
+        if (order.status !== CONST.ORDER.STATUS.PENDING_PAYMENT) {
+            throw new BadRequestError(CONST.ORDER.MESSAGE.CANCEL_ORDER_NOT_ALLOWED);
+        }
+        if (!order.holdExpiresAt || order.holdExpiresAt.getTime() <= Date.now()) {
+            order.status = CONST.ORDER.STATUS.CANCELLED;
+            order.processedAt = new Date();
+            order.holdExpiresAt = null;
+            await order.save();
+            await OrderService._restoreStockForOrder(order);
+            throw new BadRequestError(CONST.ORDER.MESSAGE.HOLD_EXPIRED);
+        }
+        order.status = CONST.ORDER.STATUS.PENDING;
+        order.processedAt = new Date();
+        order.holdExpiresAt = null;
+        await order.save();
+        await PaymentModel.updateOne(
+            { orderId: order._id.toString() },
+            { $set: { method: paymentMethod || CONST.ORDER.PAYMENT.METHOD.COD } },
+        );
+        const orderLean = await OrderModel.findById(order._id).lean();
+        const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
+        const orderWithPayment = await PaymentRepo.enrichOrderWithPayment(orderWithDetails);
+        return { order: orderWithPayment };
+    }
+
+    static async expireStalePaymentHolds() {
+        const now = new Date();
+        const staleOrders = await OrderModel.find({
+            status: CONST.ORDER.STATUS.PENDING_PAYMENT,
+            holdExpiresAt: { $lte: now },
+        }).limit(100);
+        for (const order of staleOrders) {
+            order.status = CONST.ORDER.STATUS.CANCELLED;
+            order.processedAt = now;
+            order.holdExpiresAt = null;
+            await order.save();
+            await OrderService._restoreStockForOrder(order);
+        }
+    }
+
     // 5. NOTIFY STOCK UPDATE VIA SOCKET
     static async notifyStockUpdate(productId, quantity, remainingStock) {
         try {
@@ -456,27 +550,19 @@ class OrderService {
             throw new NotFoundError(CONST.ORDER.MESSAGE.ORDER_NOT_FOUND);
         }
 
-        // Chỉ được hủy đơn đang chờ xử lý (PENDING)
-        if (order.status !== CONST.ORDER.STATUS.PENDING) {
+        if (![CONST.ORDER.STATUS.PENDING, CONST.ORDER.STATUS.PENDING_PAYMENT].includes(order.status)) {
             throw new BadRequestError(CONST.ORDER.MESSAGE.CANCEL_ORDER_NOT_ALLOWED);
         }
-
-        // Hoàn kho Redis
-        const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
-        const keyInfo = CONST.REDIS.PRODUCT_INFO(order.productId);
-        await Promise.all([
-            redisClient.incrBy(keyStock, order.quantity),
-            redisClient.del(keyInfo).catch(() => {}), // Clear cache for fresh product info
-        ]);
 
         // Cập nhật status
         order.status = CONST.ORDER.STATUS.CANCELLED;
         order.processedAt = new Date();
+        order.holdExpiresAt = null;
         await order.save();
 
         console.log(`[OrderService] ❌ Đã hủy đơn hàng: ${order._id}, hoàn ${order.quantity} sản phẩm vào kho`);
 
-        await OrderService._syncInventoryFromRedis(order.productId);
+        await OrderService._restoreStockForOrder(order);
 
         const orderLean = await OrderModel.findById(order._id).lean();
         const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);

@@ -153,7 +153,7 @@ function ShopOrders() {
 
   const stats = useMemo(() => {
     const pending = orders.filter((o) => o.status === 'pending').length;
-    const processing = orders.filter((o) => o.status === 'processing').length;
+    const processing = orders.filter((o) => o.status === 'processing' || o.status === 'confirmed').length;
     const shipping = orders.filter((o) => o.status === 'shipping').length;
     return { pending, processing, shipping };
   }, [orders]);
@@ -305,6 +305,30 @@ function ShopOrders() {
                               }}
                             >
                               Hủy
+                            </button>
+                          )}
+                          {order.canMarkShipping && (
+                            <button
+                              type="button"
+                              className={`${styles.actionBtn} ${styles.approveBtn}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(order.id, 'shipping');
+                              }}
+                            >
+                              Đang giao
+                            </button>
+                          )}
+                          {order.canComplete && (
+                            <button
+                              type="button"
+                              className={`${styles.actionBtn} ${styles.approveBtn}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(order.id, 'completed');
+                              }}
+                            >
+                              Hoàn tất
                             </button>
                           )}
                           {!order.canApprove && !order.canCancel && (

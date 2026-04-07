@@ -324,6 +324,11 @@ function OrderCard({ order, onCopyCode, onCancelOrder }) {
                 className={styles.secondaryAction}
                 disabled={secondaryAction.disabled}
                 aria-label={secondaryAction.label}
+                onClick={() => {
+                  if (order.status === 'pending_payment') {
+                    navigate(`/checkout?orderId=${encodeURIComponent(order.id)}`);
+                  }
+                }}
               >
                 {secondaryAction.label}
               </button>

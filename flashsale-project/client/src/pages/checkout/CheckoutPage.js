@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { useCart } from '../../contexts/CartContext';
 import { CartLineRow, formatPrice } from '../cart/CartLineRow';
@@ -17,6 +17,8 @@ function formatCountdown(remainingMs) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get('orderId');
   const { cart, loading, refreshCart } = useCart();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -26,6 +28,8 @@ export default function CheckoutPage() {
   const [remainingMs, setRemainingMs] = useState(CHECKOUT_LIMIT_MS);
   /** Chỉ UI — không gửi body order; trạng thái thanh toán trên /orders theo dữ liệu server */
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   const token = api.getToken();
   const items = useMemo(
@@ -37,6 +41,31 @@ export default function CheckoutPage() {
     () => items.map((i) => `${i.productId}:${i.quantity}`).join('|'),
     [items],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!token || !orderId) {
+      setPendingOrder(null);
+      return;
+    }
+    setOrderLoading(true);
+    (async () => {
+      const order = await api.getOrderById(orderId);
+      if (cancelled) return;
+      setPendingOrder(order);
+      if (order?.holdExpiresAt) {
+        const deadline = new Date(order.holdExpiresAt).getTime();
+        if (!Number.isNaN(deadline)) {
+          deadlineRef.current = deadline;
+          setRemainingMs(Math.max(0, deadline - Date.now()));
+        }
+      }
+      setOrderLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, orderId]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -66,10 +95,11 @@ export default function CheckoutPage() {
   }, [token, items.length, itemsSignature]);
 
   useEffect(() => {
+    if (orderId) return;
     if (!loading && token && items.length === 0 && !checkoutLoading) {
       navigate('/cart', { replace: true });
     }
-  }, [loading, token, items.length, checkoutLoading, navigate]);
+  }, [loading, token, items.length, checkoutLoading, navigate, orderId]);
 
   const setLineQty = useCallback(
     async (productId, nextQty) => {
@@ -100,36 +130,28 @@ export default function CheckoutPage() {
 
   const timeExpired = remainingMs <= 0;
   const countdownLabel = formatCountdown(remainingMs);
+  const checkoutItems = orderId ? (pendingOrder?.items || []) : items;
+  const checkoutTotalAmount = orderId ? (pendingOrder?.totalAmount || 0) : (cart?.totalAmount ?? 0);
 
   const handleConfirmPayment = async () => {
-    if (items.length === 0 || timeExpired) return;
+    if (checkoutItems.length === 0 || timeExpired) return;
     setError('');
     setMessage('');
     setCheckoutLoading(true);
-    const list = [...items];
-    const failures = [];
-    let ok = 0;
     try {
-      for (const it of list) {
-        try {
+      if (orderId) {
+        await api.confirmOrderPayment(orderId, paymentMethod);
+        setMessage('Thanh toán thành công. Đơn hàng đã chuyển sang chờ shop xử lý.');
+        setTimeout(() => navigate('/orders'), 1000);
+      } else {
+        const list = [...items];
+        for (const it of list) {
           await api.createOrder(it.productId, it.quantity, it.price);
           await api.removeCartItem(it.productId);
-          ok += 1;
-        } catch (err) {
-          failures.push(`${it.productName || it.productId}: ${err.message || 'Lỗi'}`);
         }
-      }
-      await refreshCart();
-
-      if (failures.length === 0) {
+        await refreshCart();
         setMessage('Đặt hàng thành công. Bạn có thể xem đơn trong mục Đơn hàng.');
         setTimeout(() => navigate('/orders'), 1200);
-      } else if (ok === 0) {
-        setError(failures.join(' '));
-      } else {
-        setError(
-          `Đã tạo ${ok} đơn. ${failures.length} dòng chưa xong: ${failures.join(' ')}`,
-        );
       }
     } catch (err) {
       setError(err.message || 'Thanh toán thất bại. Vui lòng thử lại.');
@@ -226,18 +248,20 @@ export default function CheckoutPage() {
           </p>
         )}
 
-        {items.length > 0 && (
+        {orderLoading && orderId && <p className="cart-page-muted">Đang tải đơn hàng…</p>}
+
+        {checkoutItems.length > 0 && (
           <>
             <ul className="cart-page-lines">
-              {items.map((it) => (
+              {checkoutItems.map((it) => (
                 <CartLineRow
                   key={it.productId}
                   item={it}
                   maxStock={stockById[String(it.productId)]}
-                  checkoutLoading={checkoutLoading || timeExpired}
+                  checkoutLoading={checkoutLoading || timeExpired || !!orderId}
                   onSetQty={setLineQty}
                   onRemove={handleRemove}
-                  readOnly={timeExpired}
+                  readOnly={timeExpired || !!orderId}
                 />
               ))}
             </ul>
@@ -281,17 +305,18 @@ export default function CheckoutPage() {
             <div className="cart-page-footer">
               <div className="cart-page-total-row">
                 <span className="cart-page-total-label">Tạm tính</span>
-                <span className="cart-page-total-value">{formatPrice(cart?.totalAmount ?? 0)}</span>
+                <span className="cart-page-total-value">{formatPrice(checkoutTotalAmount)}</span>
               </div>
               <p className="cart-page-note">
-                Hệ thống tạo <strong>một đơn hàng cho mỗi sản phẩm</strong> trong giỏ. Giá cuối do server xác
-                nhận khi đặt.
+                {orderId
+                  ? 'Đơn này đã được giữ chỗ từ Mua ngay. Hoàn tất thanh toán để shop tiếp nhận xử lý.'
+                  : 'Hệ thống tạo một đơn hàng cho mỗi sản phẩm trong giỏ. Giá cuối do server xác nhận khi đặt.'}
               </p>
               <button
                 type="button"
                 className="cart-page-checkout"
                 onClick={handleConfirmPayment}
-                disabled={checkoutLoading || timeExpired || items.length === 0}
+                disabled={checkoutLoading || timeExpired || checkoutItems.length === 0}
               >
                 {checkoutLoading ? 'Đang xử lý…' : timeExpired ? 'Hết thời gian' : 'Xác nhận thanh toán'}
               </button>

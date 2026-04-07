@@ -7,10 +7,10 @@ function escapeRegex(str) {
 function mapFeStatusToMongoMatch(status) {
     if (!status || status === "all") return null;
     const map = {
-        pending_payment: { status: "pending" },
+        pending_payment: { status: "pending_payment" },
         pending_confirm: { status: "confirmed" },
-        processing: { status: "confirmed" },
-        shipping: { status: "confirmed" },
+        processing: { status: { $in: ["pending", "confirmed"] } },
+        shipping: { status: "shipping" },
         completed: { status: { $in: ["completed", "success"] } },
         cancelled: { status: "cancelled" },
         refunded: { status: "failed" },

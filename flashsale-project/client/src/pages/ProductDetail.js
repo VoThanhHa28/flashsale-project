@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { flushSync } from 'react-dom';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import { getFlashSaleStatus } from '../utils/flashSaleUtils';
@@ -184,17 +183,17 @@ function ProductDetail() {
 
     const qty = Math.max(1, Math.floor(Number(quantity)) || 1);
     setOrderSubmitting(true);
-    flushSync(() => {}); // Ép React vẽ overlay trước khi gọi API
     try {
       if (api.isApiConfigured()) {
         const price = product.product_price ?? product.productPrice ?? 0;
-        const result = await api.createOrder(product.product_id, qty, price);
-        const msg = result?.message || 'Đơn hàng đang được xử lý.';
+        const result = await api.createOrder(product.product_id, qty, price, { holdPayment: true });
+        const msg = result?.message || 'Đã tạo đơn chờ thanh toán.';
         setOrderSuccess(msg);
         setOrderResult('success');
         setOrderResultMessage(msg);
-        // Giữ overlay ít nhất 800ms để user thấy "Đơn hàng đang được xử lý…"
-        await new Promise((r) => setTimeout(r, 800));
+        await refreshCart();
+        await new Promise((r) => setTimeout(r, 500));
+        navigate('/orders');
         return;
       }
       const msg = 'Đơn hàng đang được xử lý. (Chưa kết nối API)';
