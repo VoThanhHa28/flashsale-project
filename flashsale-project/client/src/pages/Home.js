@@ -127,7 +127,7 @@ function Home() {
       <div className="home">
         <section className="home-top">
           <div className="home-top-inner">
-            <div className="home-sidebar-left"><SidebarLeft /></div>
+            <div className="home-sidebar-left"><SidebarLeft categories={apiCategories} /></div>
             <div className="home-center"><BannerCarousel /><PromoTiles /></div>
             <div className="home-sidebar-right"><SidebarRight /></div>
           </div>
@@ -164,7 +164,7 @@ function Home() {
       <section className="home-top">
         <div className="home-top-inner">
           <div className="home-sidebar-left">
-            <SidebarLeft />
+            <SidebarLeft categories={apiCategories} />
           </div>
           <div className="home-center">
             <BannerCarousel />
@@ -196,38 +196,6 @@ function Home() {
               <span className="home-section-count">{products.length} sản phẩm</span>
             )}
           </div>
-
-          {categoryChips.length > 0 && (
-            <nav className="home-category-bar" aria-label="Lọc theo danh mục">
-              <span className="home-category-bar-label">
-                <FiLayers size={14} aria-hidden />
-                Danh mục
-              </span>
-              <div className="home-category-chips">
-                <button
-                  type="button"
-                  className={`home-category-chip${categoryFilter === '' ? ' home-category-chip--active' : ''}`}
-                  onClick={() => setCategoryFilter('')}
-                >
-                  Tất cả
-                </button>
-                {categoryChips.map((c) => {
-                  const name = c.categoryName;
-                  const key = c._id || name;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`home-category-chip${categoryFilter === name ? ' home-category-chip--active' : ''}`}
-                      onClick={() => setCategoryFilter(name)}
-                    >
-                      {name}
-                    </button>
-                  );
-                })}
-              </div>
-            </nav>
-          )}
 
           {products.length === 0 ? (
             <div className="home-empty">
