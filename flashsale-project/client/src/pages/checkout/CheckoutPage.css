@@ -1,0 +1,103 @@
+.checkout-countdown {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  color: #0c4a6e;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.checkout-countdown--warn {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.checkout-countdown--expired {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.checkout-countdown-icon {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.checkout-countdown-digits {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.checkout-pay-fieldset {
+  margin: 1rem 0 1.25rem 0;
+  padding: 0;
+  border: none;
+  min-inline-size: 0;
+}
+
+.checkout-pay-legend {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.65rem;
+  padding: 0;
+}
+
+.checkout-pay-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.checkout-pay-option:last-of-type {
+  margin-bottom: 0.65rem;
+}
+
+.checkout-pay-option--on {
+  border-color: #ee4d2d;
+  background: #fff5f3;
+}
+
+.checkout-pay-option input {
+  margin-top: 0.2rem;
+  accent-color: #ee4d2d;
+}
+
+.checkout-pay-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.checkout-pay-option-body strong {
+  color: #0f172a;
+}
+
+.checkout-pay-hint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.checkout-pay-note {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}

@@ -6,20 +6,9 @@ import {
   FiClock, FiLayers,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
+import { toLocalDatetime, localDatetimeToISO } from '../utils/datetimeLocal';
 import styles from './ProductForm.module.css';
-
-function toLocalDatetime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function toISO(localDatetime) {
-  if (!localDatetime) return null;
-  return new Date(localDatetime).toISOString();
-}
 
 const EMPTY_FORM = {
   productName: '',
@@ -56,7 +45,7 @@ function ProductForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const user = api.getUser();
-  const userRole = user?.usr_role || user?.role || '';
+  const userRole = getUserRoleCode(user);
   const isAdmin = userRole === 'SHOP_ADMIN' || userRole === 'OWNER' || userRole === 'ADMIN';
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -123,8 +112,8 @@ function ProductForm() {
     }
 
     setSaving(true);
-    const startISO = toISO(form.startTime);
-    const endISO = toISO(form.endTime);
+    const startISO = localDatetimeToISO(form.startTime);
+    const endISO = localDatetimeToISO(form.endTime);
     const payload = {
       productName: form.productName,
       productThumb: form.productThumb,

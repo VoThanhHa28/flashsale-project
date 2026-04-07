@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './Report.module.css';
 
 const RANGE_OPTIONS = [
@@ -19,7 +20,7 @@ function formatPrice(value) {
 function Report() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const userRole = user?.usr_role || user?.role || '';
+  const userRole = getUserRoleCode(user);
   // Chủ shop / admin mới xem được trang báo cáo
   const isAdmin =
     userRole === 'SHOP_ADMIN' ||

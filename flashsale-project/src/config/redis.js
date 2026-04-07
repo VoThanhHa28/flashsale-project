@@ -21,9 +21,9 @@ client.on('error', (err) => console.log('❌ Redis Client Error', err));
 client.on('connect', () => console.log('✅ Redis Connected!'));
 client.on('ready', () => console.log('✅ Redis Ready to use!'));
 
-// Kết nối ngay lập tức
-(async () => {
-    await client.connect();
-})();
+// Kết nối background - don't crash server if Redis is down
+client.connect().catch((err) => {
+    console.warn('⚠️  Redis connection failed (will retry), server continues without Redis:', err.message);
+});
 
 module.exports = client;

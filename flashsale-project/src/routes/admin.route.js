@@ -55,4 +55,9 @@ router.patch("/users/:id/role", validate(adminValidation.assignRoleToUser), admi
  */
 router.get("/health", adminController.health);
 
+/**
+ * GET /admin/logs - Nhật ký thao tác POST/PUT/PATCH/DELETE (SHOP_ADMIN)
+ */
+router.get("/logs", validate(adminValidation.getActivityLogs), adminController.getActivityLogs);
+
 module.exports = router;

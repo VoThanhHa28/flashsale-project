@@ -72,6 +72,14 @@ class AdminController {
             data: result,
         }).send(res);
     });
+
+    getActivityLogs = asyncHandler(async (req, res) => {
+        const result = await AdminService.getActivityLogs(req.query);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_LOGS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
 }
 
 module.exports = new AdminController();

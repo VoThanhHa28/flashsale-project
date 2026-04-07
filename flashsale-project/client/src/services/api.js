@@ -30,6 +30,19 @@ export function isMockMode() {
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 
+/** Cùng một chuỗi localStorage → cùng một object; tránh JSON.parse mỗi render làm useEffect([user]) lặp vô hạn. */
+let userCacheRaw = null;
+let userCacheParsed = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === USER_KEY || e.key === null) {
+      userCacheRaw = null;
+      userCacheParsed = null;
+    }
+  });
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -42,20 +55,35 @@ export function setToken(token) {
 export function getUser() {
   try {
     const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (raw === userCacheRaw) return userCacheParsed;
+    userCacheRaw = raw;
+    userCacheParsed = raw ? JSON.parse(raw) : null;
+    return userCacheParsed;
   } catch {
+    userCacheRaw = null;
+    userCacheParsed = null;
     return null;
   }
 }
 
 export function setUser(user) {
-  if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
-  else localStorage.removeItem(USER_KEY);
+  if (user) {
+    const s = JSON.stringify(user);
+    localStorage.setItem(USER_KEY, s);
+    userCacheRaw = s;
+    userCacheParsed = user;
+  } else {
+    localStorage.removeItem(USER_KEY);
+    userCacheRaw = null;
+    userCacheParsed = null;
+  }
 }
 
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  userCacheRaw = null;
+  userCacheParsed = null;
 }
 
 /**
@@ -268,6 +296,91 @@ export async function getProductById(id) {
   }
 }
 
+// =====================================================================
+// ============ CATEGORIES (public list + SHOP_ADMIN CRUD) =============
+// =====================================================================
+
+/**
+ * GET /v1/api/categories — danh mục đang hoạt động (không cần token).
+ */
+export async function getCategories() {
+  if (!isApiConfigured()) {
+    return { success: true, categories: [], message: '' };
+  }
+  try {
+    const res = await request('/v1/api/categories');
+    const data = getPayload(res);
+    const categories = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.categories)
+        ? data.categories
+        : [];
+    return { success: true, categories, message: res.message || '' };
+  } catch (err) {
+    return {
+      success: false,
+      categories: [],
+      message: err.message || 'Không tải được danh mục',
+    };
+  }
+}
+
+/** POST /v1/api/categories — Shop Admin */
+export async function createCategory(body) {
+  try {
+    const res = await request('/v1/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    const data = getPayload(res);
+    const category = data?.category ?? data;
+    return {
+      success: true,
+      message: res.message || 'Đã tạo danh mục',
+      category: category || null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không tạo được danh mục', category: null };
+  }
+}
+
+/** PUT /v1/api/categories/:id — Shop Admin */
+export async function updateCategory(id, body) {
+  try {
+    const res = await request(`/v1/api/categories/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    const data = getPayload(res);
+    const category = data?.category ?? data;
+    return {
+      success: true,
+      message: res.message || 'Đã cập nhật danh mục',
+      category: category || null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không cập nhật được danh mục', category: null };
+  }
+}
+
+/** DELETE /v1/api/categories/:id — Shop Admin (soft delete) */
+export async function deleteCategory(id) {
+  try {
+    const res = await request(`/v1/api/categories/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    const data = getPayload(res);
+    const category = data?.category ?? data;
+    return {
+      success: true,
+      message: res.message || 'Đã xóa danh mục',
+      category: category || null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không xóa được danh mục', category: null };
+  }
+}
+
 /** POST login; token lấy từ payload.accessToken. */
 export async function login(email, password) {
   const res = await request('/v1/api/auth/login', {
@@ -314,6 +427,43 @@ export async function createOrder(productId, quantity, price) {
   });
   const payload = getPayload(res);
   return { message: res.message || payload?.message, metadata: payload, response: res };
+}
+
+/** GET /v1/api/cart – cần đăng nhập */
+export async function getCart() {
+  if (!isApiConfigured()) return null;
+  const res = await request('/v1/api/cart');
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** POST /v1/api/cart/items */
+export async function addCartItem(productId, quantity) {
+  const res = await request('/v1/api/cart/items', {
+    method: 'POST',
+    body: JSON.stringify({ productId: String(productId), quantity }),
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** PATCH /v1/api/cart/items/:productId */
+export async function updateCartItem(productId, quantity) {
+  const res = await request(`/v1/api/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ quantity }),
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
+}
+
+/** DELETE /v1/api/cart/items/:productId */
+export async function removeCartItem(productId) {
+  const res = await request(`/v1/api/cart/items/${encodeURIComponent(productId)}`, {
+    method: 'DELETE',
+  });
+  const data = getPayload(res);
+  return data?.cart ?? null;
 }
 
 /**
@@ -533,6 +683,13 @@ export async function getShopOrders({
     return { orders: [], pagination: null };
   }
 }
+
+/**
+ * Chi tiết đơn shop (đủ dòng hàng + F5): BE chưa có — cần team BE bổ sung (khi được yêu cầu), ví dụ:
+ *   GET /v1/api/shop/orders/:id  (auth SHOP_ADMIN) trả { order } lean + populate productId từng dòng
+ *   order_details (hoặc items[]), userId (khách: name, email, phone), status, totalPrice, …
+ * FE hiện dùng dữ liệu truyền qua react-router state khi bấm hàng ở /shop/orders.
+ */
 
 /**
  * PATCH /v1/api/shop/orders/:id/status
@@ -769,6 +926,56 @@ export async function scheduleFlashSale(productId, startTime, endTime) {
 }
 
 /**
+ * Lên lịch Flash Sale cho nhiều sản phẩm (cùng khoảng thời gian).
+ * Gọi song song; invalidate cache một lần nếu có ít nhất một thành công.
+ */
+export async function scheduleFlashSaleBatch(productIds, startTime, endTime) {
+  const ids = [...new Set((productIds || []).map(String))];
+  if (!ids.length) {
+    return {
+      ok: 0,
+      fail: 0,
+      failures: [],
+      allSuccess: false,
+      message: 'Chưa chọn sản phẩm',
+    };
+  }
+
+  const settled = await Promise.allSettled(
+    ids.map((productId) =>
+      request('/v1/api/admin/flash-sale/activate', {
+        method: 'POST',
+        body: JSON.stringify({ productId, startTime, endTime }),
+      }),
+    ),
+  );
+
+  const failures = [];
+  let ok = 0;
+  settled.forEach((s, i) => {
+    if (s.status === 'fulfilled') ok += 1;
+    else {
+      const msg = s.reason?.message || 'Không thể lên lịch';
+      failures.push({ productId: ids[i], message: msg });
+    }
+  });
+
+  if (ok > 0) invalidateAllCaches();
+
+  const allSuccess = failures.length === 0;
+  let message = '';
+  if (allSuccess) {
+    message = `Đã lên lịch Flash Sale cho ${ok} sản phẩm.`;
+  } else if (ok > 0) {
+    message = `Thành công ${ok}/${ids.length} sản phẩm. Một số mục lỗi — xem chi tiết bên dưới.`;
+  } else {
+    message = failures[0]?.message || 'Không thể lên lịch cho sản phẩm nào.';
+  }
+
+  return { ok, fail: failures.length, failures, allSuccess, message };
+}
+
+/**
  * DELETE /v1/api/products/:id – Xóa mềm sản phẩm.
  * Backend set is_deleted = true, stock Redis về 0.
  */
@@ -823,6 +1030,337 @@ export async function banUser(userId) {
     return { success: true, message: res.message || 'Khóa tài khoản thành công', user: data?.user ?? null };
   } catch (err) {
     return { success: false, message: err.message || 'Không thể khóa tài khoản' };
+  }
+}
+
+/**
+ * GET /v1/api/admin/roles — Danh sách role (USER, SHOP_ADMIN, …).
+ */
+export async function getAdminRoles() {
+  try {
+    const res = await request('/v1/api/admin/roles');
+    const data = getPayload(res);
+    const roles = Array.isArray(data?.roles) ? data.roles : [];
+    return { success: true, roles, message: res.message || '' };
+  } catch (err) {
+    return { success: false, roles: [], message: err.message || 'Không tải được vai trò' };
+  }
+}
+
+/**
+ * PATCH /v1/api/admin/users/:id/role — Gán role (body { roleId }).
+ */
+export async function assignUserRole(userId, roleId) {
+  try {
+    const res = await request(`/v1/api/admin/users/${encodeURIComponent(userId)}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ roleId }),
+    });
+    const data = getPayload(res);
+    return {
+      success: true,
+      message: res.message || 'Đã cập nhật vai trò',
+      user: data?.user ?? null,
+    };
+  } catch (err) {
+    return { success: false, message: err.message || 'Không thể cập nhật vai trò', user: null };
+  }
+}
+
+// =====================================================================
+// ============ ACTIVITY LOGS (SHOP_ADMIN) ==============================
+// =====================================================================
+
+/**
+ * GET /v1/api/admin/logs – Nhật ký POST/PUT/PATCH/DELETE (phân trang).
+ * Query: page, limit, method (optional: POST | PUT | PATCH | DELETE)
+ */
+export async function getActivityLogs({ page = 1, limit = 20, method } = {}) {
+  try {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    if (method) params.set('method', method);
+    const res = await request(`/v1/api/admin/logs?${params.toString()}`);
+    const data = getPayload(res);
+    const pg = data?.pagination;
+    return {
+      success: true,
+      message: res.message || '',
+      logs: Array.isArray(data?.logs) ? data.logs : [],
+      pagination: {
+        page: pg?.page ?? page,
+        pageSize: pg?.pageSize ?? limit,
+        total: pg?.total ?? 0,
+        totalPages: pg?.totalPages ?? 0,
+      },
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.message || 'Không thể tải nhật ký',
+      logs: [],
+      pagination: { page, pageSize: limit, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+/** Dữ liệu mẫu khi BE chưa có GET /v1/api/admin/inventory/history hoặc gọi lỗi. */
+const MOCK_INVENTORY_HISTORY_ALL = [
+  {
+    id: 'mock-1',
+    createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c1',
+    productName: 'Tai nghe Bluetooth Pro',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 1,
+    price: 890000,
+    remainingStockAfter: 42,
+    orderId: null,
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-2',
+    createdAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c1',
+    productName: 'Tai nghe Bluetooth Pro',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 1,
+    price: 890000,
+    remainingStockAfter: 42,
+    orderId: '64f0e1d2c3b4a59687786950',
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-3',
+    createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c2',
+    productName: 'Bàn phím cơ RGB',
+    direction: 'in',
+    source: 'rollback',
+    sourceLabel: 'Hoàn kho',
+    kindLabel: 'Nhập lại (hoàn kho)',
+    quantity: 2,
+    price: 1290000,
+    remainingStockAfter: 18,
+    orderId: null,
+    userId: '68a1c02f3b4d5e6f7890abce',
+    note: 'Worker timeout — hoàn slot',
+  },
+  {
+    id: 'mock-4',
+    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c3',
+    productName: 'Chuột không dây X1',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 3,
+    price: 349000,
+    remainingStockAfter: 76,
+    userId: '68a1c02f3b4d5e6f7890abce',
+    note: null,
+  },
+  {
+    id: 'mock-5',
+    createdAt: new Date(Date.now() - 1000 * 60 * 150).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c3',
+    productName: 'Chuột không dây X1',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 3,
+    price: 349000,
+    remainingStockAfter: 76,
+    orderId: '64f0e1d2c3b4a59687786951',
+    userId: '68a1c02f3b4d5e6f7890abce',
+    note: null,
+  },
+  {
+    id: 'mock-6',
+    createdAt: new Date(Date.now() - 1000 * 60 * 220).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c4',
+    productName: 'Loa mini 20W',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 1,
+    price: 599000,
+    remainingStockAfter: 9,
+    orderId: '64f0e1d2c3b4a59687786952',
+    userId: null,
+    note: null,
+  },
+  {
+    id: 'mock-7',
+    createdAt: new Date(Date.now() - 1000 * 60 * 300).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c4',
+    productName: 'Loa mini 20W',
+    direction: 'in',
+    source: 'rollback',
+    sourceLabel: 'Hoàn kho',
+    kindLabel: 'Nhập lại (hoàn kho)',
+    quantity: 1,
+    price: 599000,
+    remainingStockAfter: 10,
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: 'Thanh toán thất bại',
+  },
+  {
+    id: 'mock-8',
+    createdAt: new Date(Date.now() - 1000 * 60 * 400).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c5',
+    productName: 'USB-C 256GB',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 2,
+    price: 450000,
+    remainingStockAfter: 30,
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-9',
+    createdAt: new Date(Date.now() - 1000 * 60 * 500).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c5',
+    productName: 'USB-C 256GB',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 2,
+    price: 450000,
+    remainingStockAfter: 30,
+    orderId: '64f0e1d2c3b4a59687786953',
+    userId: '68a1c02f3b4d5e6f7890abcd',
+    note: null,
+  },
+  {
+    id: 'mock-10',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c6',
+    productName: 'Webcam Full HD',
+    direction: 'out',
+    source: 'worker_commit',
+    sourceLabel: 'Xác nhận đơn',
+    kindLabel: 'Xuất kho (đơn hàng)',
+    quantity: 1,
+    price: 720000,
+    remainingStockAfter: 5,
+    orderId: '64f0e1d2c3b4a59687786954',
+    userId: '68a1c02f3b4d5e6f7890abcf',
+    note: null,
+  },
+  {
+    id: 'mock-11',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c7',
+    productName: 'Đế tản nhiệt laptop',
+    direction: 'out',
+    source: 'redis_claim',
+    sourceLabel: 'Giữ chỗ',
+    kindLabel: 'Trừ tồn giữ chỗ (Redis)',
+    quantity: 4,
+    price: 280000,
+    remainingStockAfter: 52,
+    userId: '68a1c02f3b4d5e6f7890abcf',
+    note: null,
+  },
+  {
+    id: 'mock-12',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 10).toISOString(),
+    productId: '64b2c8e1a0f1d2e3f4a5b6c7',
+    productName: 'Đế tản nhiệt laptop',
+    direction: 'in',
+    source: 'rollback',
+    sourceLabel: 'Hoàn kho',
+    kindLabel: 'Nhập lại (hoàn kho)',
+    quantity: 4,
+    price: 280000,
+    remainingStockAfter: 56,
+    userId: '68a1c02f3b4d5e6f7890abcf',
+    note: 'Hủy giữ chỗ',
+  },
+];
+
+function paginateMockInventoryHistory({ page = 1, limit = 20, productId, source }) {
+  let list = [...MOCK_INVENTORY_HISTORY_ALL];
+  if (source) list = list.filter((r) => r.source === source);
+  if (productId && String(productId).trim()) {
+    const q = String(productId).trim().toLowerCase();
+    list = list.filter((r) => String(r.productId).toLowerCase().includes(q));
+  }
+  const total = list.length;
+  const pageSize = Math.min(Math.max(1, limit), 100);
+  const pageNum = Math.max(1, page);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+  const start = (pageNum - 1) * pageSize;
+  const items = list.slice(start, start + pageSize);
+  return {
+    items,
+    pagination: {
+      page: pageNum,
+      pageSize,
+      total,
+      totalPages,
+    },
+  };
+}
+
+/**
+ * GET /v1/api/admin/inventory/history — Lịch sử biến động kho (do BE triển khai).
+ * Query: page, limit, productId?, source? (redis_claim | worker_commit | rollback).
+ * Mong đợi payload: { items: [...], pagination: { page, pageSize, total, totalPages } }.
+ * Mỗi item nên có: id, createdAt, productId, productName?, direction ('in'|'out'),
+ * source?, sourceLabel?, kindLabel?, quantity, price?, remainingStockAfter?, orderId?, userId?, note?
+ *
+ * Nếu API lỗi / chưa có route: trả dữ liệu mẫu (fromMock: true) để xem giao diện.
+ */
+export async function getInventoryHistory({ page = 1, limit = 20, productId, source } = {}) {
+  try {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('limit', String(limit));
+    if (productId) params.set('productId', String(productId));
+    if (source) params.set('source', String(source));
+    const res = await request(`/v1/api/admin/inventory/history?${params.toString()}`);
+    const data = getPayload(res);
+    const pg = data?.pagination;
+    return {
+      success: true,
+      fromMock: false,
+      message: res.message || '',
+      items: Array.isArray(data?.items) ? data.items : [],
+      pagination: {
+        page: pg?.page ?? page,
+        pageSize: pg?.pageSize ?? limit,
+        total: pg?.total ?? 0,
+        totalPages: pg?.totalPages ?? 0,
+      },
+    };
+  } catch (err) {
+    const mock = paginateMockInventoryHistory({ page, limit, productId, source });
+    return {
+      success: true,
+      fromMock: true,
+      message: 'Đang hiển thị dữ liệu mẫu (API chưa sẵn sàng hoặc lỗi mạng).',
+      mockErrorHint: err.message || '',
+      items: mock.items,
+      pagination: mock.pagination,
+    };
   }
 }
 

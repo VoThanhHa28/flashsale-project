@@ -7,6 +7,7 @@ import {
   FiTrendingUp, FiBox, FiRefreshCw,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { getUserRoleCode } from '../utils/userRole';
 import styles from './ShopProducts.module.css';
 
 const PAGE_SIZE = 8;
@@ -116,7 +117,7 @@ function SkeletonRow() {
 function ShopProducts() {
   const navigate = useNavigate();
   const user = api.getUser();
-  const userRole = user?.usr_role || user?.role || '';
+  const userRole = getUserRoleCode(user);
   const isAdmin = userRole === 'SHOP_ADMIN' || userRole === 'OWNER' || userRole === 'ADMIN';
 
   const [products, setProducts] = useState([]);
