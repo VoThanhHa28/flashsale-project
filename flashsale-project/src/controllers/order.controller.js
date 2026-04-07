@@ -28,6 +28,7 @@ class OrderController {
         // If client provides one, use it (for idempotency testing)
         // Otherwise generate new one
         const clientOrderId = req.body.client_order_id || randomUUID();
+        const holdPayment = Boolean(req.body.holdPayment);
         console.log(`[OrderController] 📦 New order attempt: ${clientOrderId}`);
 
         // 5️⃣ RESERVE PRODUCT SLOT (Redis Lua Script + Reservation record)
@@ -40,6 +41,20 @@ class OrderController {
 
         if (!success) {
             throw new BadRequestError("Rất tiếc! Sản phẩm đã hết hàng.");
+        }
+
+        if (holdPayment) {
+            const result = await InventoryService.createPendingPaymentOrder({
+                userId: userId.toString(),
+                productId: productId.toString(),
+                quantity,
+                price,
+                client_order_id: clientOrderId,
+            });
+            return new OK({
+                message: CONST.ORDER.MESSAGE.PLACE_ORDER_SUCCESS,
+                data: result,
+            }).send(res);
         }
 
         // 6️⃣ PAYLOAD ĐẨY QUEUE (CHỈ DATA CẦN THIẾT + client_order_id)
@@ -87,6 +102,18 @@ class OrderController {
         const result = await InventoryService.cancelOrder(req.user._id, req.params.id);
         return new OK({
             message: CONST.ORDER.MESSAGE.CANCEL_ORDER_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    static confirmPayment = asyncHandler(async (req, res) => {
+        const result = await InventoryService.confirmOrderPayment({
+            userId: req.user._id,
+            orderId: req.params.id,
+            paymentMethod: req.body?.paymentMethod || CONST.ORDER.PAYMENT.METHOD.COD,
+        });
+        return new OK({
+            message: CONST.ORDER.MESSAGE.CONFIRM_PAYMENT_SUCCESS,
             data: result,
         }).send(res);
     });

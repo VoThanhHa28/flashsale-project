@@ -124,8 +124,9 @@ export default function ShopOrderDetail() {
     setActionBusy(false);
     setToast(result.message || (result.success ? 'Thành công' : 'Thất bại'));
     if (result.success) {
-      const next =
-        nextStatus === 'cancelled' ? 'cancelled' : nextStatus === 'confirmed' ? 'confirmed' : order.status;
+      const next = ['cancelled', 'confirmed', 'shipping', 'completed'].includes(nextStatus)
+        ? nextStatus
+        : order.status;
       setOrder((o) => (o ? { ...o, status: next } : null));
     }
   };
@@ -167,7 +168,9 @@ export default function ShopOrderDetail() {
   }
 
   const canApprove = order.status === 'pending' || order.status === 'pending_confirm';
-  const canCancel = canApprove;
+  const canMarkShipping = order.status === 'confirmed';
+  const canComplete = order.status === 'shipping';
+  const canCancel = ['pending', 'pending_confirm', 'confirmed', 'shipping'].includes(order.status);
 
   return (
     <div className={styles.page}>
@@ -233,7 +236,7 @@ export default function ShopOrderDetail() {
           </div>
         </section>
 
-        {(canApprove || canCancel) && (
+        {(canApprove || canMarkShipping || canComplete || canCancel) && (
           <div className={styles.actions}>
             {canApprove && (
               <button
@@ -243,6 +246,26 @@ export default function ShopOrderDetail() {
                 onClick={() => handleAction('confirmed')}
               >
                 Duyệt đơn
+              </button>
+            )}
+            {canMarkShipping && (
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                disabled={actionBusy}
+                onClick={() => handleAction('shipping')}
+              >
+                Xác nhận đang giao
+              </button>
+            )}
+            {canComplete && (
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                disabled={actionBusy}
+                onClick={() => handleAction('completed')}
+              >
+                Xác nhận hoàn tất
               </button>
             )}
             {canCancel && (

@@ -36,6 +36,7 @@ router.post("/test",
 // Lịch sử đơn hàng của user (auth) – GET /me, GET /me/:id
 router.get("/me", auth.verifyToken, validate(orderValidation.getMyOrders), OrderController.getMyOrders);
 router.get("/me/:id", auth.verifyToken, validate(orderValidation.getMyOrderById), OrderController.getMyOrderById);
+router.patch("/me/:id/confirm-payment", auth.verifyToken, validate(orderValidation.confirmPayment), OrderController.confirmPayment);
 
 // Hủy đơn hàng (chỉ được hủy khi status = pending)
 router.patch("/me/:id/cancel", auth.verifyToken, OrderController.cancelOrder);

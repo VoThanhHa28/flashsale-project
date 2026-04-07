@@ -36,7 +36,7 @@ app.use(
             }
         },
         credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }),
 );
@@ -64,6 +64,12 @@ app.use(express.static(path.join(__dirname, "public")));
 // Thay vì app.use từng cái lẻ tẻ, hãy dùng 1 dòng này:
 app.use("/", rootRouter);
 // (Trong file routes/index.js bạn sẽ khai báo: router.use('/v1/api', productRouter), router.use('/v1/api', orderRouter)...)
+
+setInterval(() => {
+    OrderService.expireStalePaymentHolds().catch((err) => {
+        console.warn("[OrderService] expireStalePaymentHolds failed:", err.message);
+    });
+}, 30 * 1000);
 
 app.use(errorMiddleware);
 

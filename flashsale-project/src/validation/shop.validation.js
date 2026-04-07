@@ -6,7 +6,7 @@ const CONST = require('../constants');
 const getOrders = {
     query: Joi.object({
         status: Joi.string()
-            .valid('pending', 'confirmed', 'completed', 'success', 'failed', 'cancelled')
+            .valid('pending', 'confirmed', 'shipping', 'completed', 'success', 'failed', 'cancelled', 'processing', 'refunded')
             .optional(),
         page: Joi.number().integer().min(1).default(1),
         pageSize: Joi.number().integer().min(1).max(100).default(20),
@@ -19,10 +19,10 @@ const updateOrderStatus = {
     }),
     body: Joi.object({
         status: Joi.string()
-            .valid('confirmed', 'cancelled')
+            .valid('confirmed', 'shipping', 'completed', 'cancelled')
             .required()
             .messages({
-                'any.only': 'Trạng thái chỉ được là confirmed hoặc cancelled',
+                'any.only': 'Trạng thái chỉ được là confirmed, shipping, completed hoặc cancelled',
                 'any.required': 'Trạng thái là bắt buộc',
             }),
     }),

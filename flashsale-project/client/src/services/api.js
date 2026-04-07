@@ -419,14 +419,23 @@ export async function register(email, password, name) {
   return { user: payload?.user || payload, response: res };
 }
 
-/** POST order – body { items: [{ productId, quantity }] } (BE lấy giá từ DB). */
-export async function createOrder(productId, quantity, price) {
+/** POST order – body { items: [{ productId, quantity }], holdPayment? } */
+export async function createOrder(productId, quantity, price, options = {}) {
   const res = await request('/v1/api/order', {
     method: 'POST',
-    body: JSON.stringify({ items: [{ productId, quantity }] }),
+    body: JSON.stringify({ items: [{ productId, quantity }], holdPayment: Boolean(options.holdPayment) }),
   });
   const payload = getPayload(res);
   return { message: res.message || payload?.message, metadata: payload, response: res };
+}
+
+export async function confirmOrderPayment(orderId, paymentMethod = 'cod') {
+  const res = await request(`/v1/api/order/me/${encodeURIComponent(orderId)}/confirm-payment`, {
+    method: 'PATCH',
+    body: JSON.stringify({ paymentMethod }),
+  });
+  const payload = getPayload(res);
+  return { message: res.message || payload?.message, data: payload };
 }
 
 /** GET /v1/api/cart – cần đăng nhập */
@@ -664,7 +673,9 @@ export async function getShopOrders({
         status: currentStatus,
         createdAt: raw.orderTime || raw.createdAt || new Date().toISOString(),
         canApprove: currentStatus === 'pending' || currentStatus === 'pending_confirm',
-        canCancel: currentStatus === 'pending' || currentStatus === 'pending_confirm',
+        canMarkShipping: currentStatus === 'confirmed',
+        canComplete: currentStatus === 'shipping',
+        canCancel: ['pending', 'pending_confirm', 'confirmed', 'shipping'].includes(currentStatus),
       };
     });
 
@@ -705,7 +716,13 @@ export async function updateShopOrderStatus(orderId, nextStatus) {
       method: 'PATCH',
       body: JSON.stringify({ status: nextStatus }),
     });
-    const actionLabel = nextStatus === 'cancelled' ? 'hủy' : 'duyệt';
+    const actionLabelMap = {
+      confirmed: 'duyệt',
+      shipping: 'chuyển sang đang giao',
+      completed: 'hoàn tất',
+      cancelled: 'hủy',
+    };
+    const actionLabel = actionLabelMap[nextStatus] || 'cập nhật';
     return { success: true, message: res.message || `Đã ${actionLabel} đơn hàng thành công` };
   } catch (err) {
     console.error('Lỗi cập nhật trạng thái đơn shop:', err);

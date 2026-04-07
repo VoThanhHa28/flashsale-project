@@ -88,7 +88,8 @@ function buildOrderItems(raw) {
  */
 function mapStatusToUI(status) {
   const statusMap = {
-    pending: 'pending_payment',
+    pending_payment: 'pending_payment',
+    pending: 'processing',
     confirmed: 'pending_confirm',
     processing: 'processing',
     shipping: 'shipping',
