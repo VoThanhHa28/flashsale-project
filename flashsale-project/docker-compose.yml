@@ -59,6 +59,27 @@ services:
     networks:
       - flashsale-network
 
+  # 4. ORDER WORKER (Process queue messages)
+  worker:
+    build: .
+    container_name: flashsale_worker
+    restart: always
+    command: node src/workers/order.worker.js
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/flashsale_db
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - PREFETCH_COUNT=10
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - flashsale-network
+
 volumes:
   mongo_data:
   rabbitmq_data:
