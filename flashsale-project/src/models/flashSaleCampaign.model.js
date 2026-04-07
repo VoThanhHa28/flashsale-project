@@ -7,6 +7,16 @@ const flashSaleCampaignSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    productIds: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+      default: [],
+      validate: {
+        validator: function (arr) {
+          return Array.isArray(arr) && arr.length > 0;
+        },
+        message: 'productIds must be a non-empty array',
+      },
+    },
     startTime: {
       type: Date,
       required: true,
@@ -47,5 +57,6 @@ const flashSaleCampaignSchema = new mongoose.Schema(
 );
 
 flashSaleCampaignSchema.index({ isActive: 1, startTime: 1, endTime: 1 });
+flashSaleCampaignSchema.index({ productIds: 1, is_deleted: 1, isActive: 1 });
 
 module.exports = mongoose.model('FlashSaleCampaign', flashSaleCampaignSchema);

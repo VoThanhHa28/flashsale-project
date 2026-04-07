@@ -5,8 +5,7 @@ const validate = require("../middlewares/validate.middleware");
 const { verifyToken } = require("../middlewares/auth");
 const { requireShopAdmin } = require("../middlewares/rbac");
 const adminValidation = require("../validation/admin.validation");
-// const { verifyToken } = require('../middlewares/auth');
-// const { checkRole } = require('../middlewares/role');
+const flashSaleCampaignValidation = require("../validation/flashSaleCampaign.validation");
 
 /**
  * Admin Routes - Quản lý Flash Sale
@@ -29,6 +28,32 @@ router.post("/flash-sale/activate", adminController.activateFlashSale);
  * Body: { productId, duration } // duration in seconds, default 3600 (1 hour)
  */
 router.post("/flash-sale/hot-activate", adminController.hotActivateFlashSale);
+
+router.get(
+    "/flash-sale-campaigns",
+    validate(flashSaleCampaignValidation.listFlashSaleCampaigns),
+    adminController.listFlashSaleCampaigns
+);
+router.get(
+    "/flash-sale-campaigns/:id",
+    validate(flashSaleCampaignValidation.flashSaleCampaignIdParam),
+    adminController.getFlashSaleCampaign
+);
+router.post(
+    "/flash-sale-campaigns",
+    validate(flashSaleCampaignValidation.createFlashSaleCampaign),
+    adminController.createFlashSaleCampaign
+);
+router.patch(
+    "/flash-sale-campaigns/:id",
+    validate(flashSaleCampaignValidation.updateFlashSaleCampaign),
+    adminController.updateFlashSaleCampaign
+);
+router.delete(
+    "/flash-sale-campaigns/:id",
+    validate(flashSaleCampaignValidation.flashSaleCampaignIdParam),
+    adminController.deleteFlashSaleCampaign
+);
 
 /**
  * GET /admin/users - Danh sách user phân trang (SHOP_ADMIN)

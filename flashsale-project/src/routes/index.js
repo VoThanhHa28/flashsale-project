@@ -21,6 +21,7 @@ const activityLogMiddleware = require("../middlewares/activityLog.middleware");
 // (Cart dùng kiến trúc Buy Now cho Flash Sale; model này chuẩn bị sẵn cho e-commerce mở rộng)
 require("../models/cart.model");
 require("../models/reservationLog.model");
+require("../models/flashSaleCampaign.model");
 
 // Ghi log tự động mọi request POST / PUT / PATCH / DELETE vào collection activity_logs
 router.use(activityLogMiddleware);
