@@ -1,5 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
+const PaymentService = require("../services/payment.service");
 const { SuccessResponse, OK, CREATED } = require("../core/success.response");
 const CONST = require("../constants");
 
@@ -117,6 +118,17 @@ class AdminController {
         const result = await AdminService.getActivityLogs(req.query);
         return new OK({
             message: CONST.ADMIN.MESSAGE.GET_LOGS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    updatePaymentStatus = asyncHandler(async (req, res) => {
+        const result = await PaymentService.updatePaymentStatusByOrderIdForAdmin(
+            req.params.orderId,
+            req.body.status,
+        );
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.PAYMENT_STATUS_UPDATED,
             data: result,
         }).send(res);
     });

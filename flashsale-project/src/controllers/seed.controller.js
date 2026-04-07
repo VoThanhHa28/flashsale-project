@@ -1,6 +1,6 @@
 const asyncHandler = require("../utils/asyncHandler");
 const SeedService = require("../services/seed.service");
-const { SuccessResponse } = require("../core/success.response");
+const { SuccessResponse, OK } = require("../core/success.response");
 
 class SeedController {
     /**
@@ -42,6 +42,18 @@ class SeedController {
         new SuccessResponse({
             message: 'Đã seed master data thành công',
             metadata: result,
+        }).send(res);
+    });
+
+    /**
+     * POST /seed/shop-admin — tạo/cập nhật SHOP_ADMIN cho dev (không production)
+     */
+    seedShopAdmin = asyncHandler(async (req, res) => {
+        const result = await SeedService.seedShopAdminDev();
+
+        new OK({
+            message: result.updated ? "Đã cập nhật tài khoản SHOP_ADMIN (dev)." : "Đã tạo tài khoản SHOP_ADMIN (dev).",
+            data: result,
         }).send(res);
     });
 }

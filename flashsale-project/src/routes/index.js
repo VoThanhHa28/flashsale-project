@@ -10,6 +10,7 @@ const seedRouter = require("./seed.route");
 const userRouter = require("./user.route");
 const shopRouter = require("./shop.route");
 const categoryRouter = require("./category.route");
+const paymentRouter = require("./payment.route");
 const cartRouter = require("./cart.route");
 const inventoryRouter = require("./inventory.route");
 const checkoutRouter = require("./checkout.route");
@@ -71,6 +72,7 @@ router.use("/v1/api/shop", shopRouter);
 // Master data: categories cho dropdown frontend
 router.use("/v1/api/categories", categoryRouter);
 
+router.use("/v1/api/payments", paymentRouter);
 router.use("/v1/api/cart", cartRouter);
 
 module.exports = router;

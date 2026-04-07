@@ -5,6 +5,7 @@ const validate = require("../middlewares/validate.middleware");
 const { verifyToken } = require("../middlewares/auth");
 const { requireShopAdmin } = require("../middlewares/rbac");
 const adminValidation = require("../validation/admin.validation");
+const paymentValidation = require("../validation/payment.validation");
 const flashSaleCampaignValidation = require("../validation/flashSaleCampaign.validation");
 
 /**
@@ -84,5 +85,14 @@ router.get("/health", adminController.health);
  * GET /admin/logs - Nhật ký thao tác POST/PUT/PATCH/DELETE (SHOP_ADMIN)
  */
 router.get("/logs", validate(adminValidation.getActivityLogs), adminController.getActivityLogs);
+
+/**
+ * PATCH /admin/payments/:orderId/status - Cập nhật trạng thái thanh toán
+ */
+router.patch(
+    "/payments/:orderId/status",
+    validate(paymentValidation.patchAdminPaymentStatus),
+    adminController.updatePaymentStatus,
+);
 
 module.exports = router;

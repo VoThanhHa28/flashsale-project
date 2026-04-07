@@ -8,6 +8,8 @@ module.exports = {
         GET_LOGS_SUCCESS: 'Lấy nhật ký hoạt động thành công',
         USER_NOT_FOUND: 'Không tìm thấy user',
         ROLE_NOT_FOUND: 'Không tìm thấy role',
+        PAYMENT_NOT_FOUND: 'Không tìm thấy thanh toán cho đơn này',
+        PAYMENT_STATUS_UPDATED: 'Cập nhật trạng thái thanh toán thành công',
         LIST_CAMPAIGNS_SUCCESS: 'Lấy danh sách chiến dịch Flash Sale thành công',
         GET_CAMPAIGN_SUCCESS: 'Lấy chi tiết chiến dịch thành công',
         CREATE_CAMPAIGN_SUCCESS: 'Tạo chiến dịch Flash Sale thành công',

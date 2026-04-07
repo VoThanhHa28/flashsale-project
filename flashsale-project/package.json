@@ -9,6 +9,8 @@
         "test-mongodb": "node src/test_mongodb.js",
         "seed:products": "node src/scripts/seedProducts.js",
         "seed:users": "node src/scripts/seedUsers.js",
+        "seed:shop-admin": "node src/scripts/seedShopAdmin.js",
+        "fix:inventory-indexes": "node src/scripts/fixInventoryIndexes.js",
         "seed:users:clean": "node src/scripts/seedUsers.js clean",
         "reset:stock": "node src/scripts/resetRedisStock.js",
         "seed:admin": "node src/scripts/seedShopAdmin.js",
