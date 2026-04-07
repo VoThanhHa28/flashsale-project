@@ -7,10 +7,10 @@ import {
   FiChevronRight,
   FiLogIn,
   FiLogOut,
-  FiMapPin,
+  // FiMapPin, // (tạm ẩn thẻ Địa chỉ — bật lại khi có /addresses)
   FiSettings,
   FiShield,
-  FiHeart,
+  // FiHeart, // (tạm ẩn thẻ Yêu thích — bật lại khi có /wishlist)
   FiBell,
   FiBarChart2,
   FiActivity,
@@ -83,6 +83,7 @@ function Account() {
       desc: 'Cập nhật thông tin',
       color: 'green',
     },
+    /* Tạm ẩn — bật lại khi triển khai sổ địa chỉ / wishlist
     {
       to: '/addresses',
       icon: <FiMapPin size={24} />,
@@ -97,6 +98,7 @@ function Account() {
       desc: 'Sản phẩm đã lưu',
       color: 'pink',
     },
+    */
     ...(isShopAdmin
       ? [
           {
