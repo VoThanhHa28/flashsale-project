@@ -66,3 +66,25 @@ Mở http://localhost:3000.
 ---
 
 Chỉ cần đặt `REACT_APP_API_URL` trong `.env` và đảm bảo backend đúng contract trên là có thể kết nối, không cần sửa logic từng trang.
+
+---
+
+## Kiểm tra backend trước khi hoàn thành feature
+
+**Quy tắc:** Trước khi coi một feature là xong, cần kiểm tra lại backend xem có đang chạy và trả đúng API không.
+
+### Checklist nhanh
+
+1. **Backend đang chạy**  
+   Server (vd. port 3001) phải chạy; nếu không, client sẽ fallback sang `public/data/products.json` (và có thể không log lỗi mạng).
+
+2. **Gọi đúng endpoint**  
+   - `GET /v1/api/products` → trả danh sách sản phẩm (hoặc 304 Not Modified nếu dùng cache).  
+   - Các feature dùng auth/order cần kiểm tra thêm `POST /v1/api/auth/login`, `POST /v1/api/order`, v.v.
+
+3. **Kiểm tra bằng script (tùy chọn)**  
+   Trong thư mục `client/` chạy:
+   ```bash
+   npm run check:backend
+   ```
+   Script sẽ gọi `GET {REACT_APP_API_URL}/v1/api/products` và in kết quả (OK / lỗi). Cần có `.env` với `REACT_APP_API_URL` (vd. `http://localhost:3000`).

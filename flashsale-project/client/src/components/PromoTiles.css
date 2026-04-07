@@ -1,61 +1,168 @@
+/**
+ * Promo Tiles Component Styles
+ * 3 tile màu nổi bật với emoji icon + shimmer hover + circle decoration.
+ * Sử dụng Design System variables + CSS custom properties từ component.
+ */
+
 .promo-tiles {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: var(--spacing-3);
+  margin-bottom: 0;
 }
 
+/* ============================================
+   TILE CARD
+   ============================================ */
 .promo-tile {
   display: block;
-  background: var(--tile-color, #c00a27);
-  border-radius: 10px;
-  padding: 1.25rem 1rem;
+  background: var(--tile-color, var(--color-primary));
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-4) var(--spacing-4);
   text-decoration: none;
-  color: #fff;
-  transition: opacity 0.2s, transform 0.15s;
+  color: var(--color-text-inverse);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px var(--tile-shadow, rgba(0, 0, 0, 0.25));
+  min-height: 80px;
 }
 
 .promo-tile:hover {
-  opacity: 0.95;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--tile-shadow, rgba(0, 0, 0, 0.3));
+}
+
+.promo-tile:active {
   transform: translateY(-2px);
 }
 
+/* Shimmer sweep on hover */
+.promo-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transition: none;
+  pointer-events: none;
+}
+
+.promo-tile:hover::before {
+  animation: tile-shimmer 0.55s ease-out forwards;
+}
+
+@keyframes tile-shimmer {
+  from { left: -60%; }
+  to   { left: 160%; }
+}
+
+/* ── Decorative circle (bottom-right) ── */
+.promo-tile-circle {
+  position: absolute;
+  bottom: -30px;
+  right: -25px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+  transition: transform var(--transition-slower);
+}
+
+.promo-tile:hover .promo-tile-circle {
+  transform: scale(1.3);
+}
+
+/* Second smaller circle */
+.promo-tile-circle::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ============================================
+   TILE INNER LAYOUT
+   ============================================ */
 .promo-tile-inner {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--spacing-1);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Emoji icon ── */
+.promo-tile-emoji {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  transition: transform var(--transition-base);
+  display: block;
+  margin-bottom: var(--spacing-1);
+}
+
+.promo-tile:hover .promo-tile-emoji {
+  transform: scale(1.15) rotate(-5deg);
+}
+
+.promo-tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .promo-tile-subtitle {
-  font-size: 0.8rem;
-  opacity: 0.9;
+  font-size: var(--font-size-xs);
+  opacity: 0.82;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  font-weight: var(--font-weight-medium);
 }
 
 .promo-tile-title {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
 }
 
+/* ── CTA text ── */
 .promo-tile-cta {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: underline;
+  margin-top: var(--spacing-2);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+  transition: all var(--transition-base);
+  display: inline-block;
 }
 
+.promo-tile:hover .promo-tile-cta {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (min-width: 640px) {
   .promo-tiles {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
+    gap: var(--spacing-3);
   }
 
   .promo-tile {
-    padding: 1.5rem;
+    padding: var(--spacing-4) var(--spacing-4);
+    min-height: 90px;
   }
 
   .promo-tile-title {
-    font-size: 1.25rem;
+    font-size: var(--font-size-sm);
   }
 }

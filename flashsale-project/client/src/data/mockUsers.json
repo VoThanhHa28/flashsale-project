@@ -1,0 +1,59 @@
+{
+  "users": [
+    {
+      "id": "user-001",
+      "name": "Cao Nguyễn Hồng",
+      "email": "hong@flashsale.test",
+      "phone": "0901234567",
+      "role": "USER",
+      "usr_role": "USER",
+      "gender": "male",
+      "dob": "2000-01-15",
+      "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM"
+    },
+    {
+      "id": "user-002",
+      "name": "Hong Admin",
+      "email": "hongadmin@flashsale.test",
+      "phone": "0912345678",
+      "role": "SHOP_ADMIN",
+      "usr_role": "SHOP_ADMIN",
+      "gender": "male",
+      "dob": "1995-06-20",
+      "address": "456 Lê Lợi, Quận 1, TP.HCM"
+    },
+    {
+      "id": "user-003",
+      "name": "Owner FlashSale",
+      "email": "owner@flashsale.test",
+      "phone": "0933456789",
+      "role": "OWNER",
+      "usr_role": "OWNER",
+      "gender": "female",
+      "dob": "1990-03-10",
+      "address": "789 Hai Bà Trưng, Quận 3, TP.HCM"
+    },
+    {
+      "id": "user-004",
+      "name": "Admin System",
+      "email": "admin@flashsale.test",
+      "phone": "0944567890",
+      "role": "ADMIN",
+      "usr_role": "ADMIN",
+      "gender": "male",
+      "dob": "1988-12-01",
+      "address": "100 Điện Biên Phủ, Quận Bình Thạnh, TP.HCM"
+    },
+    {
+      "id": "user-005",
+      "name": "Nguyễn Văn A",
+      "email": "vana@gmail.com",
+      "phone": "0955678901",
+      "role": "USER",
+      "usr_role": "USER",
+      "gender": "male",
+      "dob": "2002-08-25",
+      "address": "200 Cách Mạng Tháng 8, Quận 10, TP.HCM"
+    }
+  ]
+}

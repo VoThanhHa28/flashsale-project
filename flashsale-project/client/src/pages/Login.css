@@ -1,121 +1,210 @@
+/**
+ * Login Page Styles
+ * Modern form với smooth animations và visual feedback
+ * Sử dụng Design System variables
+ */
+
 .login-page {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   margin: 0 auto;
-  padding: 1rem 0 2rem;
+  padding: var(--spacing-4) var(--spacing-4) var(--spacing-8);
+  animation: fadeInUp 0.4s var(--ease-out);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  border: 1px solid #eee;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-6);
+  border: 1px solid var(--color-gray-200);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }
 
 .login-title {
-  margin: 0 0 1.25rem 0;
-  font-size: 1.375rem;
+  margin: 0 0 var(--spacing-5) 0;
+  font-size: var(--font-size-2xl);
   text-align: center;
-  color: #1a1a2e;
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--spacing-5);
 }
 
 .login-error {
   margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: #ffe5e5;
-  color: #c00;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-error-light);
+  animation: slideInDown 0.3s var(--ease-out);
 }
 
 .login-field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--spacing-2);
 }
 
 .login-field label {
-  font-weight: 500;
-  color: #333;
-  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .login-field input {
-  padding: 0.75rem 0.875rem;
-  min-height: 48px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 16px;
+  padding: var(--spacing-3) var(--spacing-4);
+  min-height: var(--input-height-lg);
+  border: 2px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
   width: 100%;
+  background: var(--color-bg-primary);
+  transition: all var(--transition-base);
 }
 
 .login-field input:focus {
   outline: none;
-  border-color: #c00a27;
-  box-shadow: 0 0 0 2px rgba(192, 10, 39, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(192, 10, 39, 0.1);
+  background: var(--color-gray-50);
+}
+
+.login-field input:disabled {
+  background: var(--color-gray-100);
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .login-submit {
-  margin-top: 0.5rem;
-  padding: 0.875rem 1rem;
-  min-height: 48px;
-  background: #c00a27;
-  color: #fff;
+  margin-top: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  min-height: var(--button-height-lg);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-primary);
+  position: relative;
+  overflow: hidden;
 }
 
-.login-submit:hover {
-  background: #d63d56;
+.login-submit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
 }
 
-.login-submit:active {
-  background: #c2364d;
+.login-submit:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary-lg);
+}
+
+.login-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-gray-400);
+  box-shadow: none;
 }
 
 .login-footer {
-  margin: 1.5rem 0 0 0;
+  margin: var(--spacing-6) 0 0 0;
   text-align: center;
-  color: #666;
-  font-size: 0.95rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
 }
 
 .login-footer a {
-  color: #c00a27;
+  color: var(--color-primary);
   text-decoration: none;
-  font-weight: 500;
-  padding: 0.25rem 0;
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-1) 0;
   display: inline-block;
-  min-height: 44px;
-  line-height: 44px;
+  min-height: var(--button-height-md);
+  line-height: var(--button-height-md);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.login-footer a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: width var(--transition-base);
+}
+
+.login-footer a:hover::after {
+  width: 100%;
 }
 
 .login-footer a:hover {
-  text-decoration: underline;
+  color: var(--color-primary-dark);
 }
 
+/* Responsive - Tablet & Desktop */
 @media (min-width: 640px) {
   .login-page {
-    padding: 2rem 0;
+    padding: var(--spacing-8) var(--spacing-4);
   }
 
   .login-card {
-    padding: 2rem;
+    padding: var(--spacing-8);
   }
 
   .login-title {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--spacing-6);
   }
 }

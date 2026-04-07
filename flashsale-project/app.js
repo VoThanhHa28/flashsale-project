@@ -14,6 +14,7 @@ const logger = require("morgan");
 const app = express();
 const connectDB = require("./src/config/db");
 const OrderService = require("./src/services/order.service");
+const SeedService = require("./src/services/seed.service");
 const errorMiddleware = require("./src/middlewares/error.middleware");
 
 // Route tổng (Gom lại cho gọn app.js)
@@ -35,7 +36,7 @@ app.use(
             }
         },
         credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }),
 );
@@ -44,7 +45,13 @@ app.use(
 // Lưu ý: connectDB là async, nên logic init phải nằm trong .then()
 connectDB().then(() => {
     // Chỉ nạp kho khi DB đã kết nối thành công
-    OrderService.initInventory();
+    OrderService.initInventory().catch((error) => {
+        console.warn('⚠️  Lỗi initInventory (Redis may be down):', error.message);
+        // Don't crash - server can continue without Redis for Inventories/Checkout features
+    });
+    SeedService.seedMasterData().catch((error) => {
+        console.error("[Seed] Khởi tạo master data thất bại:", error.message);
+    });
 });
 
 app.use(logger("dev"));
@@ -57,6 +64,12 @@ app.use(express.static(path.join(__dirname, "public")));
 // Thay vì app.use từng cái lẻ tẻ, hãy dùng 1 dòng này:
 app.use("/", rootRouter);
 // (Trong file routes/index.js bạn sẽ khai báo: router.use('/v1/api', productRouter), router.use('/v1/api', orderRouter)...)
+
+setInterval(() => {
+    OrderService.expireStalePaymentHolds().catch((err) => {
+        console.warn("[OrderService] expireStalePaymentHolds failed:", err.message);
+    });
+}, 30 * 1000);
 
 app.use(errorMiddleware);
 

@@ -9,6 +9,8 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const User = require("../models/user.model");
+const Role = require("../models/role.model");
+const CONST = require("../constants");
 const connectDB = require("../config/db");
 
 const BATCH_SIZE = 100; // Insert 100 users mỗi lần
@@ -37,6 +39,18 @@ const seedUsers = async () => {
         const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
         console.log("✅ Password đã được hash");
 
+        // Lấy role mặc định USER (schema user yêu cầu usr_role bắt buộc)
+        const defaultRole = await Role.findOne({
+            roleCode: CONST.AUTH.USR_ROLE.USER,
+            is_deleted: false,
+        }).lean();
+
+        if (!defaultRole) {
+            throw new Error(
+                `Không tìm thấy role ${CONST.AUTH.USR_ROLE.USER}. Hãy seed master data trước (POST /v1/api/seed/master-data).`
+            );
+        }
+
         // Tạo timestamp để email unique
         const timestamp = Date.now();
 
@@ -51,6 +65,7 @@ const seedUsers = async () => {
                 email: `testuser${timestamp}_${i}@flashsale.test`,
                 password: hashedPassword,
                 name: `Test User ${i}`,
+                usr_role: defaultRole._id,
             });
 
             // Khi đủ batch size hoặc là user cuối cùng thì insert
@@ -67,6 +82,9 @@ const seedUsers = async () => {
                         totalCreated += batch.length;
                         batch = [];
                     } else {
+                        if (error?.message) {
+                            console.error("❌ Chi tiết lỗi insert batch:", error.message);
+                        }
                         throw error;
                     }
                 }

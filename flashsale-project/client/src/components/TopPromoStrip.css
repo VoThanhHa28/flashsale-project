@@ -1,35 +1,90 @@
+/**
+ * Top Promo Strip Component Styles
+ * Banner quảng cáo trên cùng với animation scroll mượt
+ * Sử dụng gradient và smooth transitions
+ */
+
 .top-promo-strip {
-  background: #c00a27;
-  color: #fff;
-  padding: 0.4rem 0;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text-inverse);
+  padding: var(--spacing-2) 0;
   overflow-x: auto;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Scrollbar styling cho webkit browsers */
+.top-promo-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.top-promo-strip::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.top-promo-strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-full);
+}
+
+.top-promo-strip::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .top-promo-inner {
   display: flex;
-  gap: 1.5rem;
-  padding: 0 1rem;
+  gap: var(--spacing-6);
+  padding: 0 var(--spacing-4);
   min-width: max-content;
   justify-content: center;
   flex-wrap: nowrap;
+  align-items: center;
 }
 
 .top-promo-link {
-  color: #fff;
+  color: var(--color-text-inverse);
   text-decoration: none;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   white-space: nowrap;
   opacity: 0.95;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.top-promo-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--color-text-inverse);
+  transition: width var(--transition-base);
 }
 
 .top-promo-link:hover {
   opacity: 1;
-  text-decoration: underline;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
+.top-promo-link:hover::after {
+  width: 80%;
+}
+
+/* Tablet & Desktop */
 @media (min-width: 768px) {
   .top-promo-inner {
     justify-content: center;
+    gap: var(--spacing-8);
+  }
+  
+  .top-promo-link {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-1) var(--spacing-3);
   }
 }

@@ -5,6 +5,15 @@ const CONST = require('../constants');
 
 class ProductController {
 
+  // GET /v1/api/products/search
+  static searchProducts = asyncHandler(async (req, res) => {
+    const result = await ProductService.searchProducts(req.query);
+    new OK({
+      message: CONST.PRODUCT.MESSAGE.SEARCH_SUCCESS,
+      data: result,
+    }).send(res);
+  });
+
   // GET /v1/api/products
   static getProducts = asyncHandler(async (req, res) => {
     const result = await ProductService.getAllProducts(req.query);
@@ -16,7 +25,8 @@ class ProductController {
 
   // POST /v1/api/products
   static createProduct = asyncHandler(async (req, res) => {
-    const result = await ProductService.createProduct(req.body);
+    const userId = req.user ? req.user._id : null;
+    const result = await ProductService.createProduct(req.body, userId);
     new CREATED({
       message: CONST.PRODUCT.MESSAGE.CREATE_SUCCESS,
       data: result,
@@ -28,6 +38,16 @@ class ProductController {
     const result = await ProductService.updateProduct(id, req.body);
     new OK({
       message: CONST.PRODUCT.MESSAGE.UPDATE_SUCCESS,
+      data: result,
+    }).send(res);
+  });
+
+  // DELETE /v1/api/products/:id
+  static deleteProduct = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const result = await ProductService.deleteProduct(id);
+    new OK({
+      message: CONST.PRODUCT.MESSAGE.DELETE_SUCCESS,
       data: result,
     }).send(res);
   });

@@ -1,0 +1,397 @@
+{
+  "statusCode": 200,
+  "message": "Lấy danh sách đơn hàng thành công",
+  "data": {
+    "schemaVersion": "v2-hybrid-user-shop",
+    "orders": [
+      {
+        "id": "ord-001",
+        "code": "FS-2026-000128",
+        "shop": { "id": "shop-001", "name": "Apple VN Official" },
+        "createdAt": "2026-03-12T10:30:00.000Z",
+        "status": "pending_payment",
+        "totalAmount": 15000000,
+        "pricing": { "subtotal": 15000000, "shippingFee": 0, "discount": 0, "finalTotal": 15000000 },
+        "actions": { "canCancel": true, "canTrack": false, "canReview": false },
+        "holdExpiresAt": "2026-03-12T11:00:00.000Z",
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-12T10:30:00.000Z", "note": "Đơn hàng đã được đặt, đang chờ thanh toán" }
+        ],
+        "items": [
+          { "productId": "prod-001", "name": "iPhone 15 Pro Max 256GB", "thumb": "https://via.placeholder.com/150", "salePrice": 15000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-002",
+        "code": "FS-2026-000127",
+        "shop": { "id": "shop-002", "name": "Apple VN Official" },
+        "createdAt": "2026-03-11T09:15:00.000Z",
+        "status": "pending_payment",
+        "totalAmount": 25000000,
+        "pricing": { "subtotal": 25000000, "shippingFee": 0, "discount": 0, "finalTotal": 25000000 },
+        "actions": { "canCancel": true, "canTrack": false, "canReview": false },
+        "holdExpiresAt": "2026-03-11T09:45:00.000Z",
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-11T09:15:00.000Z", "note": "Đơn hàng đã được đặt, đang chờ thanh toán" }
+        ],
+        "items": [
+          { "productId": "prod-002", "name": "MacBook Pro M3 14 inch", "thumb": "https://via.placeholder.com/150", "salePrice": 25000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-003",
+        "code": "FS-2026-000126",
+        "shop": { "id": "shop-001", "name": "Apple VN Official" },
+        "createdAt": "2026-03-10T14:20:00.000Z",
+        "status": "pending_confirm",
+        "totalAmount": 13000000,
+        "pricing": { "subtotal": 13000000, "shippingFee": 0, "discount": 0, "finalTotal": 13000000 },
+        "actions": { "canCancel": true, "canTrack": false, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-10T14:20:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-03-10T14:35:00.000Z", "note": "Thanh toán thành công, đang chờ shop xác nhận" }
+        ],
+        "items": [
+          { "productId": "prod-003", "name": "AirPods Pro 2", "thumb": "https://via.placeholder.com/150", "salePrice": 5000000, "quantity": 1 },
+          { "productId": "prod-004", "name": "Apple Watch Series 9", "thumb": "https://via.placeholder.com/150", "salePrice": 8000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-004",
+        "code": "FS-2026-000125",
+        "shop": { "id": "shop-001", "name": "Apple VN Official" },
+        "createdAt": "2026-03-09T11:00:00.000Z",
+        "status": "processing",
+        "totalAmount": 12000000,
+        "pricing": { "subtotal": 12000000, "shippingFee": 0, "discount": 0, "finalTotal": 12000000 },
+        "actions": { "canCancel": false, "canTrack": false, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-09T11:00:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-03-09T11:15:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-03-09T12:00:00.000Z", "note": "Shop đã xác nhận, đang đóng gói hàng" }
+        ],
+        "items": [
+          { "productId": "prod-005", "name": "iPad Air M2", "thumb": "https://via.placeholder.com/150", "salePrice": 12000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-005",
+        "code": "FS-2026-000124",
+        "shop": { "id": "shop-003", "name": "Logitech Store VN" },
+        "createdAt": "2026-03-08T16:45:00.000Z",
+        "status": "shipping",
+        "totalAmount": 3000000,
+        "pricing": { "subtotal": 3000000, "shippingFee": 0, "discount": 0, "finalTotal": 3000000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-08T16:45:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-03-08T16:55:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-03-08T17:30:00.000Z", "note": "Shop đã xác nhận đơn hàng" },
+          { "status": "shipping", "timestamp": "2026-03-08T20:00:00.000Z", "note": "Đơn hàng đã được giao cho đơn vị vận chuyển" }
+        ],
+        "items": [
+          { "productId": "prod-006", "name": "Magic Mouse", "thumb": "https://via.placeholder.com/150", "salePrice": 3000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-006",
+        "code": "FS-2026-000123",
+        "shop": { "id": "shop-004", "name": "Samsung Official VN" },
+        "createdAt": "2026-03-07T10:30:00.000Z",
+        "status": "shipping",
+        "totalAmount": 18000000,
+        "pricing": { "subtotal": 18000000, "shippingFee": 0, "discount": 0, "finalTotal": 18000000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-07T10:30:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-03-07T10:45:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-03-07T11:30:00.000Z", "note": "Shop đã xác nhận đơn hàng" },
+          { "status": "shipping", "timestamp": "2026-03-07T15:00:00.000Z", "note": "Hàng đang trên đường giao tới bạn" }
+        ],
+        "items": [
+          { "productId": "prod-007", "name": "Samsung Galaxy S24 Ultra", "thumb": "https://via.placeholder.com/150", "salePrice": 18000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-007",
+        "code": "FS-2026-000122",
+        "shop": { "id": "shop-005", "name": "Sony Flagship Store" },
+        "createdAt": "2026-03-04T15:20:00.000Z",
+        "status": "completed",
+        "totalAmount": 7000000,
+        "pricing": { "subtotal": 7000000, "shippingFee": 0, "discount": 0, "finalTotal": 7000000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-04T15:20:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-03-04T15:30:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-03-04T16:00:00.000Z", "note": "Shop đã xác nhận đơn hàng" },
+          { "status": "shipping", "timestamp": "2026-03-04T18:00:00.000Z", "note": "Đơn hàng đang được giao" },
+          { "status": "completed", "timestamp": "2026-03-05T10:00:00.000Z", "note": "Giao hàng thành công. Cảm ơn bạn đã mua hàng!" }
+        ],
+        "items": [
+          { "productId": "prod-008", "name": "Sony WH-1000XM5", "thumb": "https://via.placeholder.com/150", "salePrice": 7000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-008",
+        "code": "FS-2026-000121",
+        "shop": { "id": "shop-006", "name": "Dell Official Store" },
+        "createdAt": "2026-03-01T09:00:00.000Z",
+        "status": "completed",
+        "totalAmount": 22000000,
+        "pricing": { "subtotal": 22000000, "shippingFee": 0, "discount": 0, "finalTotal": 22000000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-01T09:00:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-03-01T09:10:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-03-01T10:00:00.000Z", "note": "Shop đã xác nhận đơn hàng" },
+          { "status": "shipping", "timestamp": "2026-03-01T14:00:00.000Z", "note": "Đơn hàng đang được giao" },
+          { "status": "completed", "timestamp": "2026-03-02T09:00:00.000Z", "note": "Giao hàng thành công!" }
+        ],
+        "items": [
+          { "productId": "prod-009", "name": "Dell XPS 15 OLED", "thumb": "https://via.placeholder.com/150", "salePrice": 22000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-009",
+        "code": "FS-2026-000120",
+        "shop": { "id": "shop-003", "name": "Logitech Store VN" },
+        "createdAt": "2026-02-26T14:10:00.000Z",
+        "status": "cancelled",
+        "totalAmount": 4500000,
+        "pricing": { "subtotal": 4500000, "shippingFee": 0, "discount": 0, "finalTotal": 4500000 },
+        "actions": { "canCancel": false, "canTrack": false, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-26T14:10:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "cancelled", "timestamp": "2026-02-26T14:30:00.000Z", "note": "Đơn hàng đã bị hủy theo yêu cầu của khách hàng" }
+        ],
+        "items": [
+          { "productId": "prod-010", "name": "Logitech MX Master 3S", "thumb": "https://via.placeholder.com/150", "salePrice": 4500000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-010",
+        "code": "FS-2026-000119",
+        "shop": { "id": "shop-007", "name": "Nintendo VN" },
+        "createdAt": "2026-02-23T11:30:00.000Z",
+        "status": "refunded",
+        "totalAmount": 9500000,
+        "pricing": { "subtotal": 9500000, "shippingFee": 0, "discount": 0, "finalTotal": 9500000 },
+        "actions": { "canCancel": false, "canTrack": false, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-23T11:30:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-02-23T11:40:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-02-23T12:00:00.000Z", "note": "Shop đã xác nhận" },
+          { "status": "refunded", "timestamp": "2026-02-24T09:00:00.000Z", "note": "Hoàn tiền thành công do sản phẩm lỗi" }
+        ],
+        "items": [
+          { "productId": "prod-011", "name": "Nintendo Switch OLED", "thumb": "https://via.placeholder.com/150", "salePrice": 9500000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-011",
+        "code": "FS-2026-000118",
+        "shop": { "id": "shop-008", "name": "Xiaomi Official VN" },
+        "createdAt": "2026-02-18T13:45:00.000Z",
+        "status": "completed",
+        "totalAmount": 16000000,
+        "pricing": { "subtotal": 16000000, "shippingFee": 0, "discount": 0, "finalTotal": 16000000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-18T13:45:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-02-18T13:55:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "processing", "timestamp": "2026-02-18T14:30:00.000Z", "note": "Shop đã xác nhận đơn hàng" },
+          { "status": "shipping", "timestamp": "2026-02-18T18:00:00.000Z", "note": "Đơn hàng đang được giao" },
+          { "status": "completed", "timestamp": "2026-02-19T11:00:00.000Z", "note": "Giao hàng thành công!" }
+        ],
+        "items": [
+          { "productId": "prod-012", "name": "Xiaomi 14 Pro", "thumb": "https://via.placeholder.com/150", "salePrice": 16000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-012",
+        "code": "FS-2026-000117",
+        "shop": { "id": "shop-009", "name": "OnePlus Store" },
+        "createdAt": "2026-02-13T08:20:00.000Z",
+        "status": "completed",
+        "totalAmount": 11000000,
+        "pricing": { "subtotal": 11000000, "shippingFee": 0, "discount": 0, "finalTotal": 11000000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-13T08:20:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "pending_confirm", "timestamp": "2026-02-13T08:30:00.000Z", "note": "Thanh toán thành công" },
+          { "status": "completed", "timestamp": "2026-02-14T09:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-013", "name": "OnePlus 12", "thumb": "https://via.placeholder.com/150", "salePrice": 11000000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-013",
+        "code": "FS-2026-000116",
+        "shop": { "id": "shop-001", "name": "Apple VN Official" },
+        "createdAt": "2026-02-15T10:00:00.000Z",
+        "status": "completed",
+        "totalAmount": 8500000,
+        "pricing": { "subtotal": 8500000, "shippingFee": 0, "discount": 0, "finalTotal": 8500000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-15T10:00:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-02-16T15:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-003", "name": "AirPods Pro 2", "thumb": "https://via.placeholder.com/150", "salePrice": 5000000, "quantity": 1 },
+          { "productId": "prod-014", "name": "Cáp sạc MagSafe", "thumb": "https://via.placeholder.com/150", "salePrice": 3500000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-014",
+        "code": "FS-2026-000115",
+        "shop": { "id": "shop-004", "name": "Samsung Official VN" },
+        "createdAt": "2026-02-20T14:30:00.000Z",
+        "status": "completed",
+        "totalAmount": 6200000,
+        "pricing": { "subtotal": 6200000, "shippingFee": 0, "discount": 0, "finalTotal": 6200000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-20T14:30:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-02-21T10:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-015", "name": "Samsung Galaxy Buds3 Pro", "thumb": "https://via.placeholder.com/150", "salePrice": 6200000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-015",
+        "code": "FS-2026-000114",
+        "shop": { "id": "shop-003", "name": "Logitech Store VN" },
+        "createdAt": "2026-02-22T09:45:00.000Z",
+        "status": "completed",
+        "totalAmount": 2800000,
+        "pricing": { "subtotal": 2800000, "shippingFee": 0, "discount": 0, "finalTotal": 2800000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-22T09:45:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-02-23T08:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-016", "name": "Logitech G Pro X Superlight", "thumb": "https://via.placeholder.com/150", "salePrice": 2800000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-016",
+        "code": "FS-2026-000113",
+        "shop": { "id": "shop-005", "name": "Sony Flagship Store" },
+        "createdAt": "2026-02-25T16:20:00.000Z",
+        "status": "completed",
+        "totalAmount": 14500000,
+        "pricing": { "subtotal": 14500000, "shippingFee": 0, "discount": 0, "finalTotal": 14500000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-25T16:20:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-02-26T14:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-017", "name": "Sony PlayStation 5 Slim", "thumb": "https://via.placeholder.com/150", "salePrice": 14500000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-017",
+        "code": "FS-2026-000112",
+        "shop": { "id": "shop-008", "name": "Xiaomi Official VN" },
+        "createdAt": "2026-02-28T11:10:00.000Z",
+        "status": "completed",
+        "totalAmount": 4300000,
+        "pricing": { "subtotal": 4300000, "shippingFee": 0, "discount": 0, "finalTotal": 4300000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-02-28T11:10:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-03-01T08:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-018", "name": "Xiaomi Smart Band 8 Pro", "thumb": "https://via.placeholder.com/150", "salePrice": 1500000, "quantity": 1 },
+          { "productId": "prod-019", "name": "Xiaomi Redmi Buds 5 Pro", "thumb": "https://via.placeholder.com/150", "salePrice": 2800000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-018",
+        "code": "FS-2026-000111",
+        "shop": { "id": "shop-006", "name": "Dell Official Store" },
+        "createdAt": "2026-03-03T08:30:00.000Z",
+        "status": "completed",
+        "totalAmount": 19800000,
+        "pricing": { "subtotal": 19800000, "shippingFee": 0, "discount": 0, "finalTotal": 19800000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-03T08:30:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-03-04T09:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-020", "name": "Dell Inspiron 16 Plus", "thumb": "https://via.placeholder.com/150", "salePrice": 19800000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-019",
+        "code": "FS-2026-000110",
+        "shop": { "id": "shop-001", "name": "Apple VN Official" },
+        "createdAt": "2026-03-06T13:00:00.000Z",
+        "status": "processing",
+        "totalAmount": 9200000,
+        "pricing": { "subtotal": 9200000, "shippingFee": 0, "discount": 0, "finalTotal": 9200000 },
+        "actions": { "canCancel": false, "canTrack": false, "canReview": false },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-06T13:00:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "processing", "timestamp": "2026-03-06T14:00:00.000Z", "note": "Shop đang chuẩn bị hàng" }
+        ],
+        "items": [
+          { "productId": "prod-004", "name": "Apple Watch Series 9", "thumb": "https://via.placeholder.com/150", "salePrice": 9200000, "quantity": 1 }
+        ]
+      },
+      {
+        "id": "ord-020",
+        "code": "FS-2026-000109",
+        "shop": { "id": "shop-004", "name": "Samsung Official VN" },
+        "createdAt": "2026-03-06T17:45:00.000Z",
+        "status": "completed",
+        "totalAmount": 5600000,
+        "pricing": { "subtotal": 5600000, "shippingFee": 0, "discount": 0, "finalTotal": 5600000 },
+        "actions": { "canCancel": false, "canTrack": true, "canReview": true },
+        "shippingAddress": { "fullName": "Cao Nguyễn Hồng", "phone": "0901234567", "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM" },
+        "timeline": [
+          { "status": "pending_payment", "timestamp": "2026-03-06T17:45:00.000Z", "note": "Đơn hàng đã được đặt" },
+          { "status": "completed", "timestamp": "2026-03-07T11:00:00.000Z", "note": "Giao hàng thành công" }
+        ],
+        "items": [
+          { "productId": "prod-021", "name": "Samsung Galaxy Tab S9 FE", "thumb": "https://via.placeholder.com/150", "salePrice": 5600000, "quantity": 1 }
+        ]
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "pageSize": 10,
+      "total": 20,
+      "totalOrders": 20,
+      "totalPages": 2
+    }
+  }
+}

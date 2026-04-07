@@ -23,10 +23,26 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
-    usr_role: {
+    avatar: {
       type: String,
-      enum: ['USER', 'SHOP_ADMIN'],
-      default: 'USER',
+      trim: true,
+      default: '',
+    },
+    usr_role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: true,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
   },
   {

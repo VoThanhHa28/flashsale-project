@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../services/api';
 import './Login.css';
 
@@ -9,6 +9,8 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '';
 
   // Validate email format
   const validateEmailFormat = (email) => {
@@ -69,14 +71,19 @@ function Login() {
       if (api.isApiConfigured()) {
         const { token, user } = await api.login(trimmedEmail.toLowerCase(), trimmedPassword);
         if (token) api.setToken(token);
-        if (user) api.setUser(user);
-        navigate('/', { replace: true });
+        // Luôn cố lấy profile đầy đủ sau login để có role/permissions chính xác.
+        const me = token ? await api.getCurrentUser() : null;
+        if (me) api.setUser(me);
+        else if (user) api.setUser(user);
+        const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
+        navigate(safeRedirect, { replace: true });
         return;
       }
       // DEV ONLY – remove when backend ready
       api.setUser({ email: email.trim().toLowerCase(), name: 'User' });
       api.setToken('mock-token');
-      navigate('/', { replace: true });
+      const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
+      navigate(safeRedirect, { replace: true });
     } catch (err) {
       // Ưu tiên các case đặc biệt cho UX rõ ràng
       const statusCode = Number(err?.status);

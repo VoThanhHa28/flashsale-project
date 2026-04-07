@@ -1,8 +1,80 @@
 const User = require("../models/user.model");
+const Role = require("../models/role.model");
+const Category = require("../models/category.model");
 const bcrypt = require("bcrypt");
 const { BadRequestError } = require("../core/error.response");
+const CONST = require("../constants");
 
 class SeedService {
+    static async getRoleIdByCode(roleCode) {
+        const role = await Role.findOne({ roleCode, is_deleted: false }).lean();
+
+        if (!role) {
+            throw new BadRequestError(`Không tìm thấy role ${roleCode}. Hãy seed master data trước.`);
+        }
+
+        return role._id;
+    }
+
+    static async seedMasterData() {
+        const roleSeeds = [
+            {
+                roleCode: CONST.AUTH.USR_ROLE.USER,
+                roleName: "User",
+                description: "Người dùng thông thường",
+            },
+            {
+                roleCode: CONST.AUTH.USR_ROLE.SHOP_ADMIN,
+                roleName: "Shop Admin",
+                description: "Quản trị cửa hàng",
+            },
+        ];
+
+        const categorySeeds = [
+            {
+                categoryName: "Điện thoại",
+                categorySlug: "dien-thoai",
+                sortOrder: 1,
+            },
+            {
+                categoryName: "Laptop",
+                categorySlug: "laptop",
+                sortOrder: 2,
+            },
+        ];
+
+        await Promise.all([
+            Role.bulkWrite(
+                roleSeeds.map((role) => ({
+                    updateOne: {
+                        filter: { roleCode: role.roleCode },
+                        update: { $setOnInsert: role },
+                        upsert: true,
+                    },
+                }))
+            ),
+            Category.bulkWrite(
+                categorySeeds.map((category) => ({
+                    updateOne: {
+                        filter: { categorySlug: category.categorySlug },
+                        update: { $setOnInsert: category },
+                        upsert: true,
+                    },
+                }))
+            ),
+        ]);
+
+        const [roles, categories] = await Promise.all([
+            Role.find({ is_deleted: false }).sort({ roleCode: 1 }).lean(),
+            Category.find({ is_deleted: false }).sort({ sortOrder: 1, categoryName: 1 }).lean(),
+        ]);
+
+        return {
+            roles,
+            categories,
+        };
+    }
+
     /**
      * Tạo số lượng lớn users để test load
      * @param {Number} count - Số lượng users cần tạo
@@ -16,6 +88,7 @@ class SeedService {
 
         // Hash password một lần duy nhất để tăng tốc
         const passwordHash = await bcrypt.hash("123456", 10);
+        const defaultRoleId = await this.getRoleIdByCode(CONST.AUTH.USR_ROLE.USER);
 
         // Tạo batch users
         const users = [];
@@ -26,6 +99,7 @@ class SeedService {
                 email: `testuser${timestamp}_${i}@flashsale.test`,
                 password: passwordHash,
                 name: `Test User ${i}`,
+                usr_role: defaultRoleId,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });

@@ -8,16 +8,30 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      # 👇 SỬA LẠI CHO KHỚP VỚI TÊN SERVICE BÊN DƯỚI
-      - MONGO_URI=${MONGO_URI}
-      - REDIS_URI=${REDIS_URI}
-      - RABBITMQ_URI=${RABBITMQ_URI}
+      - MONGO_URI=mongodb://mongo:27017/flashsale_db
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
     depends_on:
+      - mongo
       - redis
       - rabbitmq
     volumes:
       - .:/app
       - /app/node_modules
+    networks:
+      - flashsale-network
+
+  # 1.5. MongoDB
+  mongo:
+    image: mongo:7.0
+    container_name: flashsale_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: flashsale_db
+    volumes:
+      - mongo_data:/data/db
     networks:
       - flashsale-network
 

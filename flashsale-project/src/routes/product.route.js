@@ -7,6 +7,14 @@ const { verifyToken } = require('../middlewares/auth');
 const { requireShopAdmin } = require('../middlewares/rbac');
 
 /**
+ * @route   GET /v1/api/products/search
+ * @desc    Tìm kiếm & lọc sản phẩm theo keyword, khoảng giá, sort
+ * @access  Public
+ * @query   keyword, price_min, price_max, sort (price_asc|price_desc|newest), page, pageSize
+ */
+router.get('/search', validate(productValidation.searchProducts), productController.searchProducts);
+
+/**
  * @route   GET /v1/api/products/stats
  * @desc    Lấy thống kê sản phẩm
  * @access  Private (Admin)
@@ -41,5 +49,12 @@ router.put('/:id/force-start', verifyToken, requireShopAdmin, validate(productVa
  * @access  Private (Admin)
  */
 router.put('/:id', verifyToken, requireShopAdmin, validate(productValidation.updateProduct), productController.updateProduct);
+
+/**
+ * @route   DELETE /v1/api/products/:id
+ * @desc    Xóa mềm sản phẩm
+ * @access  Private (Admin)
+ */
+router.delete('/:id', verifyToken, requireShopAdmin, validate(productValidation.deleteProduct), productController.deleteProduct);
 
 module.exports = router;

@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const adminController = require("../controllers/admin.controller");
+const validate = require("../middlewares/validate.middleware");
+const { verifyToken } = require("../middlewares/auth");
+const { requireShopAdmin } = require("../middlewares/rbac");
+const adminValidation = require("../validation/admin.validation");
 // const { verifyToken } = require('../middlewares/auth');
 // const { checkRole } = require('../middlewares/role');
 
@@ -9,9 +13,8 @@ const adminController = require("../controllers/admin.controller");
  * Prefix: /admin
  */
 
-// TODO: Thêm middleware authentication và role checking khi cần
-// router.use(verifyToken);
-// router.use(checkRole('admin'));
+router.use(verifyToken);
+router.use(requireShopAdmin);
 
 /**
  * Kích hoạt Flash Sale thông thường
@@ -26,5 +29,35 @@ router.post("/flash-sale/activate", adminController.activateFlashSale);
  * Body: { productId, duration } // duration in seconds, default 3600 (1 hour)
  */
 router.post("/flash-sale/hot-activate", adminController.hotActivateFlashSale);
+
+/**
+ * GET /admin/users - Danh sách user phân trang (SHOP_ADMIN)
+ */
+router.get("/users", validate(adminValidation.getUsers), adminController.getUsers);
+
+/**
+ * GET /admin/roles - Lấy danh sách role khả dụng
+ */
+router.get("/roles", adminController.getRoles);
+
+/**
+ * PATCH /admin/users/:id/ban - Khóa user (status inactive)
+ */
+router.patch("/users/:id/ban", validate(adminValidation.banUser), adminController.banUser);
+
+/**
+ * PATCH /admin/users/:id/role - Gán role động cho user
+ */
+router.patch("/users/:id/role", validate(adminValidation.assignRoleToUser), adminController.assignRoleToUser);
+
+/**
+ * GET /admin/health - Health check Mongo + Redis
+ */
+router.get("/health", adminController.health);
+
+/**
+ * GET /admin/logs - Nhật ký thao tác POST/PUT/PATCH/DELETE (SHOP_ADMIN)
+ */
+router.get("/logs", validate(adminValidation.getActivityLogs), adminController.getActivityLogs);
 
 module.exports = router;

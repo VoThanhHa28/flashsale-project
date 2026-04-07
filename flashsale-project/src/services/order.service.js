@@ -1,34 +1,100 @@
 const redisClient = require("../config/redis");
 const ProductModel = require("../models/product.model");
 const OrderModel = require("../models/order.model");
+const ReservationLogModel = require("../models/reservationLog.model");
+const ReservationModel = require("../models/reservation.model");
 const { getIO } = require("../config/socket");
+const OrderRepo = require("../repositories/order.repo");
+const OrderDetailRepo = require("../repositories/orderDetail.repo");
+const PaymentRepo = require("../repositories/payment.repo");
+const InventoryRepo = require("../repositories/inventory.repo");
+const OrderDetailModel = require("../models/orderDetail.model");
+const PaymentModel = require("../models/payment.model");
 const { NotFoundError, BadRequestError } = require("../core/error.response");
+const { ForbiddenError } = require("../core/error.response");
 const CONST = require("../constants");
 
 class OrderService {
-    // 1. INIT INVENTORY (Safe Mode)
-    static async initInventory() {
+    static async _restoreStockForOrder(order) {
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(order.productId);
+        const keyInfo = CONST.REDIS.PRODUCT_INFO(order.productId);
+        await Promise.all([
+            redisClient.incrBy(keyStock, order.quantity),
+            redisClient.del(keyInfo).catch(() => {}),
+        ]);
+        await OrderService._syncInventoryFromRedis(order.productId);
+    }
+
+    /** Hoàn tác order + order_details + payments nếu lưu chi tiết/payment thất bại. */
+    static async _rollbackOrderPersist(orderId) {
+        await Promise.all([
+            OrderDetailModel.deleteMany({ orderId }),
+            PaymentModel.deleteMany({ orderId }),
+            OrderModel.deleteOne({ _id: orderId }),
+        ]);
+    }
+
+    /** Đồng bộ MongoDB inventories.quantityOnHand từ Redis (sau đặt/hủy đơn). */
+    static async _syncInventoryFromRedis(productId) {
         try {
-            const query = { isPublished: true }; // Đổi sang camelCase
-            const products = await ProductModel.find(query).select("_id productQuantity").lean();
+            const pid = String(productId);
+            const remaining = await redisClient.get(CONST.REDIS.PRODUCT_STOCK(pid));
+            if (remaining !== null && remaining !== undefined) {
+                await InventoryRepo.upsertQuantity(pid, parseInt(remaining, 10));
+            }
+        } catch (e) {
+            console.warn(`[OrderService] _syncInventoryFromRedis(${productId}):`, e.message);
+        }
+    }
+
+    // 1. INIT INVENTORY (Safe Mode) — Redis từ inventories (hoặc productQuantity nếu chưa có dòng tồn)
+    static async initInventory(specificProductId) {
+        try {
+            if (specificProductId) {
+                const pid = String(specificProductId);
+                const product = await ProductModel.findOne({ _id: pid, is_deleted: false })
+                    .select("_id productQuantity isPublished")
+                    .lean();
+                if (!product || !product.isPublished) return;
+
+                const inv = await InventoryRepo.findByProductId(pid);
+                const qty = inv != null ? inv.stock : product.productQuantity;
+
+                await Promise.all([
+                    redisClient.set(CONST.REDIS.PRODUCT_STOCK(pid), String(qty), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
+                    redisClient.del(CONST.REDIS.PRODUCT_INFO(pid)),
+                ]);
+
+                if (inv == null) {
+                    await InventoryRepo.upsertQuantity(pid, product.productQuantity);
+                }
+                return;
+            }
+
+            const products = await ProductModel.find({ isPublished: true, is_deleted: false })
+                .select("_id productQuantity")
+                .lean();
 
             if (!products.length) return;
 
             console.log(`📦 Đang kiểm tra đồng bộ ${products.length} sản phẩm...`);
 
+            const ids = products.map((p) => p._id.toString());
+            const invs = await InventoryRepo.findByProductIds(ids);
+            const invMap = new Map(invs.map((i) => [String(i.product_id), i]));
+
             const commands = [];
-            products.forEach((product) => {
-                const key = CONST.REDIS.PRODUCT_STOCK(product._id);
-                const keyInfo = CONST.REDIS.PRODUCT_INFO(product._id);
-
-                // Force update stock (dùng SET thay vì SETNX)
-                commands.push(redisClient.set(key, String(product.productQuantity)));
-
-                // Delete old info cache để reload từ DB
-                commands.push(redisClient.del(keyInfo));
-            });
-
+            for (const p of products) {
+                const inv = invMap.get(p._id.toString());
+                const qty = inv != null ? inv.stock : p.productQuantity;
+                commands.push(
+                    redisClient.set(CONST.REDIS.PRODUCT_STOCK(p._id), String(qty), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
+                );
+                commands.push(redisClient.del(CONST.REDIS.PRODUCT_INFO(p._id)));
+            }
             await Promise.all(commands);
+
+            await InventoryRepo.bulkEnsureMissing(products, invMap);
             console.log("✅ Đồng bộ kho hoàn tất (Safe Mode)!");
         } catch (error) {
             console.error("❌ Lỗi initInventory:", error);
@@ -87,23 +153,126 @@ class OrderService {
         return true;
     }
 
-    // 3. UPDATE STOCK (Cho Admin)
-    static async updateStock(productId, stock) {
+    /**
+     * 2B. RESERVE PRODUCT SLOT (High-Concurrency)
+     * Kết hợp: Lua Script (trừ kho) + Reservation record
+     * 
+     * Input:
+     *   - userId: ID người dùng
+     *   - productId: ID sản phẩm
+     *   - quantity: số lượng muốn mua
+     *   - clientOrderId: idempotency key (UUID) từ client
+     * 
+     * Logic:
+     *   1. Check flash sale time (giờ G)
+     *   2. Call Lua script trừ kho Redis atomic
+     *   3. Tạo Reservation record (status: pending, TTL: 30 min)
+     *   4. Return reservation object
+     * 
+     * Mục đích:
+     *   - Atomic: Redis trừ kho 1 lần
+     *   - Idempotent: client_order_id unique → chỉ process 1 lần
+     *   - Track: MongoDB lưu vết pending state
+     */
+    static async reserveProductSlot({ userId, productId, quantity, clientOrderId }) {
         const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
         const keyInfo = CONST.REDIS.PRODUCT_INFO(productId);
 
-        // Update kho & Xóa cache info để load lại giờ G (nếu có đổi giờ)
-        await Promise.all([redisClient.set(keyStock, stock, { EX: CONST.PRODUCT.CACHE.TTL_STOCK }), redisClient.del(keyInfo)]);
+        // A. LẤY THÔNG TIN GIỜ G
+        let productInfo = await redisClient.get(keyInfo);
 
-        console.log(`Updated Redis: Stock ${stock} & Invalidated Info Cache for ${productId}`);
+        // B. CACHE MISS -> GỌI DB
+        if (!productInfo) {
+            const product = await ProductModel.findById(productId)
+                .select("productStartTime productEndTime")
+                .lean();
+
+            if (!product) throw new NotFoundError(CONST.PRODUCT.MESSAGE.NOT_FOUND);
+
+            productInfo = JSON.stringify({
+                start: new Date(product.productStartTime).getTime(),
+                end: new Date(product.productEndTime).getTime(),
+            });
+
+            await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
+        }
+
+        // C. CHECK GIỜ G
+        const { start, end } = JSON.parse(productInfo);
+        const now = Date.now();
+
+        if (now < start) throw new BadRequestError(CONST.PRODUCT.MESSAGE.NOT_STARTED);
+        if (now > end) throw new BadRequestError(CONST.PRODUCT.MESSAGE.ENDED);
+
+        // D. TRỪ KHO VIA LUA SCRIPT (Atomic)
+        const luaScript = `
+            local stock = redis.call('get', KEYS[1])
+            if stock == false then return 0 end
+            if tonumber(stock) >= tonumber(ARGV[1]) then
+                redis.call('decrby', KEYS[1], ARGV[1])
+                return 1
+            else return 0 end
+        `;
+
+        const result = await redisClient.eval(luaScript, {
+            keys: [keyStock],
+            arguments: [String(quantity)],
+        });
+
+        if (result === 0) throw new BadRequestError(CONST.PRODUCT.MESSAGE.OUT_OF_STOCK);
+
+        // E. CLEAR CACHE (Evict) — Product info cache for fresh data
+        await redisClient.del(keyInfo).catch(() => {});
+
+        // F. TẠO RESERVATION RECORD (pending state)
+        const reservation = await ReservationModel.create({
+            user_id: userId,
+            product_id: productId,
+            client_order_id: clientOrderId,
+            quantity,
+            status: "pending",
+            expire_at: new Date(Date.now() + 30 * 60 * 1000), // 30 phút TTL
+            note: null,
+        });
+
+        console.log(`[OrderService] ✅ Reserved slot: ${reservation._id} (product: ${productId}, user: ${userId})`);
+
+        return {
+            success: true,
+            reservation,
+        };
+    }
+
+    // 3. UPDATE STOCK (Cho Admin / ProductService) — Redis + bảng inventories
+    static async updateStock(productId, stock) {
+        const pid = String(productId);
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(pid);
+        const keyInfo = CONST.REDIS.PRODUCT_INFO(pid);
+        const n = Math.max(0, Math.floor(Number(stock)));
+
+        await Promise.all([
+            redisClient.set(keyStock, String(n), { EX: CONST.PRODUCT.CACHE.TTL_STOCK }),
+            redisClient.del(keyInfo),
+            InventoryRepo.upsertQuantity(pid, n),
+        ]);
+
+        console.log(`Updated Redis + inventories: Stock ${n} for ${pid}`);
     }
 
     // 4. PROCESS ORDER FROM QUEUE
     static async processOrderFromQueue(orderData) {
-        const { userId, productId, quantity, price } = orderData;
+        const { client_order_id, userId, productId, quantity, price } = orderData;
+
+        // CHECK IDEMPOTENCY: Order đã create chưa?
+        const existingOrder = await OrderModel.findOne({ client_order_id }).lean();
+        if (existingOrder) {
+            console.log(`[OrderService] ⚠️  Order đã tồn tại: ${existingOrder._id}, bỏ qua`);
+            return existingOrder;
+        }
 
         // Tạo order mới từ queue data
         const order = new OrderModel({
+            client_order_id, // ← THÊM idempotency key
             userId,
             productId,
             quantity,
@@ -115,16 +284,132 @@ class OrderService {
         });
 
         await order.save();
-        console.log(`[OrderService] ✅ Đã lưu đơn hàng: ${order._id}`);
+        try {
+            await OrderDetailRepo.insertLines(order._id, [
+                {
+                    productId,
+                    quantity,
+                    unitPrice: price,
+                    lineTotal: quantity * price,
+                },
+            ]);
+            await PaymentRepo.insertForOrder(order._id, {
+                amount: order.totalPrice,
+                status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+            });
+        } catch (persistErr) {
+            await OrderService._rollbackOrderPersist(order._id);
+            throw persistErr;
+        }
+        console.log(`[OrderService] ✅ Đã lưu đơn (${client_order_id}) + order_details + payment: ${order._id}`);
+
+        await OrderService._syncInventoryFromRedis(productId);
+
+        // Ghi reservation log: worker_commit – slot đã được cam kết vào DB
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
+        const remainingRaw = await redisClient.get(keyStock).catch(() => null);
+        ReservationLogModel.create({
+            userId: userId?.toString() ?? null,
+            productId: productId?.toString() ?? null,
+            quantity,
+            price,
+            remainingStockAfter: remainingRaw !== null ? parseInt(remainingRaw) : null,
+            orderId: order._id.toString(),
+            source: CONST.RESERVATION_LOG.SOURCE.WORKER_COMMIT,
+            note: CONST.RESERVATION_LOG.MESSAGE.SLOT_COMMITTED,
+        }).catch((err) => console.error(CONST.RESERVATION_LOG.MESSAGE.LOG_FAILED, err.message));
 
         return order;
+    }
+
+    static async createPendingPaymentOrder({ userId, productId, quantity, price, client_order_id }) {
+        const expiresAt = new Date(Date.now() + CONST.ORDER.CHECKOUT_HOLD_MS);
+        const order = await OrderModel.create({
+            client_order_id,
+            userId,
+            productId,
+            quantity,
+            price,
+            totalPrice: quantity * price,
+            status: CONST.ORDER.STATUS.PENDING_PAYMENT,
+            holdExpiresAt: expiresAt,
+            orderTime: new Date(),
+            processedAt: null,
+        });
+        try {
+            await OrderDetailRepo.insertLines(order._id, [
+                {
+                    productId,
+                    quantity,
+                    unitPrice: price,
+                    lineTotal: quantity * price,
+                },
+            ]);
+            await PaymentRepo.insertForOrder(order._id, {
+                amount: order.totalPrice,
+                status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+                method: CONST.ORDER.PAYMENT.METHOD.COD,
+            });
+        } catch (persistErr) {
+            await OrderService._rollbackOrderPersist(order._id);
+            throw persistErr;
+        }
+        const orderLean = await OrderModel.findById(order._id).lean();
+        const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
+        const orderWithPayment = await PaymentRepo.enrichOrderWithPayment(orderWithDetails);
+        return { order: orderWithPayment };
+    }
+
+    static async confirmOrderPayment({ userId, orderId, paymentMethod }) {
+        const order = await OrderModel.findOne({
+            _id: orderId,
+            userId: userId.toString(),
+        });
+        if (!order) throw new NotFoundError(CONST.ORDER.MESSAGE.ORDER_NOT_FOUND);
+        if (order.status !== CONST.ORDER.STATUS.PENDING_PAYMENT) {
+            throw new BadRequestError(CONST.ORDER.MESSAGE.CANCEL_ORDER_NOT_ALLOWED);
+        }
+        if (!order.holdExpiresAt || order.holdExpiresAt.getTime() <= Date.now()) {
+            order.status = CONST.ORDER.STATUS.CANCELLED;
+            order.processedAt = new Date();
+            order.holdExpiresAt = null;
+            await order.save();
+            await OrderService._restoreStockForOrder(order);
+            throw new BadRequestError(CONST.ORDER.MESSAGE.HOLD_EXPIRED);
+        }
+        order.status = CONST.ORDER.STATUS.PENDING;
+        order.processedAt = new Date();
+        order.holdExpiresAt = null;
+        await order.save();
+        await PaymentModel.updateOne(
+            { orderId: order._id.toString() },
+            { $set: { method: paymentMethod || CONST.ORDER.PAYMENT.METHOD.COD } },
+        );
+        const orderLean = await OrderModel.findById(order._id).lean();
+        const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
+        const orderWithPayment = await PaymentRepo.enrichOrderWithPayment(orderWithDetails);
+        return { order: orderWithPayment };
+    }
+
+    static async expireStalePaymentHolds() {
+        const now = new Date();
+        const staleOrders = await OrderModel.find({
+            status: CONST.ORDER.STATUS.PENDING_PAYMENT,
+            holdExpiresAt: { $lte: now },
+        }).limit(100);
+        for (const order of staleOrders) {
+            order.status = CONST.ORDER.STATUS.CANCELLED;
+            order.processedAt = now;
+            order.holdExpiresAt = null;
+            await order.save();
+            await OrderService._restoreStockForOrder(order);
+        }
     }
 
     // 5. NOTIFY STOCK UPDATE VIA SOCKET
     static async notifyStockUpdate(productId, quantity, remainingStock) {
         try {
             const io = getIO();
-            const roomName = CONST.SOCKET.SOCKET_ROOM.PRODUCT(productId);
 
             // Lấy remaining stock từ Redis nếu không được cung cấp
             if (remainingStock === null || remainingStock === undefined) {
@@ -132,7 +417,6 @@ class OrderService {
                 remainingStock = await redisClient.get(keyStock);
             }
 
-            // Broadcast to ALL clients (không dùng room)
             io.emit(CONST.SOCKET.SOCKET_EVENT.UPDATE_STOCK, {
                 productId,
                 quantity,
@@ -140,10 +424,34 @@ class OrderService {
                 timestamp: Date.now(),
             });
 
-            console.log(`[OrderService] 📡 Đã broadcast stock update cho product ${productId}`);
+            console.log(`[OrderService] 📡 Đã phát socket event update-stock (broadcast)`);
         } catch (error) {
             console.error(`[OrderService] ❌ Lỗi notifyStockUpdate:`, error.message);
-            // Không throw error để worker không bị crash nếu socket có vấn đề
+            // Hồng sửa – khi Redis chết Worker emit Socket không tới client, nên gọi Main App qua HTTP để emit system-error cho FE hiện "Bảo trì" (Case 3)
+            try {
+                const io = getIO();
+                io.emit(CONST.SOCKET.SOCKET_EVENT.SYSTEM_ERROR, { message: "Hệ thống đang bảo trì" });
+            } catch (_) {
+                // Bỏ qua nếu Worker emit fail (vd không có adapter)
+            }
+            // Hồng sửa – gọi Main App POST /internal/emit-system-error để broadcast system-error tới client
+            const appUrl = process.env.APP_URL || process.env.BACKEND_URL || "http://localhost:3000";
+            const secret = process.env.INTERNAL_EMIT_SECRET || "flashsale-internal-dev";
+            const httpRes = await fetch(`${appUrl}/internal/emit-system-error`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Internal-Secret": secret,
+                },
+                body: JSON.stringify({ message: "Hệ thống đang bảo trì" }),
+            }).catch((e) => {
+                console.warn("[OrderService] Gọi internal emit-system-error thất bại:", e?.message);
+            });
+            if (httpRes && !httpRes.ok) {
+                const text = await httpRes.text().catch(() => "");
+                console.warn("[OrderService] Main App trả lỗi:", httpRes.status, text);
+            }
+            // Không throw để worker không crash
         }
     }
 
@@ -165,13 +473,101 @@ class OrderService {
             });
 
             await order.save();
-            console.log(`[OrderService] 💾 Đã lưu đơn hàng lỗi: ${order._id}`);
+            try {
+                await OrderDetailRepo.insertLines(order._id, [
+                    {
+                        productId,
+                        quantity,
+                        unitPrice: price,
+                        lineTotal: quantity * price,
+                    },
+                ]);
+                await PaymentRepo.insertForOrder(order._id, {
+                    amount: order.totalPrice,
+                    status: CONST.ORDER.PAYMENT.STATUS.PENDING,
+                });
+            } catch (persistErr) {
+                await OrderService._rollbackOrderPersist(order._id);
+                throw persistErr;
+            }
+            console.log(`[OrderService] 💾 Đã lưu đơn lỗi + order_details + payment: ${order._id}`);
+
+            // Ghi reservation log: rollback – kho Redis đã được hoàn lại bởi worker
+            ReservationLogModel.create({
+                userId: userId?.toString() ?? null,
+                productId: productId?.toString() ?? null,
+                quantity,
+                price,
+                remainingStockAfter: null,
+                orderId: order._id.toString(),
+                source: CONST.RESERVATION_LOG.SOURCE.ROLLBACK,
+                note: `${CONST.RESERVATION_LOG.MESSAGE.SLOT_ROLLBACK}: ${errorMessage || "Unknown error"}`,
+            }).catch((err) => console.error(CONST.RESERVATION_LOG.MESSAGE.LOG_FAILED, err.message));
 
             return order;
         } catch (error) {
             console.error(`[OrderService] ❌ Lỗi saveFailedOrder:`, error.message);
             throw error;
         }
+    }
+
+    // 7. ORDER HISTORY (không đụng Inventory)
+    static async getMyOrders(userId, query = {}) {
+        const { page, limit, status, search, sort, dateFrom, dateTo } = query;
+
+        if (dateFrom && dateTo && String(dateFrom) > String(dateTo)) {
+            throw new BadRequestError("dateFrom must be before or equal to dateTo");
+        }
+
+        return OrderRepo.findByUserId(userId.toString(), {
+            page,
+            limit,
+            status,
+            search,
+            sort,
+            dateFrom: dateFrom || "",
+            dateTo: dateTo || "",
+        });
+    }
+
+    static async getMyOrderById(userId, orderId) {
+        const order = await OrderRepo.findByIdAndUserId(orderId, userId);
+        if (!order) {
+            throw new ForbiddenError(CONST.ORDER.MESSAGE.ORDER_NOT_OWNED);
+        }
+        return { order };
+    }
+
+    // 8. CANCEL ORDER (User hủy đơn hàng)
+    static async cancelOrder(userId, orderId) {
+        // Tìm đơn hàng của user
+        const order = await OrderModel.findOne({
+            _id: orderId,
+            userId: userId.toString(),
+        });
+
+        if (!order) {
+            throw new NotFoundError(CONST.ORDER.MESSAGE.ORDER_NOT_FOUND);
+        }
+
+        if (![CONST.ORDER.STATUS.PENDING, CONST.ORDER.STATUS.PENDING_PAYMENT].includes(order.status)) {
+            throw new BadRequestError(CONST.ORDER.MESSAGE.CANCEL_ORDER_NOT_ALLOWED);
+        }
+
+        // Cập nhật status
+        order.status = CONST.ORDER.STATUS.CANCELLED;
+        order.processedAt = new Date();
+        order.holdExpiresAt = null;
+        await order.save();
+
+        console.log(`[OrderService] ❌ Đã hủy đơn hàng: ${order._id}, hoàn ${order.quantity} sản phẩm vào kho`);
+
+        await OrderService._restoreStockForOrder(order);
+
+        const orderLean = await OrderModel.findById(order._id).lean();
+        const orderWithDetails = await OrderDetailRepo.enrichOrderWithDetails(orderLean);
+        const orderWithPayment = await PaymentRepo.enrichOrderWithPayment(orderWithDetails);
+        return { order: orderWithPayment };
     }
 }
 

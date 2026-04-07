@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AdminService = require("../services/admin.service");
-const { SuccessResponse } = require("../core/success.response");
+const { SuccessResponse, OK } = require("../core/success.response");
+const CONST = require("../constants");
 
 class AdminController {
     /**
@@ -13,7 +14,7 @@ class AdminController {
 
         new SuccessResponse({
             message: "Flash Sale đã được kích hoạt thành công",
-            metadata: result,
+            data: result,
         }).send(res);
     });
 
@@ -28,7 +29,55 @@ class AdminController {
 
         new SuccessResponse({
             message: "Flash Sale đã được kích hoạt nóng thành công",
-            metadata: result,
+            data: result,
+        }).send(res);
+    });
+
+    getUsers = asyncHandler(async (req, res) => {
+        const result = await AdminService.getUsers(req.query);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_USERS_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    banUser = asyncHandler(async (req, res) => {
+        const result = await AdminService.banUser(req.params.id);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.BAN_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    health = asyncHandler(async (req, res) => {
+        const result = await AdminService.healthCheck();
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.HEALTH_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    getRoles = asyncHandler(async (req, res) => {
+        const result = await AdminService.getRoles();
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_ROLES_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    assignRoleToUser = asyncHandler(async (req, res) => {
+        const result = await AdminService.assignRoleToUser(req.params.id, req.body.roleId);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.ASSIGN_ROLE_SUCCESS,
+            data: result,
+        }).send(res);
+    });
+
+    getActivityLogs = asyncHandler(async (req, res) => {
+        const result = await AdminService.getActivityLogs(req.query);
+        return new OK({
+            message: CONST.ADMIN.MESSAGE.GET_LOGS_SUCCESS,
+            data: result,
         }).send(res);
     });
 }

@@ -12,7 +12,9 @@ const checkRole = (...allowedRoles) => {
         });
       }
 
-      if (!allowedRoles.includes(req.user.role)) {
+      const userRole = req.user?.usr_role?.roleCode || req.user?.role || req.user?.usr_role;
+
+      if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
           status: 'error',
           message: 'Forbidden - You do not have permission',

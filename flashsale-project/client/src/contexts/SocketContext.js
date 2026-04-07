@@ -10,27 +10,42 @@ const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [connectionAttempted, setConnectionAttempted] = useState(false);
   const [productStockUpdates, setProductStockUpdates] = useState(new Map());
   const [lastFlashSaleStart, setLastFlashSaleStart] = useState(null);
+  const [systemError, setSystemError] = useState(null);
 
   useEffect(() => {
     socketService.connect();
 
-    const handleConnect = () => setConnectionStatus('connected');
-    const handleDisconnect = () => setConnectionStatus('disconnected');
+    const markAttempted = () => setConnectionAttempted(true);
+    const handleConnect = () => {
+      setConnectionStatus('connected');
+      markAttempted();
+    };
+    const handleDisconnect = () => {
+      setConnectionStatus('disconnected');
+      markAttempted();
+    };
     const handleReconnect = () => setConnectionStatus('connected');
-    const handleReconnecting = () => setConnectionStatus('reconnecting');
+    const handleReconnecting = () => {
+      setConnectionStatus('reconnecting');
+      markAttempted();
+    };
+    const handleError = () => markAttempted();
 
     const unsubConnect = socketService.onConnect(handleConnect);
     const unsubDisconnect = socketService.onDisconnect(handleDisconnect);
     const unsubReconnect = socketService.onReconnect(handleReconnect);
     const unsubReconnecting = socketService.onReconnecting(handleReconnecting);
+    const unsubError = socketService.onError(handleError);
 
     const unsubscribeStock = socketService.on(SOCKET_EVENTS.UPDATE_STOCK, (data) => {
-      const { productId, quantity } = data;
+      const { productId, remainingStock, quantity } = data;
+      const stock = remainingStock != null ? remainingStock : quantity;
       setProductStockUpdates(prev => {
         const newMap = new Map(prev);
-        newMap.set(String(productId), quantity);
+        newMap.set(String(productId), stock);
         return newMap;
       });
     });
@@ -39,20 +54,28 @@ export function SocketProvider({ children }) {
       setLastFlashSaleStart(data || { productId: null, startTime: null });
     });
 
+    const unsubscribeSystemError = socketService.on(SOCKET_EVENTS.SYSTEM_ERROR, (data) => {
+      setSystemError(data && typeof data === 'object' ? data : { message: 'Hệ thống đang bảo trì' });
+    });
+
     return () => {
       unsubConnect();
       unsubDisconnect();
       unsubReconnect();
       unsubReconnecting();
+      unsubError();
       unsubscribeStock();
       unsubscribeFlashSaleStart();
+      unsubscribeSystemError();
     };
   }, []);
 
   const value = {
     connectionStatus,
+    connectionAttempted,
     productStockUpdates,
     lastFlashSaleStart,
+    systemError,
     socket: socketService,
   };
 

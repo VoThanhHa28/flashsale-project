@@ -1,8 +1,28 @@
+/**
+ * Footer Component Styles
+ * Modern footer với gradient background và smooth hover effects
+ * Sử dụng Design System variables
+ */
+
 .footer {
   margin-top: auto;
-  background: #1a1a2e;
-  color: #ccc;
-  padding: 2rem 1rem 1rem;
+  background: linear-gradient(135deg, var(--color-bg-dark) 0%, #0f0f1e 100%);
+  color: var(--color-gray-400);
+  padding: var(--spacing-8) var(--spacing-4) var(--spacing-4);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative gradient overlay */
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  opacity: 0.3;
 }
 
 .footer-inner {
@@ -10,20 +30,24 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: var(--spacing-6);
+  position: relative;
+  z-index: 1;
 }
 
 .footer-title {
-  margin: 0 0 0.75rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-inverse);
+  letter-spacing: 0.02em;
 }
 
 .footer-text {
   margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-gray-400);
 }
 
 .footer-links {
@@ -33,16 +57,21 @@
 }
 
 .footer-links li {
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--spacing-2);
 }
 
 .footer-links a {
-  color: #ccc;
+  color: var(--color-gray-400);
   text-decoration: none;
+  transition: all var(--transition-base);
+  display: inline-block;
+  padding: var(--spacing-1) 0;
 }
 
 .footer-links a:hover {
-  color: #c00a27;
+  color: var(--color-primary-light);
+  transform: translateX(4px);
+  padding-left: var(--spacing-2);
 }
 
 .footer-contact {
@@ -52,44 +81,74 @@
 }
 
 .footer-contact li {
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--spacing-2);
+  color: var(--color-gray-400);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
 }
 
 .footer-social {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
 }
 
 .footer-social-item {
-  font-size: 0.9rem;
-  padding: 0.35rem 0.5rem;
-  background: rgba(255,255,255,0.08);
-  border-radius: 6px;
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  color: var(--color-gray-300);
+  transition: all var(--transition-base);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.footer-social-item:hover {
+  background: rgba(192, 10, 39, 0.2);
+  border-color: var(--color-primary);
+  color: var(--color-primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(192, 10, 39, 0.2);
 }
 
 .footer-bottom {
   max-width: 1280px;
-  margin: 2rem auto 0;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: var(--spacing-8) auto 0;
+  padding-top: var(--spacing-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .footer-copy {
   margin: 0;
-  font-size: 0.85rem;
-  color: #888;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-600);
+  line-height: var(--line-height-relaxed);
 }
 
+/* Responsive - Tablet */
 @media (min-width: 640px) {
+  .footer {
+    padding: var(--spacing-10) var(--spacing-6) var(--spacing-6);
+  }
+
   .footer-inner {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-8);
   }
 }
 
+/* Responsive - Desktop */
 @media (min-width: 1024px) {
   .footer-inner {
     grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
+    gap: var(--spacing-8);
+  }
+  
+  .footer-title {
+    font-size: var(--font-size-lg);
   }
 }
