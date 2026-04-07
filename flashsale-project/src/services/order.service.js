@@ -165,10 +165,10 @@ class OrderService {
             await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
         }
 
-        // C-1. CHECK: User có pending/confirmed reservation khác chưa? (và chưa expire)
+        // C-1. CHECK: User có pending/awaiting_payment reservation khác chưa? (và chưa expire)
         const existingReservation = await ReservationModel.findOne({
             user_id: userId,
-            status: { $in: ["pending", "confirmed"] }, // ← Check BOTH pending & confirmed
+            status: { $in: ["pending", "awaiting_payment"] }, // ← Check pending or awaiting payment (not completed)
             product_id: { $ne: productId }, // ← Product KHÁC
             expire_at: { $gt: new Date() }, // ← CHƯA expire (TTL còn hiệu lực)
         });

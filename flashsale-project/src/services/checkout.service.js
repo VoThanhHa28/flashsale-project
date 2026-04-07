@@ -149,9 +149,9 @@ class CheckoutService {
             ...orderData,
         });
 
-        // Update reservation to confirmed
+        // Update reservation to awaiting_payment (waiting for user payment)
         await ReservationModel.findByIdAndUpdate(reservationId, {
-            status: "confirmed",
+            status: "awaiting_payment",
         });
 
         return {

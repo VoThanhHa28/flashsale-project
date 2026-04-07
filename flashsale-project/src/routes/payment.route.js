@@ -15,4 +15,18 @@ router.post(
     PaymentController.create,
 );
 
+/**
+ * POST /v1/api/payments/:orderId/confirm — Confirm payment (pending → paid)
+ * 
+ * Side effects:
+ *   - Update Payment status → "paid"
+ *   - Update Order status → "success"
+ *   - Update Reservation → "completed" (RELEASE lock!)
+ */
+router.post(
+    "/:orderId/confirm",
+    verifyToken,
+    PaymentController.confirmPayment,
+);
+
 module.exports = router;

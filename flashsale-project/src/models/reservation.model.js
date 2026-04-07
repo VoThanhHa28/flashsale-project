@@ -68,12 +68,15 @@ const reservationSchema = new mongoose.Schema(
         /**
          * Trạng thái giữ chỗ:
          * - pending: Redis đã trừ, chờ Worker xử lý
-         * - confirmed: Worker đã tạo Order thành công
+         * - confirmed: Worker đã tạo Order, chờ thanh toán
+         * - awaiting_payment: checkout confirm, chờ user thanh toán
+         * - completed: Thanh toán xong, lock release
          * - failed: Worker xử lý thất bại, hoàn kho
+         * - cancelled: User hủy hoặc timeout
          */
         status: {
             type: String,
-            enum: ["pending", "confirmed", "failed"],
+            enum: ["pending", "confirmed", "awaiting_payment", "completed", "failed", "cancelled"],
             default: "pending",
             index: true,
         },

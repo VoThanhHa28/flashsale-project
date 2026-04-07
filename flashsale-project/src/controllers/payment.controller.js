@@ -20,6 +20,28 @@ class PaymentController {
             data: payment,
         }).send(res);
     });
+
+    /**
+     * POST /v1/api/payments/:orderId/confirm
+     * User confirms payment (status: pending → paid)
+     * 
+     * Logic:
+     *   - Update Payment status → "paid"
+     *   - Update Order status → "success"
+     *   - Update Reservation to "completed" (RELEASE lock!)
+     *   - User can now order other products
+     */
+    static confirmPayment = asyncHandler(async (req, res) => {
+        const { orderId } = req.params;
+        const userId = req.user._id;
+
+        const result = await PaymentService.confirmPayment(userId, orderId);
+
+        new OK({
+            message: "Payment confirmed successfully",
+            data: result,
+        }).send(res);
+    });
 }
 
 module.exports = PaymentController;
