@@ -18,8 +18,10 @@ router.post(
 // Route cho load testing (không cần auth, auto-create dummy user)
 router.post("/test",
     (req, res, next) => {
-        // Tạo dummy user (valid ObjectId format) cho K6 load test
-        req.user = { _id: new mongoose.Types.ObjectId().toString() };
+        // Nếu client provide userId param → reuse (để test concurrent orders)
+        // Nếu không → tạo random (để load test)
+        const userId = req.query.userId || req.body.userId || new mongoose.Types.ObjectId().toString();
+        req.user = { _id: userId };
         next();
     },
     validate(orderValidation.create), // Validate body (productId, quantity)
