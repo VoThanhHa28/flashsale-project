@@ -37,6 +37,6 @@ module.exports = (err, req, res, next) => {
         statusCode,
         message,
         errors: isDev ? err.metadata : undefined,
-        stack: isDev ? err.stack : undefined,
+        // Stack only in server logs, never in response
     });
 };

@@ -13,17 +13,72 @@
  */
 
 /**
- * Chuẩn hóa 1 order item
+ * Chuẩn hóa 1 order item (dòng hiển thị trong đơn)
  */
 function normalizeOrderItem(raw) {
   if (!raw) return null;
+  let productId = raw.productId ?? raw.product_id ?? '';
+  if (productId && typeof productId === 'object') {
+    productId = productId._id || productId.id || '';
+  }
+  productId = String(productId || '');
   return {
-    productId: raw.productId || raw.product_id || '',
+    productId,
     name: raw.name || raw.productName || raw.product_name || '',
-    thumb: raw.thumb || raw.productThumb || raw.product_thumb || '',
-    salePrice: raw.salePrice || raw.price || raw.sale_price || 0,
-    quantity: raw.quantity || 1,
+    thumb: raw.thumb || raw.productThumb || raw.product_thumb || raw.imageUrl || '',
+    salePrice: Number(raw.salePrice ?? raw.price ?? raw.productPrice ?? raw.sale_price ?? 0),
+    quantity: Number(raw.quantity ?? 1) || 1,
   };
+}
+
+/** Dòng từ bảng order_details (BE) — ghép tên/ảnh từ product đã populate ở cấp đơn nếu trùng SP */
+function normalizeOrderItemFromDetail(detail, orderRoot) {
+  if (!detail) return null;
+  const pidRaw = detail.productId;
+  const pidStr =
+    pidRaw && typeof pidRaw === 'object'
+      ? String(pidRaw._id || pidRaw.id || '')
+      : String(pidRaw || '');
+  const rootPop = orderRoot.productId;
+  const rootIdStr =
+    rootPop && typeof rootPop === 'object'
+      ? String(rootPop._id || rootPop.id || '')
+      : rootPop != null
+        ? String(rootPop)
+        : '';
+  const pop = rootIdStr && pidStr === rootIdStr && rootPop && typeof rootPop === 'object' ? rootPop : null;
+  const shortRef = pidStr.length >= 6 ? pidStr.slice(-6) : pidStr;
+  return {
+    productId: pidStr,
+    name: pop?.productName || (pidStr ? `Sản phẩm ···${shortRef}` : 'Sản phẩm'),
+    thumb: pop?.productThumb || '',
+    salePrice: Number(detail.unitPrice ?? detail.unit_price ?? orderRoot.price ?? 0),
+    quantity: Number(detail.quantity ?? 1) || 1,
+  };
+}
+
+function buildOrderItems(raw) {
+  if (Array.isArray(raw.items) && raw.items.length > 0) {
+    return raw.items.map(normalizeOrderItem).filter(Boolean);
+  }
+  const details = raw.orderDetails || raw.order_details;
+  if (Array.isArray(details) && details.length > 0) {
+    const fromDetails = details.map((d) => normalizeOrderItemFromDetail(d, raw)).filter(Boolean);
+    if (fromDetails.length > 0) return fromDetails;
+  }
+  const p = raw.productId;
+  if (p && typeof p === 'object' && (p.productName != null || p._id)) {
+    return [
+      normalizeOrderItem({
+        productId: p._id || p.id,
+        productName: p.productName,
+        productThumb: p.productThumb,
+        price: raw.price ?? p.productPrice,
+        quantity: raw.quantity,
+      }),
+    ];
+  }
+  return [];
 }
 
 /**
@@ -39,8 +94,10 @@ function mapStatusToUI(status) {
     shipping: 'shipping',
     delivered: 'completed',
     completed: 'completed',
+    success: 'completed',
     cancelled: 'cancelled',
     refunded: 'refunded',
+    failed: 'failed',
   };
   return statusMap[status] || status;
 }
@@ -82,15 +139,55 @@ function normalizeTimelineEvent(raw) {
   };
 }
 
+/** Chuẩn hóa payment từ BE (bảng payments / lean object) — không gửi từ checkout FE */
+function normalizePayment(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return { status: 'pending', method: 'cod', lineLabel: 'Thu hộ' };
+  }
+  const status = String(raw.status || 'pending').toLowerCase();
+  const method = String(raw.method || 'cod').toLowerCase();
+  let lineLabel = 'Thu hộ';
+  if (status === 'paid') lineLabel = 'Đã trả';
+  else if (status === 'failed') lineLabel = 'Thanh toán thất bại';
+  else if (status === 'refunded') lineLabel = 'Đã hoàn tiền';
+  else if (status === 'pending' && (method === 'cod' || method === '')) lineLabel = 'Thu hộ';
+  else if (status === 'pending') lineLabel = 'Chưa thanh toán';
+  return { status, method, lineLabel };
+}
+
+/** Nhãn một dòng cho trạng thái đơn (UI) — ví dụ Đang giao */
+export const ORDER_STATUS_LINE_LABELS = {
+  pending_payment: 'Chờ thanh toán',
+  pending_confirm: 'Chờ xác nhận',
+  processing: 'Đang xử lý',
+  shipping: 'Đang giao',
+  completed: 'Hoàn tất',
+  failed: 'Thất bại',
+  cancelled: 'Đã hủy',
+  refunded: 'Hoàn tiền',
+};
+
+export function orderStatusLineLabel(uiStatus) {
+  if (!uiStatus) return '—';
+  return ORDER_STATUS_LINE_LABELS[uiStatus] || String(uiStatus);
+}
+
 /**
  * Chuẩn hóa 1 order từ API
  */
 export function normalizeOrder(raw) {
   if (!raw) return null;
 
+  const id = raw.id || raw._id || raw.orderId || raw.order_id || '';
+  const idStr = id ? String(id) : '';
+
   return {
-    id: raw.id || raw._id || raw.orderId || raw.order_id || '',
-    code: raw.code || raw.orderCode || raw.order_code || '',
+    id: idStr,
+    code:
+      raw.code ||
+      raw.orderCode ||
+      raw.order_code ||
+      (idStr.length >= 8 ? idStr.slice(-8).toUpperCase() : idStr.toUpperCase()),
     shop: normalizeShop(raw.shop || raw.shopInfo || raw.shop_info || null),
     createdAt: raw.createdAt || raw.orderDate || raw.order_date || raw.orderTime || raw.order_time || new Date().toISOString(),
     status: mapStatusToUI(raw.status || raw.orderStatus || raw.order_status || 'pending'),
@@ -102,9 +199,8 @@ export function normalizeOrder(raw) {
     timeline: Array.isArray(raw.timeline)
       ? raw.timeline.map(normalizeTimelineEvent).filter(Boolean)
       : [],
-    items: Array.isArray(raw.items)
-      ? raw.items.map(normalizeOrderItem).filter(Boolean)
-      : [],
+    items: buildOrderItems(raw),
+    payment: normalizePayment(raw.payment),
   };
 }
 

@@ -34,9 +34,12 @@ function formatPrice(value) {
 function StatusBadge({ status }) {
   const map = {
     pending: { label: 'Chờ duyệt', icon: <FiClock size={12} />, className: styles.statusPending },
+    confirmed: { label: 'Đã xác nhận', icon: <FiCheckCircle size={12} />, className: styles.statusProcessing },
     processing: { label: 'Đang xử lý', icon: <FiCheckCircle size={12} />, className: styles.statusProcessing },
     shipping: { label: 'Đang giao', icon: <FiTruck size={12} />, className: styles.statusShipping },
     completed: { label: 'Hoàn tất', icon: <FiCheckCircle size={12} />, className: styles.statusCompleted },
+    success: { label: 'Hoàn tất', icon: <FiCheckCircle size={12} />, className: styles.statusCompleted },
+    failed: { label: 'Thất bại', icon: <FiXCircle size={12} />, className: styles.statusCancelled },
     cancelled: { label: 'Đã hủy', icon: <FiXCircle size={12} />, className: styles.statusCancelled },
     refunded: { label: 'Hoàn tiền', icon: <FiXCircle size={12} />, className: styles.statusRefunded },
   };
@@ -67,8 +70,6 @@ function ShopOrders() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const hasFetchedRef = useRef(false);
-  const prevPageRef = useRef(currentPage);
-  const prevStatusRef = useRef(filterStatus);
 
   useEffect(() => {
     if (!user) {
@@ -76,50 +77,35 @@ function ShopOrders() {
       return;
     }
 
-    let cancelled = false;
+    let active = true;
 
-    const fetchOrders = async (isInitial) => {
-      if (isInitial) setLoading(true);
-      else setFetching(true);
-      setError('');
+    const isInitial = !hasFetchedRef.current;
+    hasFetchedRef.current = true;
+    if (isInitial) setLoading(true);
+    else setFetching(true);
+    setError('');
 
+    (async () => {
       try {
         const result = await api.getShopOrders({
           page: currentPage,
           limit: PAGE_SIZE,
           status: filterStatus,
         });
-        if (!cancelled) {
-          setOrders(result.orders || []);
-          setPagination(result.pagination || null);
-        }
+        if (!active) return;
+        setOrders(result.orders || []);
+        setPagination(result.pagination || null);
       } catch (err) {
-        if (!cancelled) {
-          setError(err.message || 'Không thể tải danh sách đơn hàng.');
-        }
+        if (!active) return;
+        setError(err.message || 'Không thể tải danh sách đơn hàng.');
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-          setFetching(false);
-        }
+        if (!active) return;
+        setLoading(false);
+        setFetching(false);
       }
-    };
+    })();
 
-    const pageChanged = prevPageRef.current !== currentPage;
-    const statusChanged = prevStatusRef.current !== filterStatus;
-    prevPageRef.current = currentPage;
-    prevStatusRef.current = filterStatus;
-
-    if (!hasFetchedRef.current) {
-      hasFetchedRef.current = true;
-      fetchOrders(true);
-    } else if (pageChanged || statusChanged) {
-      fetchOrders(false);
-    }
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { active = false; };
   }, [user, navigate, currentPage, filterStatus]);
 
   const loadOrders = async () => {
@@ -281,7 +267,11 @@ function ShopOrders() {
                   </tr>
                 ) : (
                   orders.map((order) => (
-                    <tr key={order.id}>
+                    <tr
+                      key={order.id}
+                      className={styles.rowClickable}
+                      onClick={() => navigate(`/shop/orders/${order.id}`, { state: { shopOrder: order } })}
+                    >
                       <td className={styles.code}>{order.code}</td>
                       <td>
                         <div className={styles.customerName}>{order.customerName}</div>
@@ -297,7 +287,10 @@ function ShopOrders() {
                             <button
                               type="button"
                               className={`${styles.actionBtn} ${styles.approveBtn}`}
-                              onClick={() => handleAction(order.id, 'confirmed')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(order.id, 'confirmed');
+                              }}
                             >
                               Duyệt
                             </button>
@@ -306,7 +299,10 @@ function ShopOrders() {
                             <button
                               type="button"
                               className={`${styles.actionBtn} ${styles.cancelBtn}`}
-                              onClick={() => handleAction(order.id, 'cancelled')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAction(order.id, 'cancelled');
+                              }}
                             >
                               Hủy
                             </button>

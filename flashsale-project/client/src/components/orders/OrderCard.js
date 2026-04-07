@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FiCopy,
   FiClock,
@@ -14,6 +14,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import styles from './OrderCard.module.css';
+import { orderStatusLineLabel } from '../../utils/orderShape';
 
 /**
  * Cấu hình trạng thái đơn hàng: icon, màu nhãn, bước stepper tương ứng
@@ -23,8 +24,9 @@ const STATUS_CONFIG = {
   pending_payment: { label: 'Chờ thanh toán', Icon: FiClock,       step: 1 },
   pending_confirm: { label: 'Chờ xác nhận',   Icon: FiAlertCircle, step: 1 },
   processing:      { label: 'Đang xử lý',      Icon: FiPackage,     step: 2 },
-  shipping:        { label: 'Đang giao hàng',  Icon: FiTruck,       step: 3 },
+  shipping:        { label: 'Đang giao',  Icon: FiTruck,       step: 3 },
   completed:       { label: 'Hoàn tất',         Icon: FiCheck,       step: 4 },
+  failed:          { label: 'Thất bại',         Icon: FiAlertCircle, step: -1 },
   cancelled:       { label: 'Đã hủy',           Icon: FiX,           step: -1 },
   refunded:        { label: 'Hoàn tiền',        Icon: FiRotateCcw,   step: -1 },
 };
@@ -42,6 +44,7 @@ const ORDER_STEPS = ['Đặt hàng', 'Xử lý', 'Đang giao', 'Hoàn tất'];
  * - Actions nằm ngang ở footer
  */
 function OrderCard({ order, onCopyCode, onCancelOrder }) {
+  const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState(null);
   const [isExpired, setIsExpired] = useState(false);
   // Trạng thái confirm hủy inline: false | 'confirming' | 'cancelling'
@@ -118,7 +121,8 @@ function OrderCard({ order, onCopyCode, onCancelOrder }) {
     step: 0,
   };
   const { Icon: StatusIcon, step: currentStep } = statusConfig;
-  const isCancelled = order.status === 'cancelled' || order.status === 'refunded';
+  const isCancelled =
+    order.status === 'cancelled' || order.status === 'refunded' || order.status === 'failed';
   const secondaryAction = getSecondaryAction();
   const showCountdown =
     (order.status === 'pending_payment' || order.status === 'pending_confirm') &&
@@ -126,12 +130,33 @@ function OrderCard({ order, onCopyCode, onCancelOrder }) {
     !isExpired &&
     timeLeft;
 
+  const openDetail = () => {
+    navigate(`/orders/${order.id}`);
+  };
+
+  const onCardAreaClick = (e) => {
+    if (e.target.closest('button, a')) return;
+    openDetail();
+  };
+
   return (
     <div className={`${styles.card} ${styles[`status_${order.status}`]}`}>
       {/* Left accent bar – màu dựa vào status class */}
       <div className={styles.accentBar} aria-hidden="true" />
 
-      <div className={styles.inner}>
+      <div
+        className={styles.inner}
+        onClick={onCardAreaClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openDetail();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Xem đơn hàng ${order.code}`}
+      >
         {/* ── Header: mã đơn + ngày + badge ── */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
@@ -162,6 +187,17 @@ function OrderCard({ order, onCopyCode, onCancelOrder }) {
             <StatusIcon size={13} aria-hidden="true" />
             <span>{statusConfig.label}</span>
           </div>
+        </div>
+
+        <div className={styles.statusLines}>
+          <p className={styles.statusLine}>
+            <span className={styles.statusKey}>Trạng thái đơn:</span>{' '}
+            <strong className={styles.statusValue}>{orderStatusLineLabel(order.status)}</strong>
+          </p>
+          <p className={styles.statusLine}>
+            <span className={styles.statusKey}>Thanh toán:</span>{' '}
+            <strong className={styles.statusValue}>{order.payment?.lineLabel ?? 'Thu hộ'}</strong>
+          </p>
         </div>
 
         {/* ── Countdown bar ── */}

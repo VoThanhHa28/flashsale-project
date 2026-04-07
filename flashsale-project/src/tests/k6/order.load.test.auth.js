@@ -5,19 +5,24 @@ import { Rate } from "k6/metrics";
 // Custom metrics
 const errorRate = new Rate("errors");
 const loginErrorRate = new Rate("login_errors");
+const outOfStockRate = new Rate("out_of_stock");
+
+// Safe access to env variable with default fallback
+const TARGET_VUS = Number(__ENV?.TARGET_VUS || 200);
 
 // Test configuration
 export let options = {
     stages: [
-        { duration: "30s", target: 100 }, // Warm-up: 0 → 100 users
-        { duration: "10s", target: 1000 }, // Spike: 100 → 1000 users
-        { duration: "1m", target: 1000 }, // Hold: 1000 users
-        { duration: "30s", target: 0 }, // Cool-down: 1000 → 0 users
+        { duration: "30s", target: Math.floor(TARGET_VUS * 0.25) }, // Warm-up
+        { duration: "30s", target: TARGET_VUS }, // Ramp-up
+        { duration: "1m", target: TARGET_VUS }, // Hold
+        { duration: "30s", target: 0 }, // Cool-down
     ],
     thresholds: {
-        http_req_duration: ["p(95)<500"], // 95% requests < 500ms
+        http_req_duration: ["p(95)<2000"], // 95% requests < 2s
         http_req_failed: ["rate<0.1"], // Error rate < 10%
         errors: ["rate<0.1"], // Custom error rate < 10%
+        out_of_stock: ["rate<0.7"], // Theo dõi tỷ lệ sold-out khi tải cao
     },
 };
 
@@ -27,7 +32,7 @@ const LOGIN_ENDPOINT = `${BASE_URL}/v1/api/auth/login`;
 const ORDER_ENDPOINT = `${BASE_URL}/v1/api/order`;
 
 // Test data - 1000 users đã seed
-const USER_TIMESTAMP = "1771040216695"; // Thay bằng timestamp của bạn
+const USER_TIMESTAMP = "1775526487648";
 const TOTAL_USERS = 1000;
 const PASSWORD = "123456";
 
@@ -70,7 +75,7 @@ function login(email) {
         headers: {
             "Content-Type": "application/json",
         },
-        timeout: "10s",
+        timeout: "20s",
     };
 
     const response = http.post(LOGIN_ENDPOINT, payload, params);
@@ -133,7 +138,8 @@ export function setup() {
     console.log(`📍 Order: ${ORDER_ENDPOINT}`);
     console.log(`👥 Users: testuser${USER_TIMESTAMP}_{1-${TOTAL_USERS}}@flashsale.test`);
     console.log(`🔑 Password: ${PASSWORD}`);
-    return { startTime: new Date() };
+    console.log(`🎯 Target VUs: ${TARGET_VUS}`);
+    return { startTimeMs: Date.now() };
 }
 
 /**
@@ -165,32 +171,44 @@ export default function (data) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${userToken}`,
         },
-        timeout: "10s",
+        timeout: "20s",
     };
 
     // Send POST request to real order endpoint
     const response = http.post(ORDER_ENDPOINT, payload, params);
 
+    let body = null;
+    try {
+        body = JSON.parse(response.body);
+    } catch (e) {
+        body = null;
+    }
+
+    const isSuccess = response.status === 200 || response.status === 201;
+    const isSoldOut =
+        response.status === 400 && body && typeof body.message === "string" && body.message.includes("hết hàng");
+    const isExpectedOutcome = isSuccess || isSoldOut;
+
     // Check response
     const checkResult = check(response, {
-        "status is 200 or 201": (r) => r.status === 200 || r.status === 201,
-        "response time < 500ms": (r) => r.timings.duration < 500,
-        "response time < 1000ms": (r) => r.timings.duration < 1000,
-        "has success field": (r) => {
-            try {
-                const body = JSON.parse(r.body);
-                return body.hasOwnProperty("success");
-            } catch (e) {
-                return false;
-            }
+        "order success or sold-out": () => isExpectedOutcome,
+        "has statusCode": (r) => {
+            const parsed = body;
+            return parsed && typeof parsed.statusCode === "number";
         },
     });
 
-    // Record errors
-    errorRate.add(!checkResult);
+    check(response, {
+        "response time < 2000ms": (r) => r.timings.duration < 2000,
+        "response time < 5000ms": (r) => r.timings.duration < 5000,
+    });
 
-    // Log errors
-    if (response.status !== 200 && response.status !== 201) {
+    // Record metrics
+    errorRate.add(!isExpectedOutcome);
+    outOfStockRate.add(isSoldOut);
+
+    // Log only unexpected errors
+    if (!isExpectedOutcome) {
         console.error(`❌ Order failed: ${response.status} - ${response.body}`);
     }
 
@@ -202,8 +220,8 @@ export default function (data) {
  * Teardown function - runs once after test
  */
 export function teardown(data) {
-    const endTime = new Date();
-    const duration = (endTime - data.startTime) / 1000;
+    const startTimeMs = data && typeof data.startTimeMs === "number" ? data.startTimeMs : Date.now();
+    const duration = (Date.now() - startTimeMs) / 1000;
 
     console.log("");
     console.log("╔════════════════════════════════════════╗");

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const OrderController = require("../controllers/order.controller");
 const validate = require("../middlewares/validate.middleware");
@@ -14,8 +15,16 @@ router.post(
     OrderController.placeOrder, // 3️⃣ business
 );
 
-// Route cho load testing (không cần auth, không cần validate)
-router.post("/test", OrderController.placeOrder);
+// Route cho load testing (không cần auth, auto-create dummy user)
+router.post("/test",
+    (req, res, next) => {
+        // Tạo dummy user (valid ObjectId format) cho K6 load test
+        req.user = { _id: new mongoose.Types.ObjectId().toString() };
+        next();
+    },
+    validate(orderValidation.create), // Validate body (productId, quantity)
+    OrderController.placeOrder
+);
 
 // Lịch sử đơn hàng
 // router.get(

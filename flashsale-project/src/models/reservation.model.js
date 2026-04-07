@@ -79,14 +79,29 @@ const reservationSchema = new mongoose.Schema(
         },
 
         /**
+         * Loại giữ chỗ: flash_sale vs checkout
+         * - flash_sale: Flash sale (30 min TTL)
+         * - checkout: Checkout countdown (5 min TTL)
+         */
+        type: {
+            type: String,
+            enum: ["flash_sale", "checkout"],
+            default: "flash_sale",
+            index: true,
+        },
+
+        /**
          * Thời gian hết hạn (TTL Index)
-         * Mặc định: 30 phút từ khi tạo
-         * Nếu quá 30 phút chưa confirm → MongoDB tự xóa
+         * Flash sale: 30 phút từ khi tạo
+         * Checkout: 5 phút từ khi tạo
+         * MongoDB tự xóa nếu quá hạn
          */
         expire_at: {
             type: Date,
-            default: () => new Date(Date.now() + 30 * 60 * 1000),
-            index: true,
+            default: function () {
+                const minutes = this.type === "checkout" ? 5 : 30;
+                return new Date(Date.now() + minutes * 60 * 1000);
+            },
         },
 
         /**

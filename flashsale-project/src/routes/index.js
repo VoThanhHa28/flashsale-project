@@ -10,6 +10,9 @@ const seedRouter = require("./seed.route");
 const userRouter = require("./user.route");
 const shopRouter = require("./shop.route");
 const categoryRouter = require("./category.route");
+const cartRouter = require("./cart.route");
+const inventoryRouter = require("./inventory.route");
+const checkoutRouter = require("./checkout.route");
 // Hồng sửa – route nội bộ để Worker gọi Main App emit system-error khi Redis chết (Case 3)
 const internalRouter = require("./internal.route");
 const activityLogMiddleware = require("../middlewares/activityLog.middleware");
@@ -40,6 +43,12 @@ router.use("/v1/api/order", orderRouter);
 // Route cho K6 test (không cần /v1 prefix)
 router.use("/api/orders", orderRouter);
 
+// Inventory routes (Quản lý kho - import/export transactions)
+router.use("/v1/api/inventories", inventoryRouter);
+
+// Checkout routes (5 min countdown - lock inventory)
+router.use("/v1/api/checkout", checkoutRouter);
+
 // Định nghĩa resource name ở đây
 router.use("/v1/api/products", productRouter);
 
@@ -61,5 +70,7 @@ router.use("/v1/api/shop", shopRouter);
 
 // Master data: categories cho dropdown frontend
 router.use("/v1/api/categories", categoryRouter);
+
+router.use("/v1/api/cart", cartRouter);
 
 module.exports = router;

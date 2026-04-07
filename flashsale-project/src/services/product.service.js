@@ -2,6 +2,7 @@ const Product = require('../models/product.model');
 const { BadRequestError, NotFoundError } = require('../core/error.response');
 const CONST = require('../constants');
 const InventoryService = require('./order.service'); // Import InventoryService
+const InventoryTransactionService = require('./inventoryTransaction.service');
 const redisClient = require('../config/redis');
 const ProductRepo = require('../repositories/product.repo');
 const FlashSaleCampaignService = require('./flashSaleCampaign.service');
@@ -18,13 +19,15 @@ const SORT_MAP = {
 class ProductService {
   /**
    * Tạo sản phẩm mới
+   * @param {Object} payload - Product data
+   * @param {String} userId - Current user ID (optional, for tracking who created it)
    */
-  static async createProduct(payload) {
-    const {
-      productName,
-      productThumb,
-      productDescription,
-      productPrice,
+  static async createProduct(payload, userId = null) {
+    const { 
+      productName, 
+      productThumb, 
+      productDescription, 
+      productPrice, 
       productQuantity,
       isPublished = true,
     } = payload;
@@ -39,6 +42,26 @@ class ProductService {
     });
 
     await InventoryService.updateStock(newProduct._id.toString(), newProduct.productQuantity);
+
+    // Auto-create initial inventory transaction (from UI creation)
+    if (newProduct.productQuantity > 0) {
+      try {
+        await InventoryTransactionService.createTransaction(
+          userId,
+          {
+            productId: newProduct._id.toString(),
+            quantityChange: newProduct.productQuantity,
+            type: 'import',
+            reason: 'New product created via dashboard',
+            referenceId: `MANUAL-${newProduct._id}`,
+            notes: 'Initial inventory for newly created product',
+          }
+        );
+      } catch (err) {
+        // Log but don't fail - product was created, transaction log is secondary
+        console.error('[ProductService] Error creating inventory transaction:', err.message);
+      }
+    }
 
     return newProduct;
   }
