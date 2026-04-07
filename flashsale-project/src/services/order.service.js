@@ -141,50 +141,37 @@ class OrderService {
 
         return true;
     }
-
-    /** Hoàn trả kho Redis khi đặt hàng lỗi sau khi đã reservation (rollback). */
     static async releaseReservation(productId, quantity) {
-        const keyStock = CONST.REDIS.PRODUCT_STOCK(String(productId));
-        await redisClient.incrBy(keyStock, Math.floor(Number(quantity)));
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
+        await redisClient.incrBy(keyStock, quantity);
+        await redisClient.del(CONST.REDIS.PRODUCT_INFO(productId)).catch(() => {});
+        await OrderService._syncInventoryFromRedis(productId);
     }
 
-    /**
-     * Chuẩn hóa payload queue: legacy 1 dòng hoặc items[] nhiều dòng (đã có price server-side).
-     */
     static normalizeOrderQueuePayload(orderData) {
-        if (!orderData || orderData.userId == null) {
-            throw new BadRequestError("Invalid order payload");
-        }
-        const userId = String(orderData.userId);
-        const shippingAddress =
-            typeof orderData.shippingAddress === "string" ? orderData.shippingAddress.trim() : "";
+        const userId = String(orderData.userId || "");
+        if (!userId) throw new BadRequestError("orderData.userId is required");
+
+        const shippingAddress = typeof orderData.shippingAddress === "string" ? orderData.shippingAddress.trim() : "";
         const orderTime = orderData.orderTime ? new Date(orderData.orderTime) : new Date();
 
-        let lines;
+        let lines = [];
         if (Array.isArray(orderData.items) && orderData.items.length > 0) {
             lines = orderData.items.map((i) => ({
                 productId: String(i.productId),
-                quantity: Math.floor(Number(i.quantity)),
+                quantity: Number(i.quantity),
                 price: Number(i.price),
             }));
-        } else if (orderData.productId != null && orderData.quantity != null && orderData.price != null) {
-            lines = [
-                {
-                    productId: String(orderData.productId),
-                    quantity: Math.floor(Number(orderData.quantity)),
-                    price: Number(orderData.price),
-                },
-            ];
         } else {
-            throw new BadRequestError("Invalid order payload");
+            lines = [{
+                productId: String(orderData.productId || ""),
+                quantity: Number(orderData.quantity),
+                price: Number(orderData.price),
+            }];
         }
 
-        for (const l of lines) {
-            if (!l.productId || l.quantity < 1 || !Number.isFinite(l.price) || l.price < 0) {
-                throw new BadRequestError("Invalid order line");
-            }
-        }
-
+        lines = lines.filter((l) => l.productId && Number.isFinite(l.quantity) && l.quantity > 0 && Number.isFinite(l.price) && l.price >= 0);
+        if (!lines.length) throw new BadRequestError("orderData items are invalid");
         return { userId, shippingAddress, lines, orderTime };
     }
 
@@ -206,8 +193,9 @@ class OrderService {
 
     // 4. PROCESS ORDER FROM QUEUE
     static async processOrderFromQueue(orderData) {
-        const { userId, shippingAddress, lines, orderTime } = OrderService.normalizeOrderQueuePayload(orderData);
 
+        const { userId, shippingAddress, lines, orderTime } = OrderService.normalizeOrderQueuePayload(orderData);
+        const first = lines[0];
         const detailInputs = lines.map((l) => ({
             productId: l.productId,
             quantity: l.quantity,
@@ -215,16 +203,16 @@ class OrderService {
             lineTotal: l.quantity * l.price,
         }));
         const totalPrice = detailInputs.reduce((s, l) => s + l.lineTotal, 0);
-        const first = lines[0];
 
         const order = new OrderModel({
+            client_order_id: orderData.client_order_id || null,
             userId,
             shippingAddress,
             productId: first.productId,
             quantity: lines.length === 1 ? first.quantity : undefined,
             price: lines.length === 1 ? first.price : undefined,
             totalPrice,
-            status: CONST.ORDER.STATUS.COMPLETED,
+            status: CONST.ORDER.STATUS.PENDING,
             orderTime,
             processedAt: new Date(),
         });
@@ -246,15 +234,14 @@ class OrderService {
             await OrderService._syncInventoryFromRedis(l.productId);
         }
 
-        // Ghi reservation log: worker_commit – slot đã được cam kết vào DB
-        const keyStock = CONST.REDIS.PRODUCT_STOCK(productId);
+        const keyStock = CONST.REDIS.PRODUCT_STOCK(first.productId);
         const remainingRaw = await redisClient.get(keyStock).catch(() => null);
         ReservationLogModel.create({
-            userId: userId?.toString() ?? null,
-            productId: productId?.toString() ?? null,
-            quantity,
-            price,
-            remainingStockAfter: remainingRaw !== null ? parseInt(remainingRaw) : null,
+            userId: userId || null,
+            productId: first.productId || null,
+            quantity: first.quantity,
+            price: first.price,
+            remainingStockAfter: remainingRaw !== null ? parseInt(remainingRaw, 10) : null,
             orderId: order._id.toString(),
             source: CONST.RESERVATION_LOG.SOURCE.WORKER_COMMIT,
             note: CONST.RESERVATION_LOG.MESSAGE.SLOT_COMMITTED,
@@ -362,10 +349,10 @@ class OrderService {
 
             // Ghi reservation log: rollback – kho Redis đã được hoàn lại bởi worker
             ReservationLogModel.create({
-                userId: userId?.toString() ?? null,
-                productId: productId?.toString() ?? null,
-                quantity,
-                price,
+                userId: userId || null,
+                productId: first?.productId || null,
+                quantity: first?.quantity || null,
+                price: first?.price || null,
                 remainingStockAfter: null,
                 orderId: order._id.toString(),
                 source: CONST.RESERVATION_LOG.SOURCE.ROLLBACK,

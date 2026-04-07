@@ -26,7 +26,7 @@ class OrderController {
         if (req.user && (!shippingAddress || shippingAddress.length < 5)) {
             throw new BadRequestError("Vui lòng nhập địa chỉ giao hàng (ít nhất 5 ký tự)");
         }
-        const addressForQueue = shippingAddress || (req.user ? "" : "K6 / test — địa chỉ mặc định");
+        const addressForQueue = shippingAddress || (req.user ? "" : "K6 / test - dia chi mac dinh");
 
         const reserved = [];
         try {
