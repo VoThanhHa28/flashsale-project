@@ -165,6 +165,19 @@ class OrderService {
             await redisClient.set(keyInfo, productInfo, { EX: CONST.PRODUCT.CACHE.TTL_INFO });
         }
 
+        // C-1. CHECK: User có pending/confirmed reservation khác chưa? (và chưa expire)
+        const existingReservation = await ReservationModel.findOne({
+            user_id: userId,
+            status: { $in: ["pending", "confirmed"] }, // ← Check BOTH pending & confirmed
+            product_id: { $ne: productId }, // ← Product KHÁC
+            expire_at: { $gt: new Date() }, // ← CHƯA expire (TTL còn hiệu lực)
+        });
+
+        if (existingReservation) {
+            throw new BadRequestError(CONST.ORDER.MESSAGE.ACTIVE_ORDER_EXISTS);
+        }
+
+        // C. CHECK GIỜ G
         const { start, end } = JSON.parse(productInfo);
         const now = Date.now();
 
@@ -228,12 +241,20 @@ class OrderService {
 
     // 4. PROCESS ORDER FROM QUEUE
     static async processOrderFromQueue(orderData) {
-        const { client_order_id, userId, productId, quantity, price } = orderData;
+        const { client_order_id, userId, productId, quantity, price, reservation_id } = orderData;
 
         // CHECK IDEMPOTENCY: Order đã create chưa?
         const existingOrder = await OrderModel.findOne({ client_order_id }).lean();
         if (existingOrder) {
             console.log(`[OrderService] ⚠️  Order đã tồn tại: ${existingOrder._id}, bỏ qua`);
+            
+            // 🔓 STILL NEED TO RELEASE LOCK even on idempotency retry
+            if (reservation_id) {
+                await ReservationModel.findByIdAndUpdate(reservation_id, {
+                    status: "completed",
+                    note: `Order ${existingOrder._id} (idempotent reprocess)`,
+                }).catch((err) => console.warn(`[OrderService] Failed to update Reservation ${reservation_id}:`, err.message));
+            }
             return existingOrder;
         }
 
@@ -269,6 +290,14 @@ class OrderService {
             throw persistErr;
         }
         console.log(`[OrderService] ✅ Đã lưu đơn (${client_order_id}) + order_details + payment: ${order._id}`);
+
+        // 🔓 RELEASE LOCK: Update Reservation status → completion
+        if (reservation_id) {
+            await ReservationModel.findByIdAndUpdate(reservation_id, {
+                status: "completed",
+                note: `Order ${order._id} completed`,
+            }).catch((err) => console.warn(`[OrderService] Failed to update Reservation ${reservation_id}:`, err.message));
+        }
 
         await OrderService._syncInventoryFromRedis(productId);
 
@@ -341,7 +370,7 @@ class OrderService {
     // 6. SAVE FAILED ORDER
     static async saveFailedOrder(orderData, errorMessage) {
         try {
-            const { userId, productId, quantity, price } = orderData;
+            const { userId, productId, quantity, price, reservation_id } = orderData;
 
             const order = new OrderModel({
                 userId,
@@ -374,6 +403,14 @@ class OrderService {
                 throw persistErr;
             }
             console.log(`[OrderService] 💾 Đã lưu đơn lỗi + order_details + payment: ${order._id}`);
+
+            // 🔓 RELEASE LOCK: Update Reservation status → failed
+            if (reservation_id) {
+                await ReservationModel.findByIdAndUpdate(reservation_id, {
+                    status: "failed",
+                    note: `Order failed: ${errorMessage || "Unknown error"}`,
+                }).catch((err) => console.warn(`[OrderService] Failed to update Reservation ${reservation_id}:`, err.message));
+            }
 
             // Ghi reservation log: rollback – kho Redis đã được hoàn lại bởi worker
             ReservationLogModel.create({

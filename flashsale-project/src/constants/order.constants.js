@@ -37,5 +37,6 @@ module.exports = {
         CANCEL_ORDER_SUCCESS: "Hủy đơn hàng thành công",
         CANCEL_ORDER_NOT_ALLOWED: "Chỉ có thể hủy đơn hàng đang chờ xử lý",
         PAYMENT_RECORD_SUCCESS: "Lưu thông tin thanh toán thành công",
+        ACTIVE_ORDER_EXISTS: "Bạn đang có đơn hàng chờ xử lý. Vui lòng hoàn tất hoặc hủy trước khi đặt đơn khác.",
     },
 };
