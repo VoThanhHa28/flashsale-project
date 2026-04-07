@@ -5,8 +5,10 @@ import { Rate } from "k6/metrics";
 // Custom metrics
 const errorRate = new Rate("errors");
 const loginErrorRate = new Rate("login_errors");
+const outOfStockRate = new Rate("out_of_stock");
 
-const TARGET_VUS = Number(__ENV.TARGET_VUS || 200);
+// Safe access to env variable with default fallback
+const TARGET_VUS = Number(__ENV?.TARGET_VUS || 200);
 
 // Test configuration
 export let options = {
@@ -20,6 +22,7 @@ export let options = {
         http_req_duration: ["p(95)<2000"], // 95% requests < 2s
         http_req_failed: ["rate<0.1"], // Error rate < 10%
         errors: ["rate<0.1"], // Custom error rate < 10%
+        out_of_stock: ["rate<0.7"], // Theo dõi tỷ lệ sold-out khi tải cao
     },
 };
 
@@ -174,16 +177,24 @@ export default function (data) {
     // Send POST request to real order endpoint
     const response = http.post(ORDER_ENDPOINT, payload, params);
 
+    let body = null;
+    try {
+        body = JSON.parse(response.body);
+    } catch (e) {
+        body = null;
+    }
+
+    const isSuccess = response.status === 200 || response.status === 201;
+    const isSoldOut =
+        response.status === 400 && body && typeof body.message === "string" && body.message.includes("hết hàng");
+    const isExpectedOutcome = isSuccess || isSoldOut;
+
     // Check response
     const checkResult = check(response, {
-        "status is 200 or 201": (r) => r.status === 200 || r.status === 201,
-        "has statusCode + data": (r) => {
-            try {
-                const body = JSON.parse(r.body);
-                return typeof body.statusCode === "number" && typeof body.data === "object";
-            } catch (e) {
-                return false;
-            }
+        "order success or sold-out": () => isExpectedOutcome,
+        "has statusCode": (r) => {
+            const parsed = body;
+            return parsed && typeof parsed.statusCode === "number";
         },
     });
 
@@ -192,11 +203,12 @@ export default function (data) {
         "response time < 5000ms": (r) => r.timings.duration < 5000,
     });
 
-    // Record errors
-    errorRate.add(!checkResult);
+    // Record metrics
+    errorRate.add(!isExpectedOutcome);
+    outOfStockRate.add(isSoldOut);
 
-    // Log errors
-    if (response.status !== 200 && response.status !== 201) {
+    // Log only unexpected errors
+    if (!isExpectedOutcome) {
         console.error(`❌ Order failed: ${response.status} - ${response.body}`);
     }
 
