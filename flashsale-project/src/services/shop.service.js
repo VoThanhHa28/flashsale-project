@@ -3,6 +3,7 @@
 const { NotFoundError, BadRequestError } = require('../core/error.response');
 const CONST = require('../constants');
 const ShopRepo = require('../repositories/shop.repo');
+const { getIO } = require('../config/socket');
 
 class ShopService {
     static async getOrders({ status, page = 1, pageSize = 20 }) {
@@ -54,6 +55,22 @@ class ShopService {
         }
 
         const updated = await ShopRepo.updateOrderStatus(orderId, status);
+
+        try {
+            const io = getIO();
+            const uid = String(order.userId || updated?.userId || '').trim();
+            if (uid) {
+                const room = CONST.SOCKET.SOCKET_ROOM.USER(uid);
+                io.to(room).emit(CONST.SOCKET.SOCKET_EVENT.ORDER_STATUS_UPDATED, {
+                    orderId: String(orderId),
+                    status,
+                    userId: uid,
+                });
+            }
+        } catch (emitErr) {
+            console.warn('[ShopService] ORDER_STATUS_UPDATED emit failed:', emitErr.message);
+        }
+
         return updated;
     }
 

@@ -9,6 +9,8 @@ const SOCKET_EVENT = {
     UPDATE_STOCK: "update-stock",
     ORDER_SUCCESS: "order-success",
     ORDER_FAILED: "order-failed",
+    /** Shop đổi trạng thái đơn → push tới user sở hữu đơn (room theo userId) */
+    ORDER_STATUS_UPDATED: "order-status-updated",
 
     // Flash Sale Events
     FLASH_SALE_START: "flash-sale-start",
@@ -23,12 +25,15 @@ const SOCKET_EVENT = {
     LEAVE_PRODUCT_ROOM: "leave-product-room",
     JOIN_FLASH_SALE_ROOM: "join-flash-sale-room",
     LEAVE_FLASH_SALE_ROOM: "leave-flash-sale-room",
+    JOIN_USER_ROOM: "join-user-room",
+    LEAVE_USER_ROOM: "leave-user-room",
 };
 
 const SOCKET_ROOM = {
     PRODUCT: (productId) => `product_${productId}`,
     FLASH_SALE: (flashSaleId) => `flash_sale_${flashSaleId}`,
     ALL_USERS: "all_users",
+    USER: (userId) => `user_${String(userId)}`,
 };
 
 const SOCKET_MESSAGE = {

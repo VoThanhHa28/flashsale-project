@@ -22,7 +22,7 @@ import { orderStatusLineLabel } from '../../utils/orderShape';
  */
 const STATUS_CONFIG = {
   pending_payment: { label: 'Chờ thanh toán', Icon: FiClock,       step: 1 },
-  pending_confirm: { label: 'Chờ xác nhận',   Icon: FiAlertCircle, step: 1 },
+  pending_confirm: { label: 'Đang chuẩn bị',   Icon: FiPackage,     step: 2 },
   processing:      { label: 'Đang xử lý',      Icon: FiPackage,     step: 2 },
   shipping:        { label: 'Đang giao',  Icon: FiTruck,       step: 3 },
   completed:       { label: 'Hoàn tất',         Icon: FiCheck,       step: 4 },

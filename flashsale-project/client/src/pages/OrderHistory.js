@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
+import { useSocket } from '../contexts/SocketContext';
 import OrderCard from '../components/orders/OrderCard';
 import FilterBar from '../components/orders/FilterBar';
 import OrderSkeleton from '../components/orders/OrderSkeleton';
@@ -41,6 +42,17 @@ function OrderHistory() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const user = api.getUser();
+  const { orderStatusBump } = useSocket();
+  const orderBumpRef = useRef(0);
+
+  // Shop đổi trạng thái đơn → refetch danh sách (realtime qua socket)
+  useEffect(() => {
+    if (!user) return;
+    if (orderStatusBump === orderBumpRef.current) return;
+    orderBumpRef.current = orderStatusBump;
+    if (orderStatusBump === 0) return;
+    setFilters((f) => ({ ...f }));
+  }, [orderStatusBump, user]);
 
   // Redirect nếu chưa đăng nhập
   useEffect(() => {

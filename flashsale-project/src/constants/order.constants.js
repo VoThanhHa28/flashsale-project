@@ -4,6 +4,7 @@ module.exports = {
         PENDING_PAYMENT: "pending_payment",
         PENDING: "pending",
         CONFIRMED: "confirmed",
+        SHIPPING: "shipping",
         COMPLETED: "completed",
         SUCCESS: "success",
         FAILED: "failed",

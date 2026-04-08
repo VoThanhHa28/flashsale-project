@@ -5,6 +5,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import socketService from '../services/socket';
 import { SOCKET_EVENTS } from '../contracts';
+import * as api from '../services/api';
 
 const SocketContext = createContext(null);
 
@@ -14,6 +15,8 @@ export function SocketProvider({ children }) {
   const [productStockUpdates, setProductStockUpdates] = useState(new Map());
   const [lastFlashSaleStart, setLastFlashSaleStart] = useState(null);
   const [systemError, setSystemError] = useState(null);
+  /** Tăng mỗi khi shop đổi trạng thái đơn của user (để OrderHistory / OrderDetail refetch) */
+  const [orderStatusBump, setOrderStatusBump] = useState(0);
 
   useEffect(() => {
     socketService.connect();
@@ -58,6 +61,10 @@ export function SocketProvider({ children }) {
       setSystemError(data && typeof data === 'object' ? data : { message: 'Hệ thống đang bảo trì' });
     });
 
+    const unsubscribeOrderStatus = socketService.on(SOCKET_EVENTS.ORDER_STATUS_UPDATED, () => {
+      setOrderStatusBump((n) => n + 1);
+    });
+
     return () => {
       unsubConnect();
       unsubDisconnect();
@@ -67,6 +74,23 @@ export function SocketProvider({ children }) {
       unsubscribeStock();
       unsubscribeFlashSaleStart();
       unsubscribeSystemError();
+      unsubscribeOrderStatus();
+    };
+  }, []);
+
+  /** Join socket room theo user đang đăng nhập (nhận order-status-updated từ shop) */
+  useEffect(() => {
+    const joinUserRoom = () => {
+      const u = api.getUser();
+      const uid = u && (u._id || u.id);
+      if (uid) socketService.emit('join-user-room', String(uid));
+    };
+    const offConnect = socketService.onConnect(joinUserRoom);
+    const offReconnect = socketService.onReconnect(joinUserRoom);
+    joinUserRoom();
+    return () => {
+      offConnect();
+      offReconnect();
     };
   }, []);
 
@@ -76,6 +100,7 @@ export function SocketProvider({ children }) {
     productStockUpdates,
     lastFlashSaleStart,
     systemError,
+    orderStatusBump,
     socket: socketService,
   };
 

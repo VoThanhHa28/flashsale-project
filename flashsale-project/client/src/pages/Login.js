@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../services/api';
+import socketService from '../services/socket';
 import './Login.css';
 
 function Login() {
@@ -75,6 +76,9 @@ function Login() {
         const me = token ? await api.getCurrentUser() : null;
         if (me) api.setUser(me);
         else if (user) api.setUser(user);
+        const logged = me || user;
+        const uid = logged && (logged._id || logged.id);
+        if (uid) socketService.emit('join-user-room', String(uid));
         const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/';
         navigate(safeRedirect, { replace: true });
         return;

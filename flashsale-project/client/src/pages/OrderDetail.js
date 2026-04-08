@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   FiArrowLeft,
@@ -17,6 +17,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi';
 import * as api from '../services/api';
+import { useSocket } from '../contexts/SocketContext';
 import { orderStatusLineLabel } from '../utils/orderShape';
 import styles from './OrderDetail.module.css';
 
@@ -25,7 +26,7 @@ import styles from './OrderDetail.module.css';
  */
 const STATUS_CONFIG = {
   pending_payment: { label: 'Chờ thanh toán', Icon: FiClock       },
-  pending_confirm: { label: 'Chờ xác nhận',   Icon: FiAlertCircle },
+  pending_confirm: { label: 'Đang chuẩn bị',   Icon: FiPackage     },
   processing:      { label: 'Đang xử lý',      Icon: FiPackage     },
   shipping:        { label: 'Đang giao',  Icon: FiTruck       },
   completed:       { label: 'Hoàn tất',         Icon: FiCheck       },
@@ -82,6 +83,8 @@ function OrderDetail() {
   const [toast, setToast] = useState(null);
 
   const user = api.getUser();
+  const { orderStatusBump } = useSocket();
+  const orderBumpRef = useRef(0);
 
   useEffect(() => {
     if (!user) {
@@ -108,6 +111,25 @@ function OrderDetail() {
     load();
     return () => { cancelled = true; };
   }, [id, user, navigate]);
+
+  // Cùng event socket: refetch chi tiết đơn đang xem
+  useEffect(() => {
+    if (!user || !id) return;
+    if (orderStatusBump === orderBumpRef.current) return;
+    orderBumpRef.current = orderStatusBump;
+    if (orderStatusBump === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.getOrderById(id);
+        if (!cancelled && data) setOrder(data);
+      } catch {
+        /* giữ state cũ */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [orderStatusBump, id, user]);
 
   // Auto-hide toast sau 3s
   useEffect(() => {

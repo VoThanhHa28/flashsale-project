@@ -159,7 +159,7 @@ function normalizePayment(raw) {
 /** Nhãn một dòng cho trạng thái đơn (UI) — ví dụ Đang giao */
 export const ORDER_STATUS_LINE_LABELS = {
   pending_payment: 'Chờ thanh toán',
-  pending_confirm: 'Chờ xác nhận',
+  pending_confirm: 'Đang chuẩn bị',
   processing: 'Đang xử lý',
   shipping: 'Đang giao',
   completed: 'Hoàn tất',

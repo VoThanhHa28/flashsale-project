@@ -11,7 +11,7 @@ function FilterBar({ filters, onFilterChange, onReset }) {
   const statusOptions = [
     { value: 'all', label: 'Tất cả' },
     { value: 'pending_payment', label: 'Chờ thanh toán' },
-    { value: 'pending_confirm', label: 'Chờ xác nhận' },
+    { value: 'pending_confirm', label: 'Đang chuẩn bị' },
     { value: 'processing', label: 'Đang xử lý' },
     { value: 'shipping', label: 'Đang giao' },
     { value: 'completed', label: 'Hoàn tất' },

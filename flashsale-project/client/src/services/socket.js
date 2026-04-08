@@ -104,6 +104,11 @@ class SocketService {
       const listeners = this.listeners.get(SOCKET_EVENTS.SYSTEM_ERROR) || [];
       listeners.forEach(callback => callback(data));
     });
+
+    this.socket.on(SOCKET_EVENTS.ORDER_STATUS_UPDATED, (data) => {
+      const listeners = this.listeners.get(SOCKET_EVENTS.ORDER_STATUS_UPDATED) || [];
+      listeners.forEach((callback) => callback(data));
+    });
   }
 
   /**

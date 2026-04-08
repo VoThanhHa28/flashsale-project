@@ -100,6 +100,28 @@ const initSocket = async (server) => {
             console.log(`[Socket.io] Client ${socket.id} left flash sale room: ${roomName}`);
         });
 
+        // User join room để nhận cập nhật trạng thái đơn (shop xử lý đơn)
+        socket.on(SOCKET_EVENT.JOIN_USER_ROOM, (userId) => {
+            if (!userId) {
+                console.error("[Socket.io] JOIN_USER_ROOM: userId không hợp lệ");
+                return;
+            }
+            const roomName = SOCKET_ROOM.USER(userId);
+            socket.join(roomName);
+            console.log(`[Socket.io] Client ${socket.id} joined user room: ${roomName}`);
+            socket.emit("room-joined", {
+                room: roomName,
+                message: SOCKET_MESSAGE.JOINED_ROOM,
+            });
+        });
+
+        socket.on(SOCKET_EVENT.LEAVE_USER_ROOM, (userId) => {
+            if (!userId) return;
+            const roomName = SOCKET_ROOM.USER(userId);
+            socket.leave(roomName);
+            console.log(`[Socket.io] Client ${socket.id} left user room: ${roomName}`);
+        });
+
         // Xử lý disconnect
         socket.on(SOCKET_EVENT.DISCONNECT, (reason) => {
             console.log(`[Socket.io] Client ${socket.id} ngắt kết nối: ${reason}`);
